@@ -1,7 +1,8 @@
 # official_matrix_64 (self-contained)
 
-11 agents × 8 official benchmarks = **64 cells (faithful 8x8)**, each scored by the benchmark's
-**official oracle**. This directory is **self-contained and portable** — every
+8 kernel-generation agents × 8 official benchmarks = **64 cells**, each scored by the benchmark's
+**official oracle** (faithful reproduction; the upstream harness also ships 3 more agents that are
+model-unreleased or AMD-only — see `THIRD_PARTY.md`). This directory is **self-contained and portable** — every
 agent driver, benchmark repo + oracle, evaluator, registry, and task list is
 bundled inside. Copy the folder to another machine and run it.
 
@@ -130,3 +131,12 @@ Raw per-cell data: `results/all_official_matrix_v1/official_matrix_64/cells/<ben
 python3 summarize_matrix_64.py \
   --run-root results/all_official_matrix_v1/official_matrix_64 --out results
 ```
+
+## License & Attribution
+
+This harness **vendors upstream open-source benchmarks and kernel-generation agents** under
+`third_party/`. All bundled code remains under its original authors' licenses. See
+[`THIRD_PARTY.md`](THIRD_PARTY.md) for the full list of components, upstream URLs, licenses, and
+paper citation keys. Model weights are not bundled (shared HF cache); each model follows its own
+model-card license. Please cite the original benchmark/agent papers and comply with each
+component's license when using this repository.
