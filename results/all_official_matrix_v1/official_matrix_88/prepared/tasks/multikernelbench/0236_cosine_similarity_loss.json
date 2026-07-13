@@ -1,8 +1,0 @@
-{
-  "benchmark": "multikernelbench",
-  "task_id": "cosine_similarity_loss",
-  "op": "cosine_similarity_loss",
-  "official_task": true,
-  "prompt_path": "/home/bi_geum/official_matrix_88/third_party/MultiKernelBench/reference/loss/cosine_similarity_loss.py",
-  "prompt": "Benchmark: multikernelbench\nOfficial task: cosine_similarity_loss\nReturn only source code, without Markdown fences or explanations.\n\nGenerate a kernel response for the exact MultiKernelBench operator 'cosine_similarity_loss'. Use CUDA C++ or Triton and do not replace the computation with eager PyTorch.\n\nimport torch\nimport torch.nn as nn\n\nclass Model(nn.Module):\n    \"\"\"\n    A model that computes Cosine Similarity Loss for comparing vectors.\n\n    Parameters:\n        None\n    \"\"\"\n    def __init__(self):\n        super(Model, self).__init__()\n\n    def forward(self, predictions, targets):\n        cosine_sim = torch.nn.functional.cosine_similarity(predictions, targets, dim=1)\n        return torch.mean(1 - cosine_sim)\n\nbatch_size = 128\ninput_shape = (4096, )\ndim = 1\n\ndef get_inputs():\n    return [torch.rand(batch_size, *input_shape), torch.rand(batch_size, *input_shape)]\n\ndef get_init_inputs():\n    return []\n"
-}

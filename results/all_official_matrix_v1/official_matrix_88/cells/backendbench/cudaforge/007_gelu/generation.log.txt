@@ -1,9 +1,0 @@
-$ /home/bi_geum/anaconda3/envs/survey/bin/python3 /home/bi_geum/official_matrix_88/drivers/cudaforge_inline.py --task /home/bi_geum/official_matrix_88/results/all_official_matrix_v1/official_matrix_88/cells/backendbench/cudaforge/007_gelu/official_prompt.txt --cand_dir /home/bi_geum/official_matrix_88/results/all_official_matrix_v1/official_matrix_88/cells/backendbench/cudaforge/007_gelu/candidates --rounds 1 --seed 0 --temperature 0.2
-cwd=/home/bi_geum/official_matrix_88
-returncode=0
-wall_s=5.696328
------ STDOUT -----
-[cudaforge] wrote /home/bi_geum/official_matrix_88/results/all_official_matrix_v1/official_matrix_88/cells/backendbench/cudaforge/007_gelu/candidates/round000_kernel.py
-
------ STDERR -----
-

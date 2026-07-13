@@ -1,8 +1,0 @@
-{
-  "benchmark": "multikernelbench",
-  "task_id": "hardtanh",
-  "op": "hardtanh",
-  "official_task": true,
-  "prompt_path": "/home/bi_geum/official_matrix_88/third_party/MultiKernelBench/reference/activation/hardtanh.py",
-  "prompt": "Benchmark: multikernelbench\nOfficial task: hardtanh\nReturn only source code, without Markdown fences or explanations.\n\nGenerate a kernel response for the exact MultiKernelBench operator 'hardtanh'. Use CUDA C++ or Triton and do not replace the computation with eager PyTorch.\n\nimport torch\nimport torch.nn as nn\nimport torch.nn.functional as F\n\nclass Model(nn.Module):\n    \"\"\"\n    Simple model that performs a HardTanh activation.\n    \"\"\"\n    def __init__(self):\n        super(Model, self).__init__()\n    \n    def forward(self, x: torch.Tensor) -> torch.Tensor:\n        \"\"\"\n        Applies HardTanh activation to the input tensor.\n\n        Args:\n            x (torch.Tensor): Input tensor of any shape.\n\n        Returns:\n            torch.Tensor: Output tensor with HardTanh applied, same shape as input.\n        \"\"\"\n        return F.hardtanh(x, min_val=-1., max_val=1.)\n\nbatch_size = 4096\ndim = 393216\n\ndef get_inputs():\n    x = torch.rand(batch_size, dim)\n    return [x]\n\ndef get_init_inputs():\n    return []  # No special initialization inputs needed"
-}

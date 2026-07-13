@@ -1,6 +1,0 @@
-{
-  "benchmark": "kernelbench",
-  "task_id": "98_Matmul_AvgPool_GELU_Scale_Max",
-  "source_path": "/home/bi_geum/official_matrix_88/third_party/KernelBench/KernelBench/level2/98_Matmul_AvgPool_GELU_Scale_Max.py",
-  "official_task": true
-}

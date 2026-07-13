@@ -1,8 +1,0 @@
-{
-  "benchmark": "multikernelbench",
-  "task_id": "index_add",
-  "op": "index_add",
-  "official_task": true,
-  "prompt_path": "/home/bi_geum/official_matrix_88/third_party/MultiKernelBench/reference/index/index_add.py",
-  "prompt": "Benchmark: multikernelbench\nOfficial task: index_add\nReturn only source code, without Markdown fences or explanations.\n\nGenerate a kernel response for the exact MultiKernelBench operator 'index_add'. Use CUDA C++ or Triton and do not replace the computation with eager PyTorch.\n\nimport torch\nimport torch.nn as nn\n\nclass Model(nn.Module):\n    def forward(self, x, indices, values):\n        return x.index_add(dim=0, index=indices, source=values)\n\ndef get_inputs():\n    x = torch.zeros(1024, 4096)\n    indices = torch.randint(0, 1024, (8192,))\n    values = torch.rand(8192, 4096)\n    return [x, indices, values]\n\ndef get_init_inputs():\n    return []\n"
-}

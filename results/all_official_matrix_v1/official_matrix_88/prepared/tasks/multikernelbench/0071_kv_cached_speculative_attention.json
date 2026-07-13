@@ -1,8 +1,0 @@
-{
-  "benchmark": "multikernelbench",
-  "task_id": "kv_cached_speculative_attention",
-  "op": "kv_cached_speculative_attention",
-  "official_task": true,
-  "prompt_path": "/home/bi_geum/official_matrix_88/third_party/MultiKernelBench/reference/attention/kv_cached_speculative_attention.py",
-  "prompt": "Benchmark: multikernelbench\nOfficial task: kv_cached_speculative_attention\nReturn only source code, without Markdown fences or explanations.\n\nGenerate a kernel response for the exact MultiKernelBench operator 'kv_cached_speculative_attention'. Use CUDA C++ or Triton and do not replace the computation with eager PyTorch.\n\nimport torch\nimport torch.nn as nn\nimport torch.nn.functional as F\nimport time\n\nclass Model(nn.Module):\n    \"\"\"\n    Simulates autoregressive inference attention with KV caching.\n\n    Q: (batch_size, q_len, d_model)\n    K/V: (batch_size, kv_len, d_model)\n    Output: (batch_size, q_len, d_model)\n    \"\"\"\n    def __init__(self):\n        super().__init__()\n\n    def forward(self, Q, K_cache, V_cache):\n        output = F.scaled_dot_product_attention(Q, K_cache, V_cache)\n        return output\n    \nbatch_size = 2\nq_len = 4\nkv_len = 4096\nd_model = 4096\n\ndef get_inputs():\n    Q = torch.rand(batch_size, q_len, d_model)\n    K = torch.rand(batch_size, kv_len, d_model)\n    V = torch.rand(batch_size, kv_len, d_model)\n    return [Q, K, V]\n\ndef get_init_inputs():\n    return []"
-}

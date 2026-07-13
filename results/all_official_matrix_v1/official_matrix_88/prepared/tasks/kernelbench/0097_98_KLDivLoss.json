@@ -1,6 +1,0 @@
-{
-  "benchmark": "kernelbench",
-  "task_id": "98_KLDivLoss",
-  "source_path": "/home/bi_geum/official_matrix_88/third_party/KernelBench/KernelBench/level1/98_KLDivLoss.py",
-  "official_task": true
-}

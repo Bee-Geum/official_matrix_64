@@ -1,8 +1,0 @@
-{
-  "benchmark": "multikernelbench",
-  "task_id": "matmul_dropout_mean_softmax",
-  "op": "matmul_dropout_mean_softmax",
-  "official_task": true,
-  "prompt_path": "/home/bi_geum/official_matrix_88/third_party/MultiKernelBench/reference/fuse/matmul_dropout_mean_softmax.py",
-  "prompt": "Benchmark: multikernelbench\nOfficial task: matmul_dropout_mean_softmax\nReturn only source code, without Markdown fences or explanations.\n\nGenerate a kernel response for the exact MultiKernelBench operator 'matmul_dropout_mean_softmax'. Use CUDA C++ or Triton and do not replace the computation with eager PyTorch.\n\nimport torch\nimport torch.nn as nn\n\nclass Model(nn.Module):\n    \"\"\"\n    A model that performs matrix multiplication, applies dropout, and then applies softmax.\n    \"\"\"\n    def __init__(self, in_features, out_features, dropout_p):\n        super(Model, self).__init__()\n        self.matmul = nn.Linear(in_features, out_features)\n        self.dropout = nn.Dropout(dropout_p)\n\n    def forward(self, x):\n        \"\"\"\n        Args:\n            x (torch.Tensor): Input tensor of shape (batch_size, in_features).\n\n        Returns:\n            torch.Tensor: Output tensor of shape (batch_size, out_features).\n        \"\"\"\n        x = self.matmul(x)\n        x = self.dropout(x)\n        x = torch.softmax(x, dim=1)  # Softmax over features\n        return x\n\nbatch_size = 128\nin_features = 16384\nout_features = 16384\ndropout_p = 0.2\n\ndef get_inputs():\n    return [torch.rand(batch_size, in_features)]\n\ndef get_init_inputs():\n    return [in_features, out_features, dropout_p]\n"
-}

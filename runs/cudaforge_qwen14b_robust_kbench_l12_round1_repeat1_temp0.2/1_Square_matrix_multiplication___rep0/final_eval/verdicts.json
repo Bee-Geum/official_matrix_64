@@ -225,7 +225,7 @@
       1.8193600177764893,
       1.8159359693527222
     ],
-    "candidate": "/home/bi_geum/official_matrix_88/runs/cudaforge_qwen14b_robust_kbench_l12_round1_repeat1_temp0.2/1_Square_matrix_multiplication___rep0/candidates/round000_kernel.py",
+    "candidate": "/home/bi_geum/official_matrix_64/runs/cudaforge_qwen14b_robust_kbench_l12_round1_repeat1_temp0.2/1_Square_matrix_multiplication___rep0/candidates/round000_kernel.py",
     "candidate_index": 0,
     "eval_wall_s": 2.8406570099759847
   }

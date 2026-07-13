@@ -1,6 +1,0 @@
-{
-  "benchmark": "kernelbench",
-  "task_id": "7_Matmul_with_small_K_dimension_",
-  "source_path": "/home/bi_geum/official_matrix_88/third_party/KernelBench/KernelBench/level1/7_Matmul_with_small_K_dimension_.py",
-  "official_task": true
-}

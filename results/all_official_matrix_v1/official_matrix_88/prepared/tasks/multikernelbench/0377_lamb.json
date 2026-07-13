@@ -1,8 +1,0 @@
-{
-  "benchmark": "multikernelbench",
-  "task_id": "lamb",
-  "op": "lamb",
-  "official_task": true,
-  "prompt_path": "/home/bi_geum/official_matrix_88/third_party/MultiKernelBench/reference/optimizer/lamb.py",
-  "prompt": "Benchmark: multikernelbench\nOfficial task: lamb\nReturn only source code, without Markdown fences or explanations.\n\nGenerate a kernel response for the exact MultiKernelBench operator 'lamb'. Use CUDA C++ or Triton and do not replace the computation with eager PyTorch.\n\nimport torch\nimport torch.nn as nn\n\nclass Model(nn.Module):\n    def __init__(self, lr=1e-3, eps=1e-6):\n        super().__init__()\n        self.lr = lr\n        self.eps = eps\n\n    def forward(self, param, m, v):\n        r = m / (v.sqrt() + self.eps)\n        trust_ratio = param.norm(p=2) / (r.norm(p=2) + self.eps)\n        param = param - self.lr * trust_ratio * r\n        return param\n\ndef get_inputs():\n    param = torch.rand(512, 4096)\n    m = torch.rand_like(param)\n    v = torch.abs(torch.rand_like(param)) + 1e-3\n    return [param, m, v]\n\ndef get_init_inputs():\n    return []\n"
-}

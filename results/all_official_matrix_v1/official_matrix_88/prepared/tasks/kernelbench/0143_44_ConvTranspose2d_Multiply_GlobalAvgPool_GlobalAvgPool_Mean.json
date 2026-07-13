@@ -1,6 +1,0 @@
-{
-  "benchmark": "kernelbench",
-  "task_id": "44_ConvTranspose2d_Multiply_GlobalAvgPool_GlobalAvgPool_Mean",
-  "source_path": "/home/bi_geum/official_matrix_88/third_party/KernelBench/KernelBench/level2/44_ConvTranspose2d_Multiply_GlobalAvgPool_GlobalAvgPool_Mean.py",
-  "official_task": true
-}

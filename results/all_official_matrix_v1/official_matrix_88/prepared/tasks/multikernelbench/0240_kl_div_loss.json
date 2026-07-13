@@ -1,8 +1,0 @@
-{
-  "benchmark": "multikernelbench",
-  "task_id": "kl_div_loss",
-  "op": "kl_div_loss",
-  "official_task": true,
-  "prompt_path": "/home/bi_geum/official_matrix_88/third_party/MultiKernelBench/reference/loss/kl_div_loss.py",
-  "prompt": "Benchmark: multikernelbench\nOfficial task: kl_div_loss\nReturn only source code, without Markdown fences or explanations.\n\nGenerate a kernel response for the exact MultiKernelBench operator 'kl_div_loss'. Use CUDA C++ or Triton and do not replace the computation with eager PyTorch.\n\nimport torch\nimport torch.nn as nn\n\nclass Model(nn.Module):\n    \"\"\"\n    A model that computes Kullback-Leibler Divergence for comparing two distributions.\n\n    Parameters:\n        None\n    \"\"\"\n    def __init__(self):\n        super(Model, self).__init__()\n\n    def forward(self, predictions, targets):\n        return torch.nn.functional.kl_div(torch.log(predictions), targets, reduction='batchmean')\n\nbatch_size = 8192 * 2\ninput_shape = (8192 * 2,)\ndim = 1\n\ndef get_inputs():\n    scale = torch.rand(())\n    return [(torch.rand(batch_size, *input_shape)*scale).softmax(dim=-1), torch.rand(batch_size, *input_shape).softmax(dim=-1)]\n\ndef get_init_inputs():\n    return []\n"
-}

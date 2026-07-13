@@ -1,8 +1,0 @@
-{
-  "benchmark": "multikernelbench",
-  "task_id": "gemm_group_norm_min_bias_add",
-  "op": "gemm_group_norm_min_bias_add",
-  "official_task": true,
-  "prompt_path": "/home/bi_geum/official_matrix_88/third_party/MultiKernelBench/reference/fuse/gemm_group_norm_min_bias_add.py",
-  "prompt": "Benchmark: multikernelbench\nOfficial task: gemm_group_norm_min_bias_add\nReturn only source code, without Markdown fences or explanations.\n\nGenerate a kernel response for the exact MultiKernelBench operator 'gemm_group_norm_min_bias_add'. Use CUDA C++ or Triton and do not replace the computation with eager PyTorch.\n\nimport torch\nimport torch.nn as nn\n\nclass Model(nn.Module):\n    \"\"\"\n    Model that performs a GEMM, Group Normalization, Minimum operation, and Bias addition.\n    \"\"\"\n    def __init__(self, in_features, out_features, num_groups, bias_shape):\n        super(Model, self).__init__()\n        self.gemm = nn.Linear(in_features, out_features)\n        self.group_norm = nn.GroupNorm(num_groups, out_features)\n        self.bias = nn.Parameter(torch.randn(bias_shape))\n\n    def forward(self, x):\n        x = self.gemm(x)\n        x = self.group_norm(x)\n        x = torch.min(x, dim=1, keepdim=True)[0] \n        x = x + self.bias\n        return x\n\nbatch_size = 1024\nin_features = 8192\nout_features = 8192\nnum_groups = 512\nbias_shape = (1, out_features, 1, 1)\n\ndef get_inputs():\n    return [torch.rand(batch_size, in_features)]\n\ndef get_init_inputs():\n    return [in_features, out_features, num_groups, bias_shape]"
-}

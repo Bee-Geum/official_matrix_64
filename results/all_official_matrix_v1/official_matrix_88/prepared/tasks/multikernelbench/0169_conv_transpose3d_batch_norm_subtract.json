@@ -1,8 +1,0 @@
-{
-  "benchmark": "multikernelbench",
-  "task_id": "conv_transpose3d_batch_norm_subtract",
-  "op": "conv_transpose3d_batch_norm_subtract",
-  "official_task": true,
-  "prompt_path": "/home/bi_geum/official_matrix_88/third_party/MultiKernelBench/reference/fuse/conv_transpose3d_batch_norm_subtract.py",
-  "prompt": "Benchmark: multikernelbench\nOfficial task: conv_transpose3d_batch_norm_subtract\nReturn only source code, without Markdown fences or explanations.\n\nGenerate a kernel response for the exact MultiKernelBench operator 'conv_transpose3d_batch_norm_subtract'. Use CUDA C++ or Triton and do not replace the computation with eager PyTorch.\n\nimport torch\nimport torch.nn as nn\n\nclass Model(nn.Module):\n    \"\"\"\n    A 3D convolutional transpose layer followed by Batch Normalization and subtraction.\n    \"\"\"\n    def __init__(self, in_channels, out_channels, kernel_size, stride, padding, bias=True):\n        super(Model, self).__init__()\n        self.conv_transpose = nn.ConvTranspose3d(in_channels, out_channels, kernel_size, stride=stride, padding=padding, bias=bias)\n        self.batch_norm = nn.BatchNorm3d(out_channels)\n\n    def forward(self, x):\n        x = self.conv_transpose(x)\n        x = self.batch_norm(x)\n        x = x - torch.mean(x, dim=(2, 3, 4), keepdim=True)  # Subtract mean along spatial dimensions\n        return x\n\nbatch_size = 16\nin_channels = 16\nout_channels = 32\ndepth, height, width = 16, 32, 32\nkernel_size = 3\nstride = 2\npadding = 1\n\ndef get_inputs():\n    return [torch.rand(batch_size, in_channels, depth, height, width)]\n\ndef get_init_inputs():\n    return [in_channels, out_channels, kernel_size, stride, padding]"
-}

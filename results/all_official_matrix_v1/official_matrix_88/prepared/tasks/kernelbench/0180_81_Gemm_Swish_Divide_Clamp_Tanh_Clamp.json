@@ -1,6 +1,0 @@
-{
-  "benchmark": "kernelbench",
-  "task_id": "81_Gemm_Swish_Divide_Clamp_Tanh_Clamp",
-  "source_path": "/home/bi_geum/official_matrix_88/third_party/KernelBench/KernelBench/level2/81_Gemm_Swish_Divide_Clamp_Tanh_Clamp.py",
-  "official_task": true
-}

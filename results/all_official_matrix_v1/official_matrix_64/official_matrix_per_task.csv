@@ -1,0 +1,2 @@
+benchmark,agent,task_id,official_task,generation_ok,candidate_count,official_attempted,official_eval,correct,performance_available,best_score,infrastructure_error,candidate_error,generation_log,cell_dir,task_dir
+robust_kbench,cudaforge,1_Square_matrix_multiplication_,1,1,1,1,1,1,1,1.0085051302542405,,,/home/bi_geum/official_matrix_64/results/all_official_matrix_v1/official_matrix_64/cells/robust_kbench/cudaforge/kb_matrix.log.txt,/home/bi_geum/official_matrix_64/results/all_official_matrix_v1/official_matrix_64/cells/robust_kbench/cudaforge,

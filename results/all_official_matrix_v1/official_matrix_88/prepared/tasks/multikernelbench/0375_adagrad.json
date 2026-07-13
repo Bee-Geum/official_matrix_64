@@ -1,8 +1,0 @@
-{
-  "benchmark": "multikernelbench",
-  "task_id": "adagrad",
-  "op": "adagrad",
-  "official_task": true,
-  "prompt_path": "/home/bi_geum/official_matrix_88/third_party/MultiKernelBench/reference/optimizer/adagrad.py",
-  "prompt": "Benchmark: multikernelbench\nOfficial task: adagrad\nReturn only source code, without Markdown fences or explanations.\n\nGenerate a kernel response for the exact MultiKernelBench operator 'adagrad'. Use CUDA C++ or Triton and do not replace the computation with eager PyTorch.\n\nimport torch\nimport torch.nn as nn\n\nclass Model(nn.Module):\n    def __init__(self, lr=1e-2, eps=1e-10):\n        super().__init__()\n        self.lr = lr\n        self.eps = eps\n\n    def forward(self, param, grad, accum):\n        accum = accum + grad.pow(2)\n        param = param - self.lr * grad / (accum.sqrt() + self.eps)\n        return param\n\ndef get_inputs():\n    param = torch.rand(1024, 4096)\n    grad = torch.rand_like(param)\n    accum = torch.zeros_like(param)\n    return [param, grad, accum]\n\ndef get_init_inputs():\n    return []\n"
-}

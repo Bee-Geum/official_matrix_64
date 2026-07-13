@@ -1,8 +1,0 @@
-{
-  "benchmark": "multikernelbench",
-  "task_id": "matmul_swish_scaling",
-  "op": "matmul_swish_scaling",
-  "official_task": true,
-  "prompt_path": "/home/bi_geum/official_matrix_88/third_party/MultiKernelBench/reference/fuse/matmul_swish_scaling.py",
-  "prompt": "Benchmark: multikernelbench\nOfficial task: matmul_swish_scaling\nReturn only source code, without Markdown fences or explanations.\n\nGenerate a kernel response for the exact MultiKernelBench operator 'matmul_swish_scaling'. Use CUDA C++ or Triton and do not replace the computation with eager PyTorch.\n\nimport torch\nimport torch.nn as nn\n\nclass Model(nn.Module):\n    \"\"\"\n    Simple model that performs a matrix multiplication, applies Swish activation, and scales the result.\n    \"\"\"\n    def __init__(self, in_features, out_features, scaling_factor):\n        super(Model, self).__init__()\n        self.matmul = nn.Linear(in_features, out_features)\n        self.scaling_factor = scaling_factor\n\n    def forward(self, x):\n        x = self.matmul(x)\n        x = x * torch.sigmoid(x)  # Swish activation\n        x = x * self.scaling_factor\n        return x\n\nbatch_size = 128\nin_features = 32768\nout_features = 32768\nscaling_factor = 2.0\n\ndef get_inputs():\n    return [torch.rand(batch_size, in_features)]\n\ndef get_init_inputs():\n    return [in_features, out_features, scaling_factor]"
-}

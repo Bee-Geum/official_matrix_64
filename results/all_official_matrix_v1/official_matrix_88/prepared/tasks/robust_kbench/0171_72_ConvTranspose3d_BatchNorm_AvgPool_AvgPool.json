@@ -1,6 +1,0 @@
-{
-  "benchmark": "robust_kbench",
-  "task_id": "72_ConvTranspose3d_BatchNorm_AvgPool_AvgPool",
-  "source_path": "/home/bi_geum/official_matrix_88/third_party/KernelBench/KernelBench/level2/72_ConvTranspose3d_BatchNorm_AvgPool_AvgPool.py",
-  "official_task": true
-}

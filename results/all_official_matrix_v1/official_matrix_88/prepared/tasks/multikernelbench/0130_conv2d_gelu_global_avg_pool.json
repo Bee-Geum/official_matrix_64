@@ -1,8 +1,0 @@
-{
-  "benchmark": "multikernelbench",
-  "task_id": "conv2d_gelu_global_avg_pool",
-  "op": "conv2d_gelu_global_avg_pool",
-  "official_task": true,
-  "prompt_path": "/home/bi_geum/official_matrix_88/third_party/MultiKernelBench/reference/fuse/conv2d_gelu_global_avg_pool.py",
-  "prompt": "Benchmark: multikernelbench\nOfficial task: conv2d_gelu_global_avg_pool\nReturn only source code, without Markdown fences or explanations.\n\nGenerate a kernel response for the exact MultiKernelBench operator 'conv2d_gelu_global_avg_pool'. Use CUDA C++ or Triton and do not replace the computation with eager PyTorch.\n\nimport torch\nimport torch.nn as nn\n\nclass Model(nn.Module):\n    \"\"\"\n    Simple model that performs a convolution, applies GELU, and then performs global average pooling.\n    \"\"\"\n    def __init__(self, in_channels, out_channels, kernel_size):\n        super(Model, self).__init__()\n        self.conv = nn.Conv2d(in_channels, out_channels, kernel_size)\n\n    def forward(self, x):\n        \"\"\"\n        Args:\n            x: Input tensor of shape (batch_size, in_channels, height, width)\n        Returns:\n            Output tensor of shape (batch_size, out_channels)\n        \"\"\"\n        x = self.conv(x)\n        x = torch.nn.functional.gelu(x)\n        x = torch.nn.functional.adaptive_avg_pool2d(x, 1)\n        x = x.squeeze(-1).squeeze(-1)\n        return x\n\nbatch_size = 128\nin_channels = 8\nout_channels = 64\nheight, width = 256, 256\nkernel_size = 3\n\ndef get_inputs():\n    return [torch.rand(batch_size, in_channels, height, width)]\n\ndef get_init_inputs():\n    return [in_channels, out_channels, kernel_size]"
-}

@@ -1,8 +1,0 @@
-{
-  "benchmark": "multikernelbench",
-  "task_id": "matmul_add_swish_tanh_gelu_hardtanh",
-  "op": "matmul_add_swish_tanh_gelu_hardtanh",
-  "official_task": true,
-  "prompt_path": "/home/bi_geum/official_matrix_88/third_party/MultiKernelBench/reference/fuse/matmul_add_swish_tanh_gelu_hardtanh.py",
-  "prompt": "Benchmark: multikernelbench\nOfficial task: matmul_add_swish_tanh_gelu_hardtanh\nReturn only source code, without Markdown fences or explanations.\n\nGenerate a kernel response for the exact MultiKernelBench operator 'matmul_add_swish_tanh_gelu_hardtanh'. Use CUDA C++ or Triton and do not replace the computation with eager PyTorch.\n\nimport torch\nimport torch.nn as nn\n\nclass Model(nn.Module):\n    \"\"\"\n    Simple model that performs a matrix multiplication, adds a value, applies Swish, Tanh, GELU, and Hardtanh activation functions.\n    \"\"\"\n    def __init__(self, in_features, out_features, add_value_shape):\n        super(Model, self).__init__()\n        self.matmul = nn.Linear(in_features, out_features)\n        self.add_value = nn.Parameter(torch.randn(add_value_shape)) \n\n    def forward(self, x):\n        x = self.matmul(x)\n        x = x + self.add_value\n        x = torch.sigmoid(x) * x # Swish\n        x = torch.tanh(x)\n        x = torch.nn.functional.gelu(x) # GELU\n        x = torch.nn.functional.hardtanh(x, min_val=-1, max_val=1) # Hardtanh\n        return x\n\nbatch_size = 1024\nin_features = 8192\nout_features = 8192\nadd_value_shape = (out_features,)\n\ndef get_inputs():\n    return [torch.rand(batch_size, in_features)]\n\ndef get_init_inputs():\n    return [in_features, out_features, add_value_shape]"
-}

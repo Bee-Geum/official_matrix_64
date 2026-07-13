@@ -1,8 +1,0 @@
-{
-  "benchmark": "multikernelbench",
-  "task_id": "relu",
-  "op": "relu",
-  "official_task": true,
-  "prompt_path": "/home/bi_geum/official_matrix_88/third_party/MultiKernelBench/prompts/cuda_model_leaky_relu.py",
-  "prompt": "Benchmark: multikernelbench\nOfficial task: relu\nReturn only source code, without Markdown fences or explanations.\n\nGenerate a kernel response for the exact MultiKernelBench operator 'relu'. Use CUDA C++ or Triton and do not replace the computation with eager PyTorch.\n\nimport torch\nimport torch.nn as nn\n\nclass Model(nn.Module):\n    def __init__(self, negative_slope: float = 0.1):\n        super(Model, self).__init__()\n        self.negative_slope = negative_slope\n    \n    def forward(self, x: torch.Tensor) -> torch.Tensor:\n        return torch.nn.functional.leaky_relu(x, negative_slope=self.negative_slope)\n\ndef get_inputs():\n    x = torch.randn(8, 200, 1024)\n    return [x]\n\ndef get_init_inputs():\n    return []  # No special initialization inputs needed"
-}

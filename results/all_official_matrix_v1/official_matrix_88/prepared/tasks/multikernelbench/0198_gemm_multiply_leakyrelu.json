@@ -1,8 +1,0 @@
-{
-  "benchmark": "multikernelbench",
-  "task_id": "gemm_multiply_leakyrelu",
-  "op": "gemm_multiply_leakyrelu",
-  "official_task": true,
-  "prompt_path": "/home/bi_geum/official_matrix_88/third_party/MultiKernelBench/reference/fuse/gemm_multiply_leakyrelu.py",
-  "prompt": "Benchmark: multikernelbench\nOfficial task: gemm_multiply_leakyrelu\nReturn only source code, without Markdown fences or explanations.\n\nGenerate a kernel response for the exact MultiKernelBench operator 'gemm_multiply_leakyrelu'. Use CUDA C++ or Triton and do not replace the computation with eager PyTorch.\n\nimport torch\nimport torch.nn as nn\n\nclass Model(nn.Module):\n    \"\"\"\n    Simple model that performs a Gemm, multiplies the result, and applies LeakyReLU.\n    \"\"\"\n    def __init__(self, in_features, out_features, multiplier, negative_slope):\n        super(Model, self).__init__()\n        self.gemm = nn.Linear(in_features, out_features)\n        self.multiplier = multiplier\n        self.leaky_relu = nn.LeakyReLU(negative_slope)\n\n    def forward(self, x):\n        x = self.gemm(x)\n        x = x * self.multiplier\n        x = self.leaky_relu(x)\n        return x\n\nbatch_size = 1024\nin_features  = 8192  \nout_features = 8192\nmultiplier = 2.0\nnegative_slope = 0.1\n\ndef get_inputs():\n    return [torch.rand(batch_size, in_features)]\n\ndef get_init_inputs():\n    return [in_features, out_features, multiplier, negative_slope]"
-}

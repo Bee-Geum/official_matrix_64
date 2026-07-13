@@ -1,0 +1,41 @@
+$ /home/bi_geum/anaconda3/envs/survey/bin/python3 /home/bi_geum/official_matrix_64/third_party/BackendBench/BackendBench/scripts/main.py --suite torchbench --backend directory --ops-directory /home/bi_geum/official_matrix_64/results/all_official_matrix_v1/official_matrix_64/cells/backendbench/cudaforge/002_sub/official_eval/candidate_000/ops --log-dir /home/bi_geum/official_matrix_64/results/all_official_matrix_v1/official_matrix_64/cells/backendbench/cudaforge/002_sub/official_eval/candidate_000/results_1_torchbench --check-overhead-dominated-ops
+cwd=/home/bi_geum/official_matrix_64/third_party/BackendBench
+returncode=1
+wall_s=5.120773
+----- STDOUT -----
+
+----- STDERR -----
+Using the latest cached version of the dataset since GPUMODE/backendbench_tests couldn't be found on the Hugging Face Hub (offline mode is enabled).
+[2026-07-13 15:06:40][WARNING][load.py] Using the latest cached version of the dataset since GPUMODE/backendbench_tests couldn't be found on the Hugging Face Hub (offline mode is enabled).
+Traceback (most recent call last):
+  File "/home/bi_geum/official_matrix_64/third_party/BackendBench/BackendBench/scripts/main.py", line 469, in <module>
+    cli()
+  File "/home/bi_geum/anaconda3/envs/survey/lib/python3.10/site-packages/click/core.py", line 1514, in __call__
+    return self.main(*args, **kwargs)
+  File "/home/bi_geum/anaconda3/envs/survey/lib/python3.10/site-packages/click/core.py", line 1435, in main
+    rv = self.invoke(ctx)
+  File "/home/bi_geum/anaconda3/envs/survey/lib/python3.10/site-packages/click/core.py", line 1298, in invoke
+    return ctx.invoke(self.callback, **ctx.params)
+  File "/home/bi_geum/anaconda3/envs/survey/lib/python3.10/site-packages/click/core.py", line 853, in invoke
+    return callback(*args, **kwargs)
+  File "/home/bi_geum/official_matrix_64/third_party/BackendBench/BackendBench/scripts/main.py", line 192, in cli
+    suite = {
+  File "/home/bi_geum/official_matrix_64/third_party/BackendBench/BackendBench/scripts/main.py", line 200, in <lambda>
+    "torchbench": lambda: TorchBenchTestSuite(
+  File "/home/bi_geum/official_matrix_64/third_party/BackendBench/BackendBench/suite/torchbench.py", line 85, in __init__
+    ops_list = load_ops_from_source(
+  File "/home/bi_geum/official_matrix_64/third_party/BackendBench/BackendBench/data_loaders.py", line 198, in load_ops_from_source
+    return loaders[format](source, filter)
+  File "/home/bi_geum/official_matrix_64/third_party/BackendBench/BackendBench/data_loaders.py", line 217, in _load_from_parquet
+    table = load_dataset(
+  File "/home/bi_geum/anaconda3/envs/survey/lib/python3.10/site-packages/datasets/load.py", line 1688, in load_dataset
+    builder_instance = load_dataset_builder(
+  File "/home/bi_geum/anaconda3/envs/survey/lib/python3.10/site-packages/datasets/load.py", line 1353, in load_dataset_builder
+    builder_instance: DatasetBuilder = builder_cls(
+  File "/home/bi_geum/anaconda3/envs/survey/lib/python3.10/site-packages/datasets/packaged_modules/cache/cache.py", line 125, in __init__
+    config_name, version, hash = _find_hash_in_cache(
+  File "/home/bi_geum/anaconda3/envs/survey/lib/python3.10/site-packages/datasets/packaged_modules/cache/cache.py", line 65, in _find_hash_in_cache
+    raise ValueError(
+ValueError: Couldn't find cache for GPUMODE/backendbench_tests for config 'default-a80a5a83a38b04ed'
+Available configs in the cache: ['default-e8459b16fd32f813']
+

@@ -1,8 +1,0 @@
-{
-  "benchmark": "multikernelbench",
-  "task_id": "interpolate_dynamic",
-  "op": "interpolate_dynamic",
-  "official_task": true,
-  "prompt_path": "/home/bi_geum/official_matrix_88/third_party/MultiKernelBench/reference/resize/interpolate_dynamic.py",
-  "prompt": "Benchmark: multikernelbench\nOfficial task: interpolate_dynamic\nReturn only source code, without Markdown fences or explanations.\n\nGenerate a kernel response for the exact MultiKernelBench operator 'interpolate_dynamic'. Use CUDA C++ or Triton and do not replace the computation with eager PyTorch.\n\nimport torch\nimport torch.nn as nn\nimport torch.nn.functional as F\nclass Model(nn.Module):\n    def forward(self, x, target_size):\n        return F.interpolate(x, size=target_size, mode='bilinear', align_corners=False)\n\ndef get_inputs():\n    x = torch.rand(4, 128, 100, 150)\n    size = (200, 300)\n    return [x, size]\n\ndef get_init_inputs():\n    return []"
-}

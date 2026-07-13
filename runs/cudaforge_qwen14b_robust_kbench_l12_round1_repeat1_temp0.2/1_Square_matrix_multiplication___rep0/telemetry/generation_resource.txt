@@ -1,4 +1,4 @@
-	Command being timed: "timeout --kill-after=60s 1800 env CUDA_VISIBLE_DEVICES=0 GPU_NAME=RTX PRO 6000 python3 /home/bi_geum/official_matrix_88/drivers/cudaforge_inline.py --task /home/bi_geum/official_matrix_88/third_party/KernelBench/KernelBench/level1/1_Square_matrix_multiplication_.py --cand_dir /home/bi_geum/official_matrix_88/runs/cudaforge_qwen14b_robust_kbench_l12_round1_repeat1_temp0.2/1_Square_matrix_multiplication___rep0/candidates --rounds 1 --seed 20260611 --temperature 0.2"
+	Command being timed: "timeout --kill-after=60s 1800 env CUDA_VISIBLE_DEVICES=0 GPU_NAME=RTX PRO 6000 python3 /home/bi_geum/official_matrix_64/drivers/cudaforge_inline.py --task /home/bi_geum/official_matrix_64/third_party/KernelBench/KernelBench/level1/1_Square_matrix_multiplication_.py --cand_dir /home/bi_geum/official_matrix_64/runs/cudaforge_qwen14b_robust_kbench_l12_round1_repeat1_temp0.2/1_Square_matrix_multiplication___rep0/candidates --rounds 1 --seed 20260611 --temperature 0.2"
 	User time (seconds): 0.07
 	System time (seconds): 0.01
 	Percent of CPU this job got: 2%

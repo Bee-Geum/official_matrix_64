@@ -1,4 +1,4 @@
-# official_matrix_88 -- Python dependencies
+# official_matrix_64 -- Python dependencies
 #
 # Core deps for the runner, agent drivers, and the 8 official oracles.
 # Versions below match a known-good environment (CUDA 13, Python 3.10); on a

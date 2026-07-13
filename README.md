@@ -1,6 +1,6 @@
-# official_matrix_88 (self-contained)
+# official_matrix_64 (self-contained)
 
-11 agents × 8 official benchmarks = **88 cells**, each scored by the benchmark's
+11 agents × 8 official benchmarks = **64 cells (faithful 8x8)**, each scored by the benchmark's
 **official oracle**. This directory is **self-contained and portable** — every
 agent driver, benchmark repo + oracle, evaluator, registry, and task list is
 bundled inside. Copy the folder to another machine and run it.
@@ -32,10 +32,10 @@ kernelllm, incoder32b, kernelskill.
 ## What's inside (this is a self-sufficient ROOT)
 
 ```
-official_matrix_88/
+official_matrix_64/
 ├── official_all_matrix_v1.py     # the runner (patched oracles + fixed parsers)
-├── run_matrix_88.sh              # self-contained launcher (ROOT = this dir)
-├── summarize_matrix_88.py        # cells -> 11x8 tables
+├── run_matrix_64.sh              # self-contained launcher (ROOT = this dir)
+├── summarize_matrix_64.py        # cells -> 8x8 tables
 ├── requirements.txt
 ├── drivers/                      # all 11 agent drivers + generic LLM driver
 ├── telemetry/                    # instrumented_final_eval.py (kb oracle)
@@ -64,18 +64,18 @@ hard-coded to the original machine.
 ## Run
 
 ```bash
-cd official_matrix_88
+cd official_matrix_64
 pip install -r requirements.txt
 
 # A) use an existing LLM endpoint
-LLM_BASE_URL=http://127.0.0.1:8000/v1 ./run_matrix_88.sh
+LLM_BASE_URL=http://127.0.0.1:8000/v1 ./run_matrix_64.sh
 
 # B) launch the bundled server (local GPU + model)
-AUTO_START_SERVER=1 MODEL_ID=Qwen/Qwen2.5-Coder-14B-Instruct ./run_matrix_88.sh
+AUTO_START_SERVER=1 MODEL_ID=Qwen/Qwen2.5-Coder-14B-Instruct ./run_matrix_64.sh
 
 # background
-nohup ./run_matrix_88.sh > run_matrix_88.out 2>&1 &
-tail -f run_matrix_88.out
+nohup ./run_matrix_64.sh > run_matrix_64.out 2>&1 &
+tail -f run_matrix_64.out
 ```
 
 ### Knobs (environment variables)
@@ -94,8 +94,8 @@ tail -f run_matrix_88.out
 
 Examples:
 ```bash
-LIMIT=3 ./run_matrix_88.sh
-AGENTS=cudaforge,geak BENCHMARKS=pareval,sol_execbench ./run_matrix_88.sh
+LIMIT=3 ./run_matrix_64.sh
+AGENTS=cudaforge,geak BENCHMARKS=pareval,sol_execbench ./run_matrix_64.sh
 ```
 
 ## Outputs
@@ -103,7 +103,7 @@ AGENTS=cudaforge,geak BENCHMARKS=pareval,sol_execbench ./run_matrix_88.sh
 Written to `results/`:
 - `SUMMARY.md`, `matrix_88_official_eval.csv`, `matrix_88_correct.csv`, `matrix_88_summary.csv`
 
-Raw per-cell data: `results/all_official_matrix_v1/official_matrix_88/cells/<benchmark>/<agent>/cell_result.json`
+Raw per-cell data: `results/all_official_matrix_v1/official_matrix_64/cells/<benchmark>/<agent>/cell_result.json`
 
 ## Reading the numbers
 
@@ -127,6 +127,6 @@ Raw per-cell data: `results/all_official_matrix_v1/official_matrix_88/cells/<ben
 ## Re-summarize without re-running
 
 ```bash
-python3 summarize_matrix_88.py \
-  --run-root results/all_official_matrix_v1/official_matrix_88 --out results
+python3 summarize_matrix_64.py \
+  --run-root results/all_official_matrix_v1/official_matrix_64 --out results
 ```

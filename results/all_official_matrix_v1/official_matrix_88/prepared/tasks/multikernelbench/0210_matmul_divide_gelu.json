@@ -1,8 +1,0 @@
-{
-  "benchmark": "multikernelbench",
-  "task_id": "matmul_divide_gelu",
-  "op": "matmul_divide_gelu",
-  "official_task": true,
-  "prompt_path": "/home/bi_geum/official_matrix_88/third_party/MultiKernelBench/reference/fuse/matmul_divide_gelu.py",
-  "prompt": "Benchmark: multikernelbench\nOfficial task: matmul_divide_gelu\nReturn only source code, without Markdown fences or explanations.\n\nGenerate a kernel response for the exact MultiKernelBench operator 'matmul_divide_gelu'. Use CUDA C++ or Triton and do not replace the computation with eager PyTorch.\n\nimport torch\nimport torch.nn as nn\n\nclass Model(nn.Module):\n    \"\"\"\n    A model that performs a matrix multiplication, divides by a scalar, and applies GELU activation.\n    \"\"\"\n    def __init__(self, input_size, output_size, divisor):\n        super(Model, self).__init__()\n        self.linear = nn.Linear(input_size, output_size)\n        self.divisor = divisor\n\n    def forward(self, x):\n        \"\"\"\n        Args:\n            x (torch.Tensor): Input tensor of shape (batch_size, input_size).\n        Returns:\n            torch.Tensor: Output tensor of shape (batch_size, output_size).\n        \"\"\"\n        x = self.linear(x)\n        x = x / self.divisor\n        x = torch.nn.functional.gelu(x)\n        return x\n\nbatch_size = 1024\ninput_size = 8192\noutput_size = 8192\ndivisor = 10.0\n\ndef get_inputs():\n    return [torch.rand(batch_size, input_size)]\n\ndef get_init_inputs():\n    return [input_size, output_size, divisor]"
-}

@@ -1,6 +1,0 @@
-{
-  "benchmark": "kernelbench",
-  "task_id": "66_Matmul_Dropout_Softmax",
-  "source_path": "/home/bi_geum/official_matrix_88/third_party/KernelBench/KernelBench/level2/66_Matmul_Dropout_Softmax.py",
-  "official_task": true
-}

@@ -1,6 +1,0 @@
-{
-  "benchmark": "robust_kbench",
-  "task_id": "67_Conv2d_GELU_GlobalAvgPool",
-  "source_path": "/home/bi_geum/official_matrix_88/third_party/KernelBench/KernelBench/level2/67_Conv2d_GELU_GlobalAvgPool.py",
-  "official_task": true
-}

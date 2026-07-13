@@ -1,8 +1,0 @@
-{
-  "benchmark": "multikernelbench",
-  "task_id": "conv_transpose3d_clamp_min_divide",
-  "op": "conv_transpose3d_clamp_min_divide",
-  "official_task": true,
-  "prompt_path": "/home/bi_geum/official_matrix_88/third_party/MultiKernelBench/reference/fuse/conv_transpose3d_clamp_min_divide.py",
-  "prompt": "Benchmark: multikernelbench\nOfficial task: conv_transpose3d_clamp_min_divide\nReturn only source code, without Markdown fences or explanations.\n\nGenerate a kernel response for the exact MultiKernelBench operator 'conv_transpose3d_clamp_min_divide'. Use CUDA C++ or Triton and do not replace the computation with eager PyTorch.\n\nimport torch\nimport torch.nn as nn\n\nclass Model(nn.Module):\n    \"\"\"\n    A model that performs a transposed 3D convolution, clamps the output to a minimum value, \n    and then divides the result by a constant.\n    \"\"\"\n    def __init__(self, in_channels, out_channels, kernel_size, stride, padding, min_value, divisor):\n        super(Model, self).__init__()\n        self.conv_transpose = nn.ConvTranspose3d(in_channels, out_channels, kernel_size, stride=stride, padding=padding)\n        self.min_value = min_value\n        self.divisor = divisor\n\n    def forward(self, x):\n        x = self.conv_transpose(x)\n        x = torch.clamp(x, min=self.min_value)\n        x = x / self.divisor\n        return x\n\nbatch_size = 16\nin_channels = 32\nout_channels = 16\ndepth, height, width = 16, 32, 32\nkernel_size = 3\nstride = 2\npadding = 1\nmin_value = -1.0\ndivisor = 2.0\n\ndef get_inputs():\n    return [torch.rand(batch_size, in_channels, depth, height, width)]\n\ndef get_init_inputs():\n    return [in_channels, out_channels, kernel_size, stride, padding, min_value, divisor]"
-}

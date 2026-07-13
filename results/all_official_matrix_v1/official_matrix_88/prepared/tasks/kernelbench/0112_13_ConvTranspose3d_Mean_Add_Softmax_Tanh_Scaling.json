@@ -1,6 +1,0 @@
-{
-  "benchmark": "kernelbench",
-  "task_id": "13_ConvTranspose3d_Mean_Add_Softmax_Tanh_Scaling",
-  "source_path": "/home/bi_geum/official_matrix_88/third_party/KernelBench/KernelBench/level2/13_ConvTranspose3d_Mean_Add_Softmax_Tanh_Scaling.py",
-  "official_task": true
-}

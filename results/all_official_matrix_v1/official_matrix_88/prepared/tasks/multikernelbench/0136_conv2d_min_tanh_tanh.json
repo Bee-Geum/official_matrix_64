@@ -1,8 +1,0 @@
-{
-  "benchmark": "multikernelbench",
-  "task_id": "conv2d_min_tanh_tanh",
-  "op": "conv2d_min_tanh_tanh",
-  "official_task": true,
-  "prompt_path": "/home/bi_geum/official_matrix_88/third_party/MultiKernelBench/reference/fuse/conv2d_min_tanh_tanh.py",
-  "prompt": "Benchmark: multikernelbench\nOfficial task: conv2d_min_tanh_tanh\nReturn only source code, without Markdown fences or explanations.\n\nGenerate a kernel response for the exact MultiKernelBench operator 'conv2d_min_tanh_tanh'. Use CUDA C++ or Triton and do not replace the computation with eager PyTorch.\n\nimport torch\nimport torch.nn as nn\n\nclass Model(nn.Module):\n    \"\"\"\n    Model that performs a convolution, applies minimum operation, Tanh, and another Tanh.\n    \"\"\"\n    def __init__(self, in_channels, out_channels, kernel_size):\n        super(Model, self).__init__()\n        self.conv = nn.Conv2d(in_channels, out_channels, kernel_size)\n\n    def forward(self, x):\n        x = self.conv(x)\n        x = torch.min(x, dim=1, keepdim=True)[0] # Apply minimum operation along the channel dimension\n        x = torch.tanh(x)\n        x = torch.tanh(x)\n        return x\n\nbatch_size = 128\nin_channels = 16\nout_channels = 64\nheight = width = 256\nkernel_size = 3\n\ndef get_inputs():\n    return [torch.rand(batch_size, in_channels, height, width)]\n\ndef get_init_inputs():\n    return [in_channels, out_channels, kernel_size]"
-}

@@ -1,0 +1,19 @@
+{
+  "benchmark": "backendbench",
+  "task_id": "sigmoid",
+  "official_task": 1,
+  "generation_ok": 1,
+  "candidate_count": 1,
+  "official_attempted": 1,
+  "official_eval": 1,
+  "correct": 0,
+  "performance_available": 0,
+  "best_score": 0.0,
+  "infrastructure_error": "",
+  "candidate_error": "sigmoid/official_eval/candidate_000/ops/sigmoid/sigmoid_implementation_1.py\\\", line 12, in _call_candidate\\n    raise RuntimeError('candidate import failed') from _candidate_error\\nRuntimeError: candidate import failed\\n\\n\", \"error_type\": \"<class 'RuntimeError'>\", \"traceback\": \"Traceback (most recent call last):\\n  File \\\"/home/bi_geum/anaconda3/envs/survey/lib/python3.10/site-packages/triton/runtime/jit.py\\\", line 461, in __init__\\n    self.raw_src, self.starting_line_number = inspect.getsourcelines(fn)\\n  File \\\"/home/bi_geum/anaconda3/envs/survey/lib/python3.10/inspect.py\\\", line 1121, in getsourcelines\\n    lines, lnum = findsource(object)\\n  File \\\"/home/bi_geum/anaconda3/envs/survey/lib/python3.10/inspect.py\\\", line 958, in findsource\\n    raise OSError('could not get source code')\\nOSError: could not get source code\\n\\nThe above exception was the direct cause of the following exception:\\n\\nTraceback (most recent call last):\\n  File \\\"/home/bi_geum/official_matrix_64/results/all_official_matrix_v1/official_matrix_64/cells/backendbench/cudaforge/005_sigmoid/official_eval/candidate_000/ops/sigmoid/sigmoid_implementation_1.py\\\", line 6, in <module>\\n    exec(compile(_CANDIDATE_CODE, '<agent_candidate>', 'exec'), _candidate.__dict__)\\n  File \\\"<agent_candidate>\\\", line 6, in <module>\\n  File \\\"/home/bi_geum/anaconda3/envs/survey/lib/python3.10/site-packages/triton/runtime/jit.py\\\", line 935, in jit\\n    return decorator(fn)\\n  File \\\"/home/bi_geum/anaconda3/envs/survey/lib/python3.10/site-packages/triton/runtime/jit.py\\\", line 923, in decorator\\n    return JITFunction(\\n  File \\\"/home/bi_geum/anaconda3/envs/survey/lib/python3.10/site-packages/triton/runtime/jit.py\\\", line 756, in __init__\\n    super().__init__(fn)\\n  File \\\"/home/bi_geum/anaconda3/envs/survey/lib/python3.10/site-packages/triton/runtime/jit.py\\\", line 463, in __init__\\n    raise ValueError(\\\"@jit functions should be defined in a Python file\\\") from e\\nValueError: @jit functions should be defined in a Python file\\n\\nThe above exception was the direct cause of the following exception:\\n\\nTraceback (most recent call last):\\n  File \\\"/home/bi_geum/official_matrix_64/third_party/BackendBench/BackendBench/eval.py\\\", line 102, in eval_correctness_test\\n    res = impl(*args, **kwargs)\\n  File \\\"/home/bi_geum/official_matrix_64/results/all_official_matrix_v1/official_matrix_64/cells/backendbench/cudaforge/005_sigmoid/official_eval/candidate_000/ops/sigmoid/sigmoid_implementation_1.py\\\", line 24, in sigmoid_kernel_impl\\n    return _call_candidate(*args, **kwargs)\\n  File \\\"/home/bi_geum/official_matrix_64/results/all_official_matrix_v1/official_matrix_64/cells/backendbench/cudaforge/005_sigmoid/official_eval/candidate_000/ops/sigmoid/sigmoid_implementation_1.py\\\", line 12, in _call_candidate\\n    raise RuntimeError('candidate import failed') from _candidate_error\\nRuntimeError: candidate import failed\\n\", \"max_abs_error\": -Infinity, \"max_rel_error\": -Infinity, \"test_type\": \"correctness\"}]",
+  "generation_log": "/home/bi_geum/official_matrix_64/results/all_official_matrix_v1/official_matrix_64/cells/backendbench/cudaforge/005_sigmoid/generation.log.txt",
+  "official_reports": [],
+  "agent": "cudaforge",
+  "cell_dir": "/home/bi_geum/official_matrix_64/results/all_official_matrix_v1/official_matrix_64/cells/backendbench/cudaforge",
+  "task_dir": "/home/bi_geum/official_matrix_64/results/all_official_matrix_v1/official_matrix_64/cells/backendbench/cudaforge/005_sigmoid"
+}

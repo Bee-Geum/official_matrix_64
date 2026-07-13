@@ -1,6 +1,0 @@
-{
-  "benchmark": "kernelbench",
-  "task_id": "17_Conv2d_InstanceNorm_Divide",
-  "source_path": "/home/bi_geum/official_matrix_88/third_party/KernelBench/KernelBench/level2/17_Conv2d_InstanceNorm_Divide.py",
-  "official_task": true
-}

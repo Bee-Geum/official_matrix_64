@@ -29,7 +29,7 @@ def load_prompt_template() -> str:
     return mod.PROMPT_TEMPLATE
 
 
-COMPAT_SHIM = '''# [official_matrix_88] torch>=2.11 compat shim: restore classic inductor `grid`
+COMPAT_SHIM = '''# [official_matrix_64] torch>=2.11 compat shim: restore classic inductor `grid`
 # (KernelLLM emits torch-inductor-style code; `grid` was refactored out of
 #  torch._inductor.runtime.triton_heuristics in newer torch. Kernel logic below is verbatim.)
 import triton as _triton

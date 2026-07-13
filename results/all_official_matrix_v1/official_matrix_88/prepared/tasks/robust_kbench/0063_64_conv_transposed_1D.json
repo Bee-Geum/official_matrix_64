@@ -1,6 +1,0 @@
-{
-  "benchmark": "robust_kbench",
-  "task_id": "64_conv_transposed_1D",
-  "source_path": "/home/bi_geum/official_matrix_88/third_party/KernelBench/KernelBench/level1/64_conv_transposed_1D.py",
-  "official_task": true
-}

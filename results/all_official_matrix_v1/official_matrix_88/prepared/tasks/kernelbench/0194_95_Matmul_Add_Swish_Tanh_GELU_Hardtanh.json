@@ -1,6 +1,0 @@
-{
-  "benchmark": "kernelbench",
-  "task_id": "95_Matmul_Add_Swish_Tanh_GELU_Hardtanh",
-  "source_path": "/home/bi_geum/official_matrix_88/third_party/KernelBench/KernelBench/level2/95_Matmul_Add_Swish_Tanh_GELU_Hardtanh.py",
-  "official_task": true
-}

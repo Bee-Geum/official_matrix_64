@@ -1,8 +1,0 @@
-{
-  "benchmark": "multikernelbench",
-  "task_id": "scatter_add",
-  "op": "scatter_add",
-  "official_task": true,
-  "prompt_path": "/home/bi_geum/official_matrix_88/third_party/MultiKernelBench/reference/index/scatter_add.py",
-  "prompt": "Benchmark: multikernelbench\nOfficial task: scatter_add\nReturn only source code, without Markdown fences or explanations.\n\nGenerate a kernel response for the exact MultiKernelBench operator 'scatter_add'. Use CUDA C++ or Triton and do not replace the computation with eager PyTorch.\n\nimport torch\nimport torch.nn as nn\n\nclass Model(nn.Module):\n    def forward(self, x, idx, updates):\n        return x.scatter_add(dim=1, index=idx, src=updates)\n\ndef get_inputs():\n    x = torch.zeros(32, 4096)\n    idx = torch.randint(0, 4096, (32, 1024))\n    updates = torch.rand(32, 1024)\n    return [x, idx, updates]\n\ndef get_init_inputs():\n    return []\n"
-}

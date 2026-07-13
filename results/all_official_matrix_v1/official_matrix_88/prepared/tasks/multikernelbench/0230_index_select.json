@@ -1,8 +1,0 @@
-{
-  "benchmark": "multikernelbench",
-  "task_id": "index_select",
-  "op": "index_select",
-  "official_task": true,
-  "prompt_path": "/home/bi_geum/official_matrix_88/third_party/MultiKernelBench/reference/index/index_select.py",
-  "prompt": "Benchmark: multikernelbench\nOfficial task: index_select\nReturn only source code, without Markdown fences or explanations.\n\nGenerate a kernel response for the exact MultiKernelBench operator 'index_select'. Use CUDA C++ or Triton and do not replace the computation with eager PyTorch.\n\nimport torch\nimport torch.nn as nn\n\nclass Model(nn.Module):\n    def forward(self, x, indices):\n        return torch.index_select(x, dim=1, index=indices)\n\ndef get_inputs():\n    x = torch.rand(256, 8192)\n    indices = torch.randint(0, 8192, (2048,))\n    return [x, indices]\n\ndef get_init_inputs():\n    return []\n"
-}

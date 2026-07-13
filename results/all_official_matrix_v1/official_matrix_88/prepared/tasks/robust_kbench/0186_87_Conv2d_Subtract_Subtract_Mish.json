@@ -1,6 +1,0 @@
-{
-  "benchmark": "robust_kbench",
-  "task_id": "87_Conv2d_Subtract_Subtract_Mish",
-  "source_path": "/home/bi_geum/official_matrix_88/third_party/KernelBench/KernelBench/level2/87_Conv2d_Subtract_Subtract_Mish.py",
-  "official_task": true
-}

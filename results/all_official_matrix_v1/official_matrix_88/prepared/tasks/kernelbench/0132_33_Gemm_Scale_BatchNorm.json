@@ -1,6 +1,0 @@
-{
-  "benchmark": "kernelbench",
-  "task_id": "33_Gemm_Scale_BatchNorm",
-  "source_path": "/home/bi_geum/official_matrix_88/third_party/KernelBench/KernelBench/level2/33_Gemm_Scale_BatchNorm.py",
-  "official_task": true
-}

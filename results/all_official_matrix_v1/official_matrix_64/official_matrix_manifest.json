@@ -1,0 +1,26 @@
+{
+  "run_root": "/home/bi_geum/official_matrix_64/results/all_official_matrix_v1/official_matrix_64",
+  "generated_at": "2026-07-13T15:13:35+0900",
+  "benchmarks": [
+    "robust_kbench"
+  ],
+  "agents": [
+    "cudaforge"
+  ],
+  "expected_cells": 1,
+  "observed_cells": 1,
+  "valid_official_cells": 1,
+  "all_official_benchmarking_normal": 1,
+  "by_benchmark": {
+    "robust_kbench": {
+      "agents": 1,
+      "valid_official_cells": 1,
+      "candidate_cells": 1,
+      "official_eval_tasks": 1,
+      "correct_tasks": 1,
+      "all_agents_official": 1,
+      "top_errors": []
+    }
+  },
+  "strict_definition": "A valid cell has official tasks, a generated candidate for every selected task, and a parsed structured upstream-evaluator result for every task. Correctness may be zero."
+}

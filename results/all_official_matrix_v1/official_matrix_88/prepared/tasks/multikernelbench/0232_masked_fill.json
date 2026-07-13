@@ -1,8 +1,0 @@
-{
-  "benchmark": "multikernelbench",
-  "task_id": "masked_fill",
-  "op": "masked_fill",
-  "official_task": true,
-  "prompt_path": "/home/bi_geum/official_matrix_88/third_party/MultiKernelBench/reference/index/masked_fill.py",
-  "prompt": "Benchmark: multikernelbench\nOfficial task: masked_fill\nReturn only source code, without Markdown fences or explanations.\n\nGenerate a kernel response for the exact MultiKernelBench operator 'masked_fill'. Use CUDA C++ or Triton and do not replace the computation with eager PyTorch.\n\nimport torch\nimport torch.nn as nn\n\nclass Model(nn.Module):\n    def forward(self, x, mask):\n        return x.masked_fill(mask, float('-inf'))\n\ndef get_inputs():\n    x = torch.rand(64, 512, 512)\n    mask = torch.randint(0, 2, (64, 512, 512), dtype=torch.bool)\n    return [x, mask]\n\ndef get_init_inputs():\n    return []\n"
-}

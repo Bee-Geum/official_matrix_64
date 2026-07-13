@@ -1,6 +1,0 @@
-{
-  "benchmark": "kernelbench",
-  "task_id": "5_Matrix_scalar_multiplication",
-  "source_path": "/home/bi_geum/official_matrix_88/third_party/KernelBench/KernelBench/level1/5_Matrix_scalar_multiplication.py",
-  "official_task": true
-}

@@ -1,8 +1,0 @@
-{
-  "benchmark": "multikernelbench",
-  "task_id": "matmul_min_subtract",
-  "op": "matmul_min_subtract",
-  "official_task": true,
-  "prompt_path": "/home/bi_geum/official_matrix_88/third_party/MultiKernelBench/reference/fuse/matmul_min_subtract.py",
-  "prompt": "Benchmark: multikernelbench\nOfficial task: matmul_min_subtract\nReturn only source code, without Markdown fences or explanations.\n\nGenerate a kernel response for the exact MultiKernelBench operator 'matmul_min_subtract'. Use CUDA C++ or Triton and do not replace the computation with eager PyTorch.\n\nimport torch\nimport torch.nn as nn\n\nclass Model(nn.Module):\n    \"\"\"\n    Simple model that performs a matrix multiplication, applies minimum, and subtracts a constant.\n    \"\"\"\n    def __init__(self, in_features, out_features, constant):\n        super(Model, self).__init__()\n        self.linear = nn.Linear(in_features, out_features)\n        self.constant = nn.Parameter(torch.tensor(constant))\n\n    def forward(self, x):\n        x = self.linear(x)\n        x = torch.min(x, self.constant)\n        x = x - self.constant\n        return x\n\nbatch_size = 128\nin_features = 16384\nout_features = 16384\nconstant = 2.0\n\ndef get_inputs():\n    return [torch.rand(batch_size, in_features)]\n\ndef get_init_inputs():\n    return [in_features, out_features, constant]"
-}

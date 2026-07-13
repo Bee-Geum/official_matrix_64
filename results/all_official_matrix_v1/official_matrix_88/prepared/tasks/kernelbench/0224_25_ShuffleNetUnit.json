@@ -1,6 +1,0 @@
-{
-  "benchmark": "kernelbench",
-  "task_id": "25_ShuffleNetUnit",
-  "source_path": "/home/bi_geum/official_matrix_88/third_party/KernelBench/KernelBench/level3/25_ShuffleNetUnit.py",
-  "official_task": true
-}

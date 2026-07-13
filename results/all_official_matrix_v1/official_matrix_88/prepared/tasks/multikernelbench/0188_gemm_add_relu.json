@@ -1,8 +1,0 @@
-{
-  "benchmark": "multikernelbench",
-  "task_id": "gemm_add_relu",
-  "op": "gemm_add_relu",
-  "official_task": true,
-  "prompt_path": "/home/bi_geum/official_matrix_88/third_party/MultiKernelBench/reference/fuse/gemm_add_relu.py",
-  "prompt": "Benchmark: multikernelbench\nOfficial task: gemm_add_relu\nReturn only source code, without Markdown fences or explanations.\n\nGenerate a kernel response for the exact MultiKernelBench operator 'gemm_add_relu'. Use CUDA C++ or Triton and do not replace the computation with eager PyTorch.\n\nimport torch\nimport torch.nn as nn\n\nclass Model(nn.Module):\n    \"\"\"\n    Simple model that performs a matrix multiplication, adds a bias term, and applies ReLU.\n    \"\"\"\n    def __init__(self, in_features, out_features, bias_shape):\n        super(Model, self).__init__()\n        self.gemm = nn.Linear(in_features, out_features, bias=False)\n        self.bias = nn.Parameter(torch.randn(bias_shape))\n\n    def forward(self, x):\n        \"\"\"\n        Args:\n            x (torch.Tensor): Input tensor with shape (batch_size, in_features).\n        Returns:\n            torch.Tensor: Output tensor with shape (batch_size, out_features).\n        \"\"\"\n        x = self.gemm(x)\n        x = x + self.bias\n        x = torch.relu(x)\n        return x\n\nbatch_size = 1024\nin_features = 8192\nout_features = 8192\nbias_shape = (out_features,)\n\ndef get_inputs():\n    return [torch.rand(batch_size, in_features)]\n\ndef get_init_inputs():\n    return [in_features, out_features, bias_shape]"
-}

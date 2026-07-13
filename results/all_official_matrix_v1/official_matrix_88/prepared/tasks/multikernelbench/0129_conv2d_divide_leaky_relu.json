@@ -1,8 +1,0 @@
-{
-  "benchmark": "multikernelbench",
-  "task_id": "conv2d_divide_leaky_relu",
-  "op": "conv2d_divide_leaky_relu",
-  "official_task": true,
-  "prompt_path": "/home/bi_geum/official_matrix_88/third_party/MultiKernelBench/reference/fuse/conv2d_divide_leaky_relu.py",
-  "prompt": "Benchmark: multikernelbench\nOfficial task: conv2d_divide_leaky_relu\nReturn only source code, without Markdown fences or explanations.\n\nGenerate a kernel response for the exact MultiKernelBench operator 'conv2d_divide_leaky_relu'. Use CUDA C++ or Triton and do not replace the computation with eager PyTorch.\n\nimport torch\nimport torch.nn as nn\n\nclass Model(nn.Module):\n    \"\"\"\n    Simple model that performs a convolution, divides by a constant, and applies LeakyReLU.\n    \"\"\"\n    def __init__(self, in_channels, out_channels, kernel_size, divisor):\n        super(Model, self).__init__()\n        self.conv = nn.Conv2d(in_channels, out_channels, kernel_size)\n        self.divisor = divisor\n\n    def forward(self, x):\n        x = self.conv(x)\n        x = x / self.divisor\n        x = torch.nn.functional.leaky_relu(x, negative_slope=0.01)\n        return x\n\nbatch_size = 128\nin_channels = 8\nout_channels = 64\nheight, width = 128, 128\nkernel_size = 3\ndivisor = 2\n\ndef get_inputs():\n    return [torch.rand(batch_size, in_channels, height, width)]\n\ndef get_init_inputs():\n    return [in_channels, out_channels, kernel_size, divisor]"
-}

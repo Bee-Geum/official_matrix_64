@@ -1,8 +1,0 @@
-{
-  "benchmark": "multikernelbench",
-  "task_id": "l1_norm",
-  "op": "l1_norm",
-  "official_task": true,
-  "prompt_path": "/home/bi_geum/official_matrix_88/third_party/MultiKernelBench/reference/normalization/l1_norm.py",
-  "prompt": "Benchmark: multikernelbench\nOfficial task: l1_norm\nReturn only source code, without Markdown fences or explanations.\n\nGenerate a kernel response for the exact MultiKernelBench operator 'l1_norm'. Use CUDA C++ or Triton and do not replace the computation with eager PyTorch.\n\nimport torch\nimport torch.nn as nn\n\nclass Model(nn.Module):\n    \"\"\"\n    Simple model that performs L1 normalization.\n    \"\"\"\n    def __init__(self):\n        \"\"\"\n        Initializes the L1 normalization layer.\n        \"\"\"\n        super(Model, self).__init__()\n\n    def forward(self, x: torch.Tensor) -> torch.Tensor:\n        \"\"\"\n        Applies L1 normalization to the input tensor.\n\n        Args:\n            x (torch.Tensor): Input tensor of shape (..., dim, ...).\n\n        Returns:\n            torch.Tensor: Output tensor with L1 normalization applied, same shape as input.\n        \"\"\"\n        return x / torch.mean(torch.abs(x), dim=1, keepdim=True)\n\nbatch_size = 32768\n# choose dim so total <2^31\ndim = 65535\n\ndef get_inputs():\n    x = torch.rand(batch_size, dim)\n    return [x]\n\ndef get_init_inputs():\n    return []"
-}

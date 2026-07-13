@@ -1,8 +1,0 @@
-{
-  "benchmark": "multikernelbench",
-  "task_id": "triplet_margin_loss",
-  "op": "triplet_margin_loss",
-  "official_task": true,
-  "prompt_path": "/home/bi_geum/official_matrix_88/third_party/MultiKernelBench/reference/loss/triplet_margin_loss.py",
-  "prompt": "Benchmark: multikernelbench\nOfficial task: triplet_margin_loss\nReturn only source code, without Markdown fences or explanations.\n\nGenerate a kernel response for the exact MultiKernelBench operator 'triplet_margin_loss'. Use CUDA C++ or Triton and do not replace the computation with eager PyTorch.\n\nimport torch\nimport torch.nn as nn\n\nclass Model(nn.Module):\n    \"\"\"\n    A model that computes Triplet Margin Loss for metric learning tasks.\n\n    Parameters:\n        margin (float): The margin between the positive and negative samples.\n    \"\"\"\n    def __init__(self, margin=1.0):\n        super(Model, self).__init__()\n        self.loss_fn = torch.nn.TripletMarginLoss(margin=margin)\n\n    def forward(self, anchor, positive, negative):\n        return self.loss_fn(anchor, positive, negative)\n\nbatch_size = 32768\ninput_shape = (8192,)\ndim = 1\n\ndef get_inputs():\n    scale = torch.rand(())\n    return [torch.rand(batch_size, *input_shape)*scale, torch.rand(batch_size, *input_shape), torch.rand(batch_size, *input_shape)]\n    \ndef get_init_inputs():\n    return [1.0]  # Default margin\n"
-}

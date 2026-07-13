@@ -1,6 +1,0 @@
-{
-  "benchmark": "kernelbench",
-  "task_id": "83_Conv3d_GroupNorm_Min_Clamp_Dropout",
-  "source_path": "/home/bi_geum/official_matrix_88/third_party/KernelBench/KernelBench/level2/83_Conv3d_GroupNorm_Min_Clamp_Dropout.py",
-  "official_task": true
-}

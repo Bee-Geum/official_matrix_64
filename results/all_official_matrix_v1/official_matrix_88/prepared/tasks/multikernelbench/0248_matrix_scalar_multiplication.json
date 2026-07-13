@@ -1,8 +1,0 @@
-{
-  "benchmark": "multikernelbench",
-  "task_id": "matrix_scalar_multiplication",
-  "op": "matrix_scalar_multiplication",
-  "official_task": true,
-  "prompt_path": "/home/bi_geum/official_matrix_88/third_party/MultiKernelBench/reference/math/matrix_scalar_multiplication.py",
-  "prompt": "Benchmark: multikernelbench\nOfficial task: matrix_scalar_multiplication\nReturn only source code, without Markdown fences or explanations.\n\nGenerate a kernel response for the exact MultiKernelBench operator 'matrix_scalar_multiplication'. Use CUDA C++ or Triton and do not replace the computation with eager PyTorch.\n\nimport torch\nimport torch.nn as nn\n\nclass Model(nn.Module):\n    \"\"\"\n    Simple model that performs a matrix-scalar multiplication (C = A * s)\n    \"\"\"\n    def __init__(self):\n        super(Model, self).__init__()\n    \n    def forward(self, A: torch.Tensor, s: float) -> torch.Tensor:\n        \"\"\"\n        Performs matrix-scalar multiplication.\n\n        Args:\n            A: Input matrix of shape (M, N)\n            s: Scalar value\n\n        Returns:\n            C: Resulting matrix of shape (M, N)\n        \"\"\"\n        return A * s\n\nM = 16384 * 4\nN = 4096 * 4\n\ndef get_inputs():\n    A = torch.rand(M, N)\n    s = 3.14\n    return [A, s]\n\ndef get_init_inputs():\n    return []  # No special initialization inputs needed"
-}

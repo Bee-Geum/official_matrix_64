@@ -1,8 +1,0 @@
-{
-  "benchmark": "multikernelbench",
-  "task_id": "batch_norm",
-  "op": "batch_norm",
-  "official_task": true,
-  "prompt_path": "/home/bi_geum/official_matrix_88/third_party/MultiKernelBench/reference/normalization/batch_norm.py",
-  "prompt": "Benchmark: multikernelbench\nOfficial task: batch_norm\nReturn only source code, without Markdown fences or explanations.\n\nGenerate a kernel response for the exact MultiKernelBench operator 'batch_norm'. Use CUDA C++ or Triton and do not replace the computation with eager PyTorch.\n\nimport torch\nimport torch.nn as nn\n\nclass Model(nn.Module):\n    \"\"\"\n    Simple model that performs Batch Normalization.\n    \"\"\"\n    def __init__(self, num_features: int):\n        \"\"\"\n        Initializes the BatchNorm layer.\n\n        Args:\n            num_features (int): Number of features in the input tensor.\n        \"\"\"\n        super(Model, self).__init__()\n        self.bn = nn.BatchNorm2d(num_features=num_features)\n\n    def forward(self, x: torch.Tensor) -> torch.Tensor:\n        \"\"\"\n        Applies Batch Normalization to the input tensor.\n\n        Args:\n            x (torch.Tensor): Input tensor of shape (batch_size, num_features, *).\n\n        Returns:\n            torch.Tensor: Output tensor with Batch Normalization applied, same shape as input.\n        \"\"\"\n        return self.bn(x)\n\nbatch_size = 64\nfeatures = 64\ndim1 = 512\ndim2 = 512\n\ndef get_inputs():\n    x = torch.rand(batch_size, features, dim1, dim2)\n    return [x]\n\ndef get_init_inputs():\n    return [features]"
-}

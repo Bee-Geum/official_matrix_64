@@ -1,8 +1,0 @@
-{
-  "benchmark": "multikernelbench",
-  "task_id": "cross_modal_attention",
-  "op": "cross_modal_attention",
-  "official_task": true,
-  "prompt_path": "/home/bi_geum/official_matrix_88/third_party/MultiKernelBench/reference/attention/cross_modal_attention.py",
-  "prompt": "Benchmark: multikernelbench\nOfficial task: cross_modal_attention\nReturn only source code, without Markdown fences or explanations.\n\nGenerate a kernel response for the exact MultiKernelBench operator 'cross_modal_attention'. Use CUDA C++ or Triton and do not replace the computation with eager PyTorch.\n\nimport torch\nimport torch.nn as nn\n\nclass Model(nn.Module):\n    \"\"\"\n    Cross-modal attention: text queries, visual keys/values.\n    \"\"\"\n    def __init__(self, d_model_text=256, d_model_img=512, num_heads=8):\n        super().__init__()\n        self.q_proj = nn.Linear(d_model_text, d_model_text)\n        self.kv_proj = nn.Linear(d_model_img, d_model_text)\n        self.mha = nn.MultiheadAttention(d_model_text, num_heads, batch_first=True)\n\n    def forward(self, text, img):\n        q = self.q_proj(text)\n        kv = self.kv_proj(img)\n        out, _ = self.mha(q, kv, kv)\n        return out\n\nbatch_size = 4\nlen_text = 32\nlen_img = 196\n\ndef get_inputs():\n    text = torch.rand(batch_size, len_text, 256)\n    img = torch.rand(batch_size, len_img, 512)\n    return [text, img]\n\ndef get_init_inputs():\n    return [256, 512, 8]\n"
-}

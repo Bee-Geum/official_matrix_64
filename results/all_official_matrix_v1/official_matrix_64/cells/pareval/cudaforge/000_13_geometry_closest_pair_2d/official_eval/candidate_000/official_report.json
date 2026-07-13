@@ -1,0 +1,22 @@
+{
+  "benchmark": "pareval",
+  "task_id": "13_geometry_closest_pair_2d",
+  "task_manifest": "/home/bi_geum/official_matrix_64/results/all_official_matrix_v1/official_matrix_64/prepared/tasks/pareval/0000_13_geometry_closest_pair_2d.json",
+  "candidate": "/home/bi_geum/official_matrix_64/results/all_official_matrix_v1/official_matrix_64/cells/pareval/cudaforge/000_13_geometry_closest_pair_2d/candidates/official_candidate_000.py",
+  "official_task": 1,
+  "official_attempted": 1,
+  "official_eval": 1,
+  "correct": 0,
+  "performance_available": 0,
+  "score": 0.0,
+  "evaluator_rc": 0,
+  "infrastructure_error": "",
+  "candidate_error": "[{\"generated_output\": \"__shared__ double minDist;\\n\\tif (threadIdx.x == 0) {\\n\\t\\tminDist = DBL_MAX;\\n\\t}\\n\\t__syncthreads();\\n\\n\\tfor (size_t i = threadIdx.x; i < numPoints - 1; i += blockDim.x) {\\n\\t\\tfor (size_t j = i + 1; j < numPoints; ++j) {\\n\\t\\t\\tdouble dist = distanceBetweenPoints(points[i], points[j]);\\n\\t\\t\\tif (dist < minDist) {\\n\\t\\t\\t\\tminDist = dist;\\n\\t\\t\\t}\\n\\t\\t}\\n\\t}\\n\\t__syncthreads();\\n\\n\\tif (threadIdx.x == 0) {\\n\\t\\tatomicMin(&minDist, minDist);\\n\\t\\t*distance = minDist;\\n\\t}\\n}\\n\", \"source_write_success\": true, \"did_build\": false, \"is_source_valid\": true, \"did_any_run\": false, \"did_all_run\": false, \"are_any_valid\": false, \"are_all_valid\": false, \"best_sequential_runtime\": null, \"runs\": null}]",
+  "logs": [
+    "/home/bi_geum/official_matrix_64/results/all_official_matrix_v1/official_matrix_64/cells/pareval/cudaforge/000_13_geometry_closest_pair_2d/official_eval/candidate_000/official_eval.log.txt"
+  ],
+  "artifacts": [
+    "/home/bi_geum/official_matrix_64/results/all_official_matrix_v1/official_matrix_64/cells/pareval/cudaforge/000_13_geometry_closest_pair_2d/official_eval/candidate_000/pareval_result.json"
+  ],
+  "wall_s": 0.4372391700744629
+}

@@ -1,8 +1,0 @@
-{
-  "benchmark": "multikernelbench",
-  "task_id": "take_along_dim",
-  "op": "take_along_dim",
-  "official_task": true,
-  "prompt_path": "/home/bi_geum/official_matrix_88/third_party/MultiKernelBench/reference/index/take_along_dim.py",
-  "prompt": "Benchmark: multikernelbench\nOfficial task: take_along_dim\nReturn only source code, without Markdown fences or explanations.\n\nGenerate a kernel response for the exact MultiKernelBench operator 'take_along_dim'. Use CUDA C++ or Triton and do not replace the computation with eager PyTorch.\n\nimport torch\nimport torch.nn as nn\n\nclass Model(nn.Module):\n    def forward(self, x, idx):\n        return torch.take_along_dim(x, idx, dim=1)\n\ndef get_inputs():\n    x = torch.rand(128, 8192)\n    idx = torch.randint(0, 8192, (128, 4096))\n    return [x, idx]\n\ndef get_init_inputs():\n    return []\n"
-}

@@ -1,0 +1,7 @@
+{
+  "system": "cudaforge",
+  "round": 0,
+  "latency_s": 4.9974822998046875,
+  "candidate": "/home/bi_geum/official_matrix_64/results/all_official_matrix_v1/official_matrix_64/cells/multikernelbench/cudaforge/000_elu/candidates/round000_kernel.py",
+  "first_line": "import torch"
+}

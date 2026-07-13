@@ -1,0 +1,6 @@
+{
+  "benchmark": "kernelbench",
+  "task_id": "17_Matmul_with_transposed_B",
+  "source_path": "/home/bi_geum/official_matrix_64/third_party/KernelBench/KernelBench/level1/17_Matmul_with_transposed_B.py",
+  "official_task": true
+}

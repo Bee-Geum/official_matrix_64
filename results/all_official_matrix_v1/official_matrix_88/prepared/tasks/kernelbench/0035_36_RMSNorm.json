@@ -1,6 +1,0 @@
-{
-  "benchmark": "kernelbench",
-  "task_id": "36_RMSNorm_",
-  "source_path": "/home/bi_geum/official_matrix_88/third_party/KernelBench/KernelBench/level1/36_RMSNorm_.py",
-  "official_task": true
-}

@@ -1,6 +1,0 @@
-{
-  "benchmark": "kernelbench",
-  "task_id": "36_LSTMHn",
-  "source_path": "/home/bi_geum/official_matrix_88/third_party/KernelBench/KernelBench/level3/36_LSTMHn.py",
-  "official_task": true
-}

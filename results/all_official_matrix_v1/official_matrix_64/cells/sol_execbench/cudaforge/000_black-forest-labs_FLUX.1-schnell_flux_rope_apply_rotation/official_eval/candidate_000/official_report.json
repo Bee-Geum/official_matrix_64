@@ -1,0 +1,24 @@
+{
+  "benchmark": "sol_execbench",
+  "task_id": "black-forest-labs_FLUX.1-schnell_flux_rope_apply_rotation",
+  "task_manifest": "/home/bi_geum/official_matrix_64/results/all_official_matrix_v1/official_matrix_64/prepared/tasks/sol_execbench/0000_black-forest-labs_FLUX.1-schnell_flux_rope_apply_rotation.json",
+  "candidate": "/home/bi_geum/official_matrix_64/results/all_official_matrix_v1/official_matrix_64/cells/sol_execbench/cudaforge/000_black-forest-labs_FLUX.1-schnell_flux_rope_apply_rotation/candidates/official_candidate_000.py",
+  "official_task": 1,
+  "official_attempted": 1,
+  "official_eval": 1,
+  "correct": 1,
+  "performance_available": 0,
+  "score": 0.0,
+  "evaluator_rc": 0,
+  "infrastructure_error": "",
+  "candidate_error": "",
+  "logs": [
+    "/home/bi_geum/official_matrix_64/results/all_official_matrix_v1/official_matrix_64/cells/sol_execbench/cudaforge/000_black-forest-labs_FLUX.1-schnell_flux_rope_apply_rotation/official_eval/candidate_000/official_eval.log.txt"
+  ],
+  "artifacts": [
+    "/home/bi_geum/official_matrix_64/results/all_official_matrix_v1/official_matrix_64/cells/sol_execbench/cudaforge/000_black-forest-labs_FLUX.1-schnell_flux_rope_apply_rotation/official_eval/candidate_000/solution.json",
+    "/home/bi_geum/official_matrix_64/results/all_official_matrix_v1/official_matrix_64/cells/sol_execbench/cudaforge/000_black-forest-labs_FLUX.1-schnell_flux_rope_apply_rotation/official_eval/candidate_000/trace.jsonl",
+    "/home/bi_geum/official_matrix_64/results/all_official_matrix_v1/official_matrix_64/cells/sol_execbench/cudaforge/000_black-forest-labs_FLUX.1-schnell_flux_rope_apply_rotation/official_eval/candidate_000/bench_config.json"
+  ],
+  "wall_s": 2.394266366958618
+}

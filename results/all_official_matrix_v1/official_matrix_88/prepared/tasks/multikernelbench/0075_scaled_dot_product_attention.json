@@ -1,8 +1,0 @@
-{
-  "benchmark": "multikernelbench",
-  "task_id": "scaled_dot_product_attention",
-  "op": "scaled_dot_product_attention",
-  "official_task": true,
-  "prompt_path": "/home/bi_geum/official_matrix_88/third_party/MultiKernelBench/reference/attention/scaled_dot_product_attention.py",
-  "prompt": "Benchmark: multikernelbench\nOfficial task: scaled_dot_product_attention\nReturn only source code, without Markdown fences or explanations.\n\nGenerate a kernel response for the exact MultiKernelBench operator 'scaled_dot_product_attention'. Use CUDA C++ or Triton and do not replace the computation with eager PyTorch.\n\nimport torch\nimport torch.nn as nn\n\nclass Model(nn.Module):\n    def __init__(self):\n        super(Model, self).__init__()\n\n    def forward(self, Q: torch.Tensor, K: torch.Tensor, V: torch.Tensor) -> torch.Tensor:\n        out = torch.nn.functional.scaled_dot_product_attention(Q, K, V)\n        return out\n\nbatch_size = 32\nnum_heads = 32\nsequence_length = 512\nembedding_dimension = 1024\n\ndef get_inputs():\n    Q = torch.rand(batch_size, num_heads, sequence_length, embedding_dimension)\n    K = torch.rand(batch_size, num_heads, sequence_length, embedding_dimension)\n    V = torch.rand(batch_size, num_heads, sequence_length, embedding_dimension)\n    return [Q, K, V]\n\ndef get_init_inputs():\n    return []\n"
-}

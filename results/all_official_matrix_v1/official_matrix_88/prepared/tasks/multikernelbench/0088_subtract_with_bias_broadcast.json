@@ -1,8 +1,0 @@
-{
-  "benchmark": "multikernelbench",
-  "task_id": "subtract_with_bias_broadcast",
-  "op": "subtract_with_bias_broadcast",
-  "official_task": true,
-  "prompt_path": "/home/bi_geum/official_matrix_88/third_party/MultiKernelBench/reference/broadcast/subtract_with_bias_broadcast.py",
-  "prompt": "Benchmark: multikernelbench\nOfficial task: subtract_with_bias_broadcast\nReturn only source code, without Markdown fences or explanations.\n\nGenerate a kernel response for the exact MultiKernelBench operator 'subtract_with_bias_broadcast'. Use CUDA C++ or Triton and do not replace the computation with eager PyTorch.\n\nimport torch\nimport torch.nn as nn\n\nclass Model(nn.Module):\n    def __init__(self):\n        super().__init__()\n\n    def forward(self, x, bias):\n        return x - bias\n\ndef get_inputs():\n    x = torch.rand(8, 4096)\n    bias = torch.rand(4096)\n    return [x, bias]\n\ndef get_init_inputs():\n    return []"
-}

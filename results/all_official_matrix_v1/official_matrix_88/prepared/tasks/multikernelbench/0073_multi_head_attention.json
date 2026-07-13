@@ -1,8 +1,0 @@
-{
-  "benchmark": "multikernelbench",
-  "task_id": "multi_head_attention",
-  "op": "multi_head_attention",
-  "official_task": true,
-  "prompt_path": "/home/bi_geum/official_matrix_88/third_party/MultiKernelBench/reference/attention/multi_head_attention.py",
-  "prompt": "Benchmark: multikernelbench\nOfficial task: multi_head_attention\nReturn only source code, without Markdown fences or explanations.\n\nGenerate a kernel response for the exact MultiKernelBench operator 'multi_head_attention'. Use CUDA C++ or Triton and do not replace the computation with eager PyTorch.\n\nimport torch\nimport torch.nn as nn\n\nclass Model(nn.Module):\n    \"\"\"\n    Implements standard multi-head attention (MHA).\n    \"\"\"\n    def __init__(self, d_model=512, num_heads=8):\n        super().__init__()\n        self.mha = nn.MultiheadAttention(d_model, num_heads, batch_first=True)\n\n    def forward(self, x):\n        out, _ = self.mha(x, x, x)\n        return out\n\nbatch_size = 16\nseq_len = 256\nd_model = 512\nnum_heads = 8\n\ndef get_inputs():\n    x = torch.rand(batch_size, seq_len, d_model)\n    return [x]\n\ndef get_init_inputs():\n    return [d_model, num_heads]\n"
-}
