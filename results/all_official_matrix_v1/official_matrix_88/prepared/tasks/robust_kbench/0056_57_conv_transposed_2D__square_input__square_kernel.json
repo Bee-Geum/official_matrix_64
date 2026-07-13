@@ -1,0 +1,6 @@
+{
+  "benchmark": "robust_kbench",
+  "task_id": "57_conv_transposed_2D__square_input__square_kernel",
+  "source_path": "/home/bi_geum/official_matrix_88/third_party/KernelBench/KernelBench/level1/57_conv_transposed_2D__square_input__square_kernel.py",
+  "official_task": true
+}

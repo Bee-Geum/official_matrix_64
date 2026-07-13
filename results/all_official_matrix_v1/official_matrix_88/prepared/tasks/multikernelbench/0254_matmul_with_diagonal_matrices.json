@@ -1,0 +1,8 @@
+{
+  "benchmark": "multikernelbench",
+  "task_id": "matmul_with_diagonal_matrices",
+  "op": "matmul_with_diagonal_matrices",
+  "official_task": true,
+  "prompt_path": "/home/bi_geum/official_matrix_88/third_party/MultiKernelBench/reference/matmul/matmul_with_diagonal_matrices.py",
+  "prompt": "Benchmark: multikernelbench\nOfficial task: matmul_with_diagonal_matrices\nReturn only source code, without Markdown fences or explanations.\n\nGenerate a kernel response for the exact MultiKernelBench operator 'matmul_with_diagonal_matrices'. Use CUDA C++ or Triton and do not replace the computation with eager PyTorch.\n\nimport torch\nimport torch.nn as nn\n\nclass Model(nn.Module):\n    \"\"\"\n    Simple model that performs a matrix multiplication of a diagonal matrix with another matrix.\n    C = diag(A) * B\n    \"\"\"\n    def __init__(self):\n        super(Model, self).__init__()\n    \n    def forward(self, A, B):\n        \"\"\"\n        Performs the matrix multiplication.\n\n        Args:\n            A (torch.Tensor): A 1D tensor representing the diagonal of the diagonal matrix. Shape: (N,).\n            B (torch.Tensor): A 2D tensor representing the second matrix. Shape: (N, M).\n\n        Returns:\n            torch.Tensor: The result of the matrix multiplication. Shape: (N, M).\n        \"\"\"\n        return torch.diag(A) @ B\n\nM = 4096\nN = 4096\n\ndef get_inputs():\n    A = torch.rand(N)\n    B = torch.rand(N, M)\n    return [A, B]\n\ndef get_init_inputs():\n    return []  # No special initialization inputs needed"
+}

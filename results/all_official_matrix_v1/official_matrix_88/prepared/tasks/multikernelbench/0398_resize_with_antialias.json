@@ -1,0 +1,8 @@
+{
+  "benchmark": "multikernelbench",
+  "task_id": "resize_with_antialias",
+  "op": "resize_with_antialias",
+  "official_task": true,
+  "prompt_path": "/home/bi_geum/official_matrix_88/third_party/MultiKernelBench/reference/resize/resize_with_antialias.py",
+  "prompt": "Benchmark: multikernelbench\nOfficial task: resize_with_antialias\nReturn only source code, without Markdown fences or explanations.\n\nGenerate a kernel response for the exact MultiKernelBench operator 'resize_with_antialias'. Use CUDA C++ or Triton and do not replace the computation with eager PyTorch.\n\nimport torch\nimport torch.nn as nn\nimport torch.nn.functional as F\nclass Model(nn.Module):\n    def forward(self, x):\n        return F.interpolate(x, size=(128, 128), mode='bilinear', align_corners=False, antialias=True)\n\ndef get_inputs():\n    x = torch.rand(8, 3, 256, 256)\n    return [x]\n\ndef get_init_inputs():\n    return []"
+}

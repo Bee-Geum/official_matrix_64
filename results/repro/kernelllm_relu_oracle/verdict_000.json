@@ -1,0 +1,23 @@
+{
+  "compiled": false,
+  "correct": false,
+  "latency_ms": null,
+  "ref_latency_ms": null,
+  "speedup": null,
+  "error": "compile: Traceback (most recent call last):\n  File \"/home/bi_geum/official_matrix_88/telemetry/instrumented_eval_worker.py\", line 87, in main\n    candidate_module = load_module(job[\"cand_path\"], \"cand_mod\")\n  File \"/home/bi_geum/official_matrix_88/telemetry/instrumented_eval_worker.py\", line 19, in load_module\n    spec.loader.exec_module(module)\n  File \"<frozen importlib._bootstrap_external>\", line 883, in exec_module\n  File \"<frozen importlib._bootstrap>\", line 241, in _call_with_frames_removed\n  File \"/home/bi_geum/official_matrix_88/results/repro/kernelllm_relu_cand/round0_kernel.py\", line 4, in <module>\n    from torch._inductor.runtime.triton_heuristics import grid\nImportError: cannot import name 'grid' from 'torch._inductor.runtime.triton_heuristics' (/home/bi_geum/anaconda3/envs/survey/lib/python3.10/site-packages/torch/_inductor/runtime/triton_heuristics.py)\n",
+  "stage_s": {
+    "reference_import": 0.0002673710114322603,
+    "candidate_compile_import": 0.8342324960394762,
+    "model_init": 0.0,
+    "correctness": 0.0,
+    "reference_benchmark": 0.0,
+    "candidate_benchmark": 0.0,
+    "total": 1.7972975330194458
+  },
+  "correctness_trials_requested": 5,
+  "correctness_trials_executed": 0,
+  "warmup": 10,
+  "timing_iters": 100,
+  "compile_attempts": 1,
+  "profile_runs": 0
+}

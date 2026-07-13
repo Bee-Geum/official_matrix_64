@@ -1,0 +1,37 @@
+# official_matrix_88 -- Python dependencies
+#
+# Core deps for the runner, agent drivers, and the 8 official oracles.
+# Versions below match a known-good environment (CUDA 13, Python 3.10); on a
+# different CUDA/GPU, install the torch/triton build that matches your platform
+# instead of pinning these exactly.
+#
+# System prerequisites (NOT pip-installable):
+#   - NVIDIA GPU + driver
+#   - CUDA toolkit with `nvcc` on PATH (KernelBench / ParEval / BackendBench compile kernels)
+#   - An OpenAI-compatible LLM endpoint (see run_matrix_88.sh: LLM_BASE_URL)
+
+# --- runner + agent drivers ---
+requests>=2.28
+numpy>=1.24
+
+# --- correctness/perf oracles (kernelbench, tritonbench, multikernelbench,
+#     backendbench, sol_execbench all execute kernels through torch) ---
+torch>=2.4            # install the build matching your CUDA
+# triton is bundled with recent torch; install separately if your torch lacks it:
+# triton>=3.0
+
+# --- sol_execbench ---
+pydantic>=2.0
+
+# --- backendbench official CLI ---
+click>=8.0
+tabulate>=0.9
+
+# --- optional: only needed if you run the bundled LLM server (hf_openai_server.py) ---
+# transformers>=4.44
+# fastapi>=0.110
+# uvicorn>=0.29
+
+# NOTE: cupti python bindings are NOT required -- SOL-ExecBench is patched at
+# eval time to use CUDA-events timing instead (see official_all_matrix_v1.py:
+# patch_sol_repo).

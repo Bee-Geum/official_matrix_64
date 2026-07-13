@@ -1,0 +1,13 @@
+{
+  "benchmark": "pareval",
+  "task_id": "37_search_find_the_closest_number_to_pi",
+  "official_task": true,
+  "prompt_obj": {
+    "problem_type": "search",
+    "language": "cpp",
+    "name": "37_search_find_the_closest_number_to_pi",
+    "parallelism_model": "cuda",
+    "prompt": "/* Find the index of the value in the vector x that is closest to the math constant PI. Store the index in closestToPiIndex.\n   Use M_PI for the value of PI.\n   Use CUDA to search in parallel. The kernel is launched with at least N threads.\n   Example:\n\n   input: [9.18, 3.05, 7.24, 11.3, -166.49, 2.1]\n   output: 1\n*/\n__global__ void findClosestToPi(const double *x, size_t N, size_t *closestToPiIndex) {"
+  },
+  "prompt": "Benchmark: pareval\nOfficial task: 37_search_find_the_closest_number_to_pi\nReturn only source code, without Markdown fences or explanations.\n\nThis is a ParEval CUDA COMPLETION task. Below is the BEGINNING of a CUDA C++ file; its last line is a function signature ending with '{' and the body is missing. Your output will be appended VERBATIM right after it and compiled by ParEval's official C++ driver.\n\nOutput ONLY the code that completes that open function body, ending with its closing '}'. Do NOT repeat anything shown below: no #include, no struct/typedef, no 'using', no function signature, and no main(). Emit raw C++ only (no Markdown fences, no prose).\n\n--- code so far (context only; do NOT repeat it) ---\n/* Find the index of the value in the vector x that is closest to the math constant PI. Store the index in closestToPiIndex.\n   Use M_PI for the value of PI.\n   Use CUDA to search in parallel. The kernel is launched with at least N threads.\n   Example:\n\n   input: [9.18, 3.05, 7.24, 11.3, -166.49, 2.1]\n   output: 1\n*/\n__global__ void findClosestToPi(const double *x, size_t N, size_t *closestToPiIndex) {"
+}

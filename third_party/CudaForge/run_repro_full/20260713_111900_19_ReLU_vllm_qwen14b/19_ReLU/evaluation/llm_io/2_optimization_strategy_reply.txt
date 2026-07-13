@@ -1,0 +1,7 @@
+```json
+{
+  "bottleneck": "Long scoreboard stalls due to high branch resolving latency.",
+  "optimisation method": "Use predicated execution to reduce branch resolving overhead.",
+  "modification plan": "Modify kernel to use predicated execution for conditional writes."
+}
+```

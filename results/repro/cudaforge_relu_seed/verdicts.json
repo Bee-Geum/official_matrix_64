@@ -1,0 +1,19 @@
+[
+  {
+    "compiled": false,
+    "correct": false,
+    "latency_ms": null,
+    "ref_latency_ms": null,
+    "speedup": null,
+    "error": "timeout/crash",
+    "stage_s": {
+      "total": 240.12492836202728
+    },
+    "compile_attempts": 1,
+    "profile_runs": 0,
+    "correctness_trials_executed": 0,
+    "candidate": "third_party/CudaForge/run_repro/20260713_103822_19_ReLU_vllm_qwen14b/19_ReLU/code/kernel_20260713_103829.py",
+    "candidate_index": 0,
+    "eval_wall_s": 240.1249318770133
+  }
+]

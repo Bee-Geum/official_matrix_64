@@ -1,0 +1,6 @@
+{
+  "benchmark": "kernelbench",
+  "task_id": "7_Conv3d_ReLU_LeakyReLU_GELU_Sigmoid_BiasAdd",
+  "source_path": "/home/bi_geum/official_matrix_88/third_party/KernelBench/KernelBench/level2/7_Conv3d_ReLU_LeakyReLU_GELU_Sigmoid_BiasAdd.py",
+  "official_task": true
+}

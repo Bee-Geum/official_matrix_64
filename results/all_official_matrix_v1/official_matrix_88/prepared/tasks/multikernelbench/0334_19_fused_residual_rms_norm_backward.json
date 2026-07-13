@@ -1,0 +1,8 @@
+{
+  "benchmark": "multikernelbench",
+  "task_id": "19_fused_residual_rms_norm_backward",
+  "op": "19_fused_residual_rms_norm_backward",
+  "official_task": true,
+  "prompt_path": "",
+  "prompt": "Benchmark: multikernelbench\nOfficial task: 19_fused_residual_rms_norm_backward\nReturn only source code, without Markdown fences or explanations.\n\nGenerate a kernel response for the exact MultiKernelBench operator '19_fused_residual_rms_norm_backward'. Use CUDA C++ or Triton and do not replace the computation with eager PyTorch.\n\nMultiKernelBench operator: 19_fused_residual_rms_norm_backward\nOfficial dataset entry: {'category': 'npukernelbench_level2', 'source': 'NPUKernelBench'}\n"
+}

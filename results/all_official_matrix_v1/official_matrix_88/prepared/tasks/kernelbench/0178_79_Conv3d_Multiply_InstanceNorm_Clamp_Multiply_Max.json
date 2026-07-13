@@ -1,0 +1,6 @@
+{
+  "benchmark": "kernelbench",
+  "task_id": "79_Conv3d_Multiply_InstanceNorm_Clamp_Multiply_Max",
+  "source_path": "/home/bi_geum/official_matrix_88/third_party/KernelBench/KernelBench/level2/79_Conv3d_Multiply_InstanceNorm_Clamp_Multiply_Max.py",
+  "official_task": true
+}

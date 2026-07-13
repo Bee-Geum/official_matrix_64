@@ -1,0 +1,1 @@
+{"ref_path": "third_party/KernelBench/KernelBench/level1/19_ReLU.py", "cand_path": "results/repro/drkernel_relu_cand/round0_kernel.py", "trials": 5, "atol": 0.01, "rtol": 0.01, "warmup": 10, "timing_iters": 100, "input_seed_base": 2657153428, "out_path": "results/repro/drkernel_relu_oracle/verdict_000.json"}

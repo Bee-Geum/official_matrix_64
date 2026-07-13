@@ -1,0 +1,34 @@
+{
+  "benchmark": "multikernelbench",
+  "agent": "cudaforge",
+  "n_tasks": 1,
+  "candidate_task_count": 1,
+  "official_eval_task_count": 1,
+  "correct_task_count": 1,
+  "valid_official_cell": 1,
+  "all_tasks_official": 1,
+  "wall_s": 42.019203662872314,
+  "top_infrastructure_error": "",
+  "task_results": [
+    {
+      "benchmark": "multikernelbench",
+      "task_id": "elu",
+      "official_task": 1,
+      "generation_ok": 1,
+      "candidate_count": 1,
+      "official_attempted": 1,
+      "official_eval": 1,
+      "correct": 1,
+      "performance_available": 0,
+      "best_score": 0.0,
+      "infrastructure_error": "",
+      "candidate_error": "",
+      "generation_log": "/home/bi_geum/official_matrix_88/results/all_official_matrix_v1/official_matrix_88/cells/multikernelbench/cudaforge/000_elu/generation.log.txt",
+      "official_reports": [],
+      "agent": "cudaforge",
+      "cell_dir": "/home/bi_geum/official_matrix_88/results/all_official_matrix_v1/official_matrix_88/cells/multikernelbench/cudaforge",
+      "task_dir": "/home/bi_geum/official_matrix_88/results/all_official_matrix_v1/official_matrix_88/cells/multikernelbench/cudaforge/000_elu"
+    }
+  ],
+  "finished_at": "2026-07-13T15:10:29+0900"
+}

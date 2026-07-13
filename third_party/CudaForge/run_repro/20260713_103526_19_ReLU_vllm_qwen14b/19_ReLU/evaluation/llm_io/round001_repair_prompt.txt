@@ -1,0 +1,98 @@
+You are a senior CUDA-extension developer.
+Your job is to **FIX** the compilation or runtime errors in the Python script
+shown below.
+
+OUTPUT RULES (STRICT) ────────────────────────────────────────────────────────────────
+1. Inside the block, follow **exactly** this order:
+   1. Imports – `torch`, `torch.nn`, `load_inline`.
+   2. `source` – triple-quoted CUDA string(s) (kernel + host wrapper).
+   3. `cpp_src` – prototypes for *all* kernels you expose.
+   4. **One** `load_inline` call per kernel group.
+   5. `class ModelNew(nn.Module)` – mirrors original inputs/outputs but calls
+      your CUDA kernels.
+2. **Do NOT include** testing code, `if __name__ == "__main__"`, or extra prose.
+
+────────────────────────────────────────────────────────────────
+ERROR LOG
+────────────────────────────────────────────────────────────────
+Traceback (most recent call last):
+  File "/home/bi_geum/official_matrix_88/third_party/CudaForge/utils/compile_and_run.py", line 533, in compare_and_bench
+    test_out, _ = _run_once(test_model, inp, dev)
+  File "/home/bi_geum/official_matrix_88/third_party/CudaForge/utils/compile_and_run.py", line 131, in _run_once
+    out = model(*inp)
+  File "/home/bi_geum/anaconda3/envs/survey/lib/python3.10/site-packages/torch/nn/modules/module.py", line 1779, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+  File "/home/bi_geum/anaconda3/envs/survey/lib/python3.10/site-packages/torch/nn/modules/module.py", line 1790, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/home/bi_geum/official_matrix_88/third_party/CudaForge/run_repro/20260713_103526_19_ReLU_vllm_qwen14b/19_ReLU/code/kernel_20260713_103533.py", line 53, in forward
+    return self.relu.relu_cuda(x)
+torch.OutOfMemoryError: CUDA out of memory. Tried to allocate 6.00 GiB. GPU 0 has a total capacity of 94.97 GiB of which 779.25 MiB is free. Process 289241 has 81.52 GiB memory in use. Including non-PyTorch memory, this process has 12.66 GiB memory in use. Of the allocated memory 12.00 GiB is allocated by PyTorch, and 0 bytes is reserved by PyTorch but unallocated. If reserved but unallocated memory is large try setting PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True to avoid fragmentation.  See documentation for Memory Management  (https://docs.pytorch.org/docs/stable/notes/cuda.html#optimizing-memory-usage-with-pytorch-cuda-alloc-conf)
+
+────────────────────────────────────────────────────────────────
+OLD CODE (read-only)
+────────────────────────────────────────────────────────────────
+# <complete ModelNew code>
+import torch
+import torch.nn as nn
+from torch.utils.cpp_extension import load_inline
+
+# Define the custom CUDA kernel for ReLU activation
+source = """
+#include <torch/extension.h>
+#include <cuda_runtime.h>
+
+__global__ void relu_kernel(const float* x, float* out, int size) {
+    int idx = blockIdx.x * blockDim.x + threadIdx.x;
+    if (idx < size) {
+        out[idx] = max(0.0f, x[idx]);
+    }
+}
+
+torch::Tensor relu_cuda(torch::Tensor x) {
+    auto size = x.numel();
+    auto out = torch::zeros_like(x);
+
+    const int block_size = 256;
+    const int num_blocks = (size + block_size - 1) / block_size;
+
+    relu_kernel<<<num_blocks, block_size>>>(x.data_ptr<float>(), out.data_ptr<float>(), size);
+
+    return out;
+}
+"""
+
+cpp_src = (
+    "torch::Tensor relu_cuda(torch::Tensor x);"
+)
+
+# Compile the inline CUDA code for ReLU activation
+relu = load_inline(
+    name="relu",
+    cpp_sources=cpp_src,
+    cuda_sources=source,
+    functions=["relu_cuda"],
+    verbose=True,
+    extra_cflags=[""],
+    extra_ldflags=[""],
+)
+
+
+class ModelNew(nn.Module):
+    def __init__(self) -> None:
+        super().__init__()
+        self.relu = relu
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        return self.relu.relu_cuda(x)
+
+────────────────────────────────────────────────────────────────
+Main Critical Problem
+────────────────────────────────────────────────────────────────
+critical_issue: CUDA out of memory during execution.
+why_it_matters: Insufficient GPU memory leads to runtime failure.
+minimal_fix_hint: Reduce batch size or optimize memory usage.
+
+```python
+# <your corrected code>
+```
+# ==========================================================

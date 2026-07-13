@@ -1,0 +1,11 @@
+# regenerable caches / logs
+__pycache__/
+*.pyc
+*.pyo
+logs/
+# torch cpp_extension build caches
+results/repro/_extdir_*/
+**/build.ninja
+**/*.so
+# scratch
+*.tmp

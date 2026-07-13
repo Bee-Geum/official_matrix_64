@@ -1,0 +1,52 @@
+{
+  "benchmark": "sol_execbench",
+  "task_id": "custom_matmul",
+  "official_task": true,
+  "problem_dir": "/home/bi_geum/official_matrix_88/third_party/SOL-ExecBench/tests/sol_execbench/samples/custom_inputs_matmul",
+  "definition": {
+    "name": "custom_matmul",
+    "op_type": "matmul",
+    "axes": {
+      "M": {
+        "type": "var"
+      },
+      "K": {
+        "type": "var"
+      },
+      "N": {
+        "type": "var"
+      }
+    },
+    "custom_inputs_entrypoint": "generate_inputs",
+    "inputs": {
+      "A": {
+        "shape": [
+          "M",
+          "K"
+        ],
+        "dtype": "float32",
+        "description": "Left matrix"
+      },
+      "B": {
+        "shape": [
+          "K",
+          "N"
+        ],
+        "dtype": "float32",
+        "description": "Right matrix"
+      }
+    },
+    "outputs": {
+      "C": {
+        "shape": [
+          "M",
+          "N"
+        ],
+        "dtype": "float32",
+        "description": "Result matrix"
+      }
+    },
+    "reference": "import torch\n\ndef generate_inputs(axes_and_scalars, device):\n    M = axes_and_scalars['M']\n    K = axes_and_scalars['K']\n    N = axes_and_scalars['N']\n    A = torch.randn(M, K, dtype=torch.float32, device=device) / K ** 0.5\n    B = torch.randn(K, N, dtype=torch.float32, device=device) / K ** 0.5\n    return {'A': A, 'B': B}\n\n@torch.no_grad()\ndef run(A, B):\n    return A @ B\n"
+  },
+  "prompt": "Benchmark: sol_execbench\nOfficial task: custom_matmul\nReturn only source code, without Markdown fences or explanations.\n\nImplement the SOL-ExecBench Definition below. Prefer a Python or Triton module with a callable `run`; CUDA C++ is also accepted. The adapter will package the source into the official Solution schema.\n\nDefinition:\n{\n  \"name\": \"custom_matmul\",\n  \"op_type\": \"matmul\",\n  \"axes\": {\n    \"M\": {\n      \"type\": \"var\"\n    },\n    \"K\": {\n      \"type\": \"var\"\n    },\n    \"N\": {\n      \"type\": \"var\"\n    }\n  },\n  \"custom_inputs_entrypoint\": \"generate_inputs\",\n  \"inputs\": {\n    \"A\": {\n      \"shape\": [\n        \"M\",\n        \"K\"\n      ],\n      \"dtype\": \"float32\",\n      \"description\": \"Left matrix\"\n    },\n    \"B\": {\n      \"shape\": [\n        \"K\",\n        \"N\"\n      ],\n      \"dtype\": \"float32\",\n      \"description\": \"Right matrix\"\n    }\n  },\n  \"outputs\": {\n    \"C\": {\n      \"shape\": [\n        \"M\",\n        \"N\"\n      ],\n      \"dtype\": \"float32\",\n      \"description\": \"Result matrix\"\n    }\n  },\n  \"reference\": \"import torch\\n\\ndef generate_inputs(axes_and_scalars, device):\\n    M = axes_and_scalars['M']\\n    K = axes_and_scalars['K']\\n    N = axes_and_scalars['N']\\n    A = torch.randn(M, K, dtype=torch.float32, device=device) / K ** 0.5\\n    B = torch.randn(K, N, dtype=torch.float32, device=device) / K ** 0.5\\n    return {'A': A, 'B': B}\\n\\n@torch.no_grad()\\ndef run(A, B):\\n    return A @ B\\n\"\n}\n\nFirst workload:\n{\"axes\": {\"M\": 128, \"K\": 256, \"N\": 128}, \"inputs\": {\"A\": {\"type\": \"custom\"}, \"B\": {\"type\": \"custom\"}}, \"uuid\": \"matmul-001\"}"
+}

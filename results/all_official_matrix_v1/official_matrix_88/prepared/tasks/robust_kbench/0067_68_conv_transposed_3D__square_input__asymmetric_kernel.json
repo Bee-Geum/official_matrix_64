@@ -1,0 +1,6 @@
+{
+  "benchmark": "robust_kbench",
+  "task_id": "68_conv_transposed_3D__square_input__asymmetric_kernel",
+  "source_path": "/home/bi_geum/official_matrix_88/third_party/KernelBench/KernelBench/level1/68_conv_transposed_3D__square_input__asymmetric_kernel.py",
+  "official_task": true
+}

@@ -1,0 +1,26 @@
+{
+  "KernelBench": {
+    "url": "https://github.com/ScalingIntelligence/KernelBench",
+    "sha": "423217d9fda91e0c2d67e4a43bf62f96f6d104f1"
+  },
+  "robust-kbench": {
+    "url": "https://github.com/SakanaAI/robust-kbench",
+    "sha": "078f5bab29934a822268d59a4e707d449abf9b4e"
+  },
+  "MultiKernelBench": {
+    "url": "https://github.com/wzzll123/MultiKernelBench",
+    "sha": "460a972c9be7ce18035984321d38b910e27df95f"
+  },
+  "TritonBench": {
+    "url": "https://github.com/thunlp/TritonBench",
+    "sha": "603e28a5050e8c268f6883a69709d477a272d49a"
+  },
+  "BackendBench": {
+    "url": "https://github.com/meta-pytorch/BackendBench",
+    "sha": "2a8d7e19e2c13c789ff2dceb44883ea8ea04dab4"
+  },
+  "ParEval": {
+    "url": "https://github.com/parallelcodefoundry/ParEval",
+    "sha": "9e2a9afafa2c9686fdd3310defde0f9a8c3731c1"
+  }
+}

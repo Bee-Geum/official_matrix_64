@@ -1,0 +1,29 @@
+[
+  {
+    "task": "third_party/KernelBench/KernelBench/level1/19_ReLU.py",
+    "task_dir": "/home/bi_geum/official_matrix_88/results/repro/autokernel_relu_oracle",
+    "n_candidates": 1,
+    "n_compiled": 1,
+    "n_correct": 1,
+    "runnable_rate": 1.0,
+    "correct_rate": 1.0,
+    "pass@1": 1.0,
+    "pass@k_analytic": 1.0,
+    "fast_1": 1.0,
+    "best_score": 1.008107594985684,
+    "best_runnable": true,
+    "geomean_speedup": 1.008107594985684,
+    "median_speedup": 1.008107594985684,
+    "compile_attempts": 1,
+    "correctness_trials_executed": 5,
+    "profile_runs": 220,
+    "first_compiled_candidate_index": 0,
+    "first_correct_candidate_index": 0,
+    "first_faster_candidate_index": 0,
+    "unified_eval_wall_s": 39.93952706299024,
+    "compile_s": 0.0009565509972162545,
+    "correctness_s": 27.407121419964824,
+    "benchmark_s": 1.944667706033215,
+    "model_init_s": 0.00011937000090256333
+  }
+]

@@ -1,0 +1,13 @@
+{
+  "benchmark": "pareval",
+  "task_id": "45_sparse_la_sparse_solve",
+  "official_task": true,
+  "prompt_obj": {
+    "problem_type": "sparse_la",
+    "language": "cpp",
+    "name": "45_sparse_la_sparse_solve",
+    "parallelism_model": "cuda",
+    "prompt": "struct COOElement {\n   size_t row, column;\n   double value;\n};\n\n/* Solve the sparse linear system Ax=b for x.\n   A is a sparse NxN matrix in COO format with sizeA elements. x and b are dense vectors with N elements.\n   Use CUDA to compute in parallel. The kernel is launched with at least sizeA threads.\n   Example:\n   \n   input: A=[{0,0,1}, {0,1,1}, {1,1,-2}] b=[1,4]\n   output: x=[3,-2]\n*/\n__global__ void solveLinearSystem(const COOElement *A, size_t sizeA, const double *b, double *x, size_t N) {"
+  },
+  "prompt": "Benchmark: pareval\nOfficial task: 45_sparse_la_sparse_solve\nReturn only source code, without Markdown fences or explanations.\n\nThis is a ParEval CUDA COMPLETION task. Below is the BEGINNING of a CUDA C++ file; its last line is a function signature ending with '{' and the body is missing. Your output will be appended VERBATIM right after it and compiled by ParEval's official C++ driver.\n\nOutput ONLY the code that completes that open function body, ending with its closing '}'. Do NOT repeat anything shown below: no #include, no struct/typedef, no 'using', no function signature, and no main(). Emit raw C++ only (no Markdown fences, no prose).\n\n--- code so far (context only; do NOT repeat it) ---\nstruct COOElement {\n   size_t row, column;\n   double value;\n};\n\n/* Solve the sparse linear system Ax=b for x.\n   A is a sparse NxN matrix in COO format with sizeA elements. x and b are dense vectors with N elements.\n   Use CUDA to compute in parallel. The kernel is launched with at least sizeA threads.\n   Example:\n   \n   input: A=[{0,0,1}, {0,1,1}, {1,1,-2}] b=[1,4]\n   output: x=[3,-2]\n*/\n__global__ void solveLinearSystem(const COOElement *A, size_t sizeA, const double *b, double *x, size_t N) {"
+}

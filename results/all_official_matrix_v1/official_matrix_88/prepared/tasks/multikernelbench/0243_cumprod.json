@@ -1,0 +1,8 @@
+{
+  "benchmark": "multikernelbench",
+  "task_id": "cumprod",
+  "op": "cumprod",
+  "official_task": true,
+  "prompt_path": "/home/bi_geum/official_matrix_88/third_party/MultiKernelBench/reference/math/cumprod.py",
+  "prompt": "Benchmark: multikernelbench\nOfficial task: cumprod\nReturn only source code, without Markdown fences or explanations.\n\nGenerate a kernel response for the exact MultiKernelBench operator 'cumprod'. Use CUDA C++ or Triton and do not replace the computation with eager PyTorch.\n\nimport torch\nimport torch.nn as nn\n\nclass Model(nn.Module):\n    \"\"\"\n    A model that performs a cumulative product operation along a specified dimension.\n\n    Parameters:\n        dim (int): The dimension along which to perform the cumulative product operation.\n    \"\"\"\n\n    def __init__(self, dim):\n        \"\"\"\n        Initialize the CumulativeProductModel.\n\n        Args:\n            dim (int): The dimension along which to perform the cumulative product.\n        \"\"\"\n        super(Model, self).__init__()\n        self.dim = dim\n\n    def forward(self, x):\n        \"\"\"\n        Forward pass, computing the cumulative product along the specified dimension.\n\n        Args:\n            x (torch.Tensor): Input tensor of shape (batch_size, *input_shape).\n\n        Returns:\n            torch.Tensor: Tensor of the same shape as `x` after applying cumulative product along `dim`.\n        \"\"\"\n        return torch.cumprod(x, dim=self.dim)\n\n# Define input dimensions and parameters\nbatch_size = 32768\ninput_shape = (32768,)\ndim = 1\n\ndef get_inputs():\n    return [torch.rand(batch_size, *input_shape)]\n\ndef get_init_inputs():\n    return [dim]\n"
+}

@@ -1,0 +1,7 @@
+```json
+{
+  "bottleneck": "Long scoreboard stalls due to branch resolving.",
+  "optimisation method": "Optimize branch prediction by ensuring uniform branch targets.",
+  "modification plan": "Refactor kernel to minimize conditional branches."
+}
+```

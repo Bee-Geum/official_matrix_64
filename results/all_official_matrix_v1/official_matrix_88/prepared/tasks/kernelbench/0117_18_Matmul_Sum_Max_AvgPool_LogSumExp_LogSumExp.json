@@ -1,0 +1,6 @@
+{
+  "benchmark": "kernelbench",
+  "task_id": "18_Matmul_Sum_Max_AvgPool_LogSumExp_LogSumExp",
+  "source_path": "/home/bi_geum/official_matrix_88/third_party/KernelBench/KernelBench/level2/18_Matmul_Sum_Max_AvgPool_LogSumExp_LogSumExp.py",
+  "official_task": true
+}

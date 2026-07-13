@@ -1,0 +1,8 @@
+$ /home/bi_geum/anaconda3/envs/survey/bin/python3 /home/bi_geum/official_matrix_88/third_party/TritonBench/performance_metrics/perf_T/run_bench/write_file.py --input_folder_path /home/bi_geum/official_matrix_88/results/all_official_matrix_v1/official_matrix_88/cells/tritonbench_t/cudaforge/000_Adam/official_eval/candidate_000/stage/target --results_path /home/bi_geum/official_matrix_88/results/all_official_matrix_v1/official_matrix_88/cells/tritonbench_t/cudaforge/000_Adam/official_eval/candidate_000/perf_results
+cwd=/home/bi_geum/official_matrix_88/third_party/TritonBench/performance_metrics/perf_T
+returncode=0
+wall_s=0.020096
+----- STDOUT -----
+
+----- STDERR -----
+

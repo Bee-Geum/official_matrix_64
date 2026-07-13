@@ -1,0 +1,29 @@
+[
+  {
+    "task": "third_party/KernelBench/KernelBench/level1/19_ReLU.py",
+    "task_dir": "/home/bi_geum/official_matrix_88/results/repro/autotriton_relu_oracle",
+    "n_candidates": 1,
+    "n_compiled": 1,
+    "n_correct": 1,
+    "runnable_rate": 1.0,
+    "correct_rate": 1.0,
+    "pass@1": 1.0,
+    "pass@k_analytic": 1.0,
+    "fast_1": 0.0,
+    "best_score": 0.9897301270627741,
+    "best_runnable": true,
+    "geomean_speedup": 0.9897301270627741,
+    "median_speedup": 0.9897301270627741,
+    "compile_attempts": 1,
+    "correctness_trials_executed": 5,
+    "profile_runs": 220,
+    "first_compiled_candidate_index": 0,
+    "first_correct_candidate_index": 0,
+    "first_faster_candidate_index": null,
+    "unified_eval_wall_s": 43.94612778298324,
+    "compile_s": 0.1089457199559547,
+    "correctness_s": 28.897779304010328,
+    "benchmark_s": 2.339910351962317,
+    "model_init_s": 0.00011732400162145495
+  }
+]

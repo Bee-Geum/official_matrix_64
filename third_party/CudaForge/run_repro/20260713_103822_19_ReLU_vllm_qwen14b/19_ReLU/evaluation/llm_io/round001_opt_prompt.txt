@@ -1,0 +1,109 @@
+# Target GPU
+GPU Name: Quadro RTX 6000
+Architecture: Turing
+Details:
+• GPU Memory: 24GB GDDR6 with ECC
+• Memory Bandwidth: 624 GB/s
+• FP32 TFLOPS: 16.3
+• TF32 Tensor Core TFLOPS: — (Turing does not support TF32)
+• FP16 Tensor Core TFLOPS: 261 (522 with sparsity)*
+• FP8 Tensor Core TFLOPS: — (Not supported for FP8)
+• INT8 Tensor Core TOPS: 261 (522 with sparsity)*
+• Register File Size: 64K 32-bit registers per SM
+• Maximum number of registers per thread: 255
+• Maximum number of thread blocks per SM: 32
+• Shared memory capacity per SM: 64 KB
+• Maximum shared memory per thread block: 64 KB
+
+# ----------  Previously generated kernels ----------
+(None)
+
+
+You are a CUDA-kernel optimization specialist.
+
+Analyze the provided architecture and kernel history and **strictly apply the following STRATEGY** to produce an improved CUDA kernel.
+
+[ARCHITECTURE FILE]
+```python
+# <complete ModelNew code>
+import torch
+import torch.nn as nn
+from torch.utils.cpp_extension import load_inline
+
+# Define the custom CUDA kernel for ReLU activation
+source = """
+#include <torch/extension.h>
+#include <cuda_runtime.h>
+
+__global__ void relu_kernel(const float* x, float* out, int size) {
+    int idx = blockIdx.x * blockDim.x + threadIdx.x;
+    if (idx < size) {
+        out[idx] = max(0.0f, x[idx]);
+    }
+}
+
+torch::Tensor relu_cuda(torch::Tensor x) {
+    auto size = x.numel();
+    auto out = torch::zeros_like(x);
+
+    const int block_size = 256;
+    const int num_blocks = (size + block_size - 1) / block_size;
+
+    relu_kernel<<<num_blocks, block_size>>>(x.data_ptr<float>(), out.data_ptr<float>(), size);
+
+    return out;
+}
+"""
+
+cpp_src = (
+    "torch::Tensor relu_cuda(torch::Tensor x);"
+)
+
+# Compile the inline CUDA code for ReLU activation
+relu = load_inline(
+    name="relu",
+    cpp_sources=cpp_src,
+    cuda_sources=source,
+    functions=["relu_cuda"],
+    verbose=True,
+    extra_cflags=[""],
+    extra_ldflags=[""],
+)
+
+
+class ModelNew(nn.Module):
+    def __init__(self) -> None:
+        super().__init__()
+        self.relu = relu
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        return self.relu.relu_cuda(x)
+```
+
+[optimization instructions]
+{
+  "bottleneck": "Long scoreboard stalls due to branch resolving.",
+  "optimisation method": "Optimize branch prediction by ensuring uniform branch targets.",
+  "modification plan": "Refactor kernel to minimize conditional branches."
+}
+
+GOAL
+────
+- Improve latency and throughput on the target GPU.
+- Maintain correctness within atol=1e-4 or rtol=1e-4.
+- Preserve the public Python API (same inputs/outputs, shapes, dtypes).
+
+OUTPUT RULES (STRICT) ────────────────────────────────────────────────
+1. Inside the block, follow **exactly** this order:
+   1. Imports – `torch`, `torch.nn`, `load_inline`.
+   2. `source` – triple-quoted CUDA string(s) (kernel + host wrapper).
+   3. `cpp_src` – prototypes for *all* kernels you expose.
+   4. **One** `load_inline` call per kernel group.
+   5. `class ModelNew(nn.Module)` – mirrors original inputs/outputs but calls
+      your CUDA kernels.
+2. **Do NOT include** testing code, `if __name__ == "__main__"`, or extra prose.
+
+```python
+# <your corrected code>
+```
+# ==========================================================

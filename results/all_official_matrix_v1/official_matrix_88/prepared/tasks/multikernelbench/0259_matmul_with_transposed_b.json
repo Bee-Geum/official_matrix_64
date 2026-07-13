@@ -1,0 +1,8 @@
+{
+  "benchmark": "multikernelbench",
+  "task_id": "matmul_with_transposed_b",
+  "op": "matmul_with_transposed_b",
+  "official_task": true,
+  "prompt_path": "/home/bi_geum/official_matrix_88/third_party/MultiKernelBench/reference/matmul/matmul_with_transposed_b.py",
+  "prompt": "Benchmark: multikernelbench\nOfficial task: matmul_with_transposed_b\nReturn only source code, without Markdown fences or explanations.\n\nGenerate a kernel response for the exact MultiKernelBench operator 'matmul_with_transposed_b'. Use CUDA C++ or Triton and do not replace the computation with eager PyTorch.\n\nimport torch\nimport torch.nn as nn\n\nclass Model(nn.Module):\n    \"\"\"\n    Simple model that performs a single matrix multiplication (C = A * B)\n    \"\"\"\n    def __init__(self):\n        super(Model, self).__init__()\n    \n    def forward(self, A: torch.Tensor, B: torch.Tensor) -> torch.Tensor:\n        \"\"\"\n        Performs matrix multiplication.\n\n        Args:\n            A: Input tensor of shape (M, K).\n            B: Input tensor of shape (K, N).\n\n        Returns:\n            Output tensor of shape (M, N).\n        \"\"\"\n        return torch.matmul(A, B.T)\n\nM = 1024 * 2\nK = 4096 * 2\nN = 2048 * 2\n\ndef get_inputs():\n    A = torch.rand(M, K)\n    B = torch.rand(N, K)\n    return [A, B]\n\ndef get_init_inputs():\n    return []  # No special initialization inputs needed"
+}

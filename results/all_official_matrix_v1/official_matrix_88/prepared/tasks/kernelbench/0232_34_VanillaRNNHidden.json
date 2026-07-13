@@ -1,0 +1,6 @@
+{
+  "benchmark": "kernelbench",
+  "task_id": "34_VanillaRNNHidden",
+  "source_path": "/home/bi_geum/official_matrix_88/third_party/KernelBench/KernelBench/level3/34_VanillaRNNHidden.py",
+  "official_task": true
+}

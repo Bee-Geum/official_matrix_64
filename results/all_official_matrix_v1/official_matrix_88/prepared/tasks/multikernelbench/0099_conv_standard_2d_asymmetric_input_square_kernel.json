@@ -1,0 +1,8 @@
+{
+  "benchmark": "multikernelbench",
+  "task_id": "conv_standard_2d_asymmetric_input_square_kernel",
+  "op": "conv_standard_2d_asymmetric_input_square_kernel",
+  "official_task": true,
+  "prompt_path": "",
+  "prompt": "Benchmark: multikernelbench\nOfficial task: conv_standard_2d_asymmetric_input_square_kernel\nReturn only source code, without Markdown fences or explanations.\n\nGenerate a kernel response for the exact MultiKernelBench operator 'conv_standard_2d_asymmetric_input_square_kernel'. Use CUDA C++ or Triton and do not replace the computation with eager PyTorch.\n\nMultiKernelBench operator: conv_standard_2d_asymmetric_input_square_kernel\nOfficial dataset entry: {'category': 'convolution'}\n"
+}

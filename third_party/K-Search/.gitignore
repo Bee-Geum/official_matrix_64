@@ -1,0 +1,7 @@
+__pycache__/
+logs/
+.ksearch-output*/
+wandb/
+openevolve_output/
+*.log
+.DS_Store

@@ -1,0 +1,8 @@
+{
+  "benchmark": "multikernelbench",
+  "task_id": "linear_attention",
+  "op": "linear_attention",
+  "official_task": true,
+  "prompt_path": "/home/bi_geum/official_matrix_88/third_party/MultiKernelBench/reference/attention/linear_attention.py",
+  "prompt": "Benchmark: multikernelbench\nOfficial task: linear_attention\nReturn only source code, without Markdown fences or explanations.\n\nGenerate a kernel response for the exact MultiKernelBench operator 'linear_attention'. Use CUDA C++ or Triton and do not replace the computation with eager PyTorch.\n\nimport torch\nimport torch.nn as nn\n\nclass Model(nn.Module):\n    \"\"\"\n    Linear attention approximation using kernel trick (Φ(Q)Φ(K)^T V).\n    \"\"\"\n    def __init__(self):\n        super().__init__()\n\n    def forward(self, Q, K, V):\n        Q_ = torch.relu(Q) + 1e-6\n        K_ = torch.relu(K) + 1e-6\n        KV = torch.einsum('bkd,bkv->bdv', K_, V)\n        out = torch.einsum('bqd,bdv->bqv', Q_, KV)\n        return out\n\nbatch_size = 8\nseq_len = 512\nd_model = 1024\n\ndef get_inputs():\n    Q = torch.rand(batch_size, seq_len, d_model)\n    K = torch.rand(batch_size, seq_len, d_model)\n    V = torch.rand(batch_size, seq_len, d_model)\n    return [Q, K, V]\n\ndef get_init_inputs():\n    return []\n"
+}

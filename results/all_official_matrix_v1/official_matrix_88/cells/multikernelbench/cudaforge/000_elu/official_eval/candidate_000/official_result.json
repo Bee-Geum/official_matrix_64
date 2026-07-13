@@ -1,0 +1,13 @@
+{
+  "compiled": true,
+  "correctness": true,
+  "performance": {
+    "mean": 8.85,
+    "std": 0.00597,
+    "min": 8.84,
+    "max": 8.87,
+    "num_trials": 100
+  },
+  "hardware": "NVIDIA RTX PRO 6000 Blackwell Workstation Edition",
+  "cheating": false
+}

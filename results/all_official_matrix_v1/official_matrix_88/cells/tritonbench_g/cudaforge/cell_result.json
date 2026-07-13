@@ -1,0 +1,34 @@
+{
+  "benchmark": "tritonbench_g",
+  "agent": "cudaforge",
+  "n_tasks": 1,
+  "candidate_task_count": 1,
+  "official_eval_task_count": 1,
+  "correct_task_count": 1,
+  "valid_official_cell": 1,
+  "all_tasks_official": 1,
+  "wall_s": 43.83959102630615,
+  "top_infrastructure_error": "",
+  "task_results": [
+    {
+      "benchmark": "tritonbench_g",
+      "task_id": "adam_update_triton",
+      "official_task": 1,
+      "generation_ok": 1,
+      "candidate_count": 1,
+      "official_attempted": 1,
+      "official_eval": 1,
+      "correct": 1,
+      "performance_available": 1,
+      "best_score": 0.88,
+      "infrastructure_error": "",
+      "candidate_error": "",
+      "generation_log": "/home/bi_geum/official_matrix_88/results/all_official_matrix_v1/official_matrix_88/cells/tritonbench_g/cudaforge/000_adam_update_triton/generation.log.txt",
+      "official_reports": [],
+      "agent": "cudaforge",
+      "cell_dir": "/home/bi_geum/official_matrix_88/results/all_official_matrix_v1/official_matrix_88/cells/tritonbench_g/cudaforge",
+      "task_dir": "/home/bi_geum/official_matrix_88/results/all_official_matrix_v1/official_matrix_88/cells/tritonbench_g/cudaforge/000_adam_update_triton"
+    }
+  ],
+  "finished_at": "2026-07-13T15:12:28+0900"
+}

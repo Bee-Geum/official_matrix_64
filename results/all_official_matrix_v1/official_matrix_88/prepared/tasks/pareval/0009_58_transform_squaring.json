@@ -1,0 +1,13 @@
+{
+  "benchmark": "pareval",
+  "task_id": "58_transform_squaring",
+  "official_task": true,
+  "prompt_obj": {
+    "problem_type": "transform",
+    "language": "cpp",
+    "name": "58_transform_squaring",
+    "parallelism_model": "cuda",
+    "prompt": "/* Replace every element of x with the square of its value.\n   Use CUDA to compute in parallel. The kernel is launched with at least as many threads as values in x.\n   Example:\n\n   input: [5, 1, 2, -4, 8]\n   output: [25, 1, 4, 16, 64]\n*/\n__global__ void squareEach(int *x, size_t N) {"
+  },
+  "prompt": "Benchmark: pareval\nOfficial task: 58_transform_squaring\nReturn only source code, without Markdown fences or explanations.\n\nThis is a ParEval CUDA COMPLETION task. Below is the BEGINNING of a CUDA C++ file; its last line is a function signature ending with '{' and the body is missing. Your output will be appended VERBATIM right after it and compiled by ParEval's official C++ driver.\n\nOutput ONLY the code that completes that open function body, ending with its closing '}'. Do NOT repeat anything shown below: no #include, no struct/typedef, no 'using', no function signature, and no main(). Emit raw C++ only (no Markdown fences, no prose).\n\n--- code so far (context only; do NOT repeat it) ---\n/* Replace every element of x with the square of its value.\n   Use CUDA to compute in parallel. The kernel is launched with at least as many threads as values in x.\n   Example:\n\n   input: [5, 1, 2, -4, 8]\n   output: [25, 1, 4, 16, 64]\n*/\n__global__ void squareEach(int *x, size_t N) {"
+}

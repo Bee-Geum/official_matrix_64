@@ -1,0 +1,140 @@
+
+# Target GPU
+GPU Name: Quadro RTX 6000
+Architecture: Turing
+Details:
+• GPU Memory: 24GB GDDR6 with ECC
+• Memory Bandwidth: 624 GB/s
+• FP32 TFLOPS: 16.3
+• TF32 Tensor Core TFLOPS: — (Turing does not support TF32)
+• FP16 Tensor Core TFLOPS: 261 (522 with sparsity)*
+• FP8 Tensor Core TFLOPS: — (Not supported for FP8)
+• INT8 Tensor Core TOPS: 261 (522 with sparsity)*
+• Register File Size: 64K 32-bit registers per SM
+• Maximum number of registers per thread: 255
+• Maximum number of thread blocks per SM: 32
+• Shared memory capacity per SM: 64 KB
+• Maximum shared memory per thread block: 64 KB
+
+
+# Pytorch Reference
+import torch
+import torch.nn as nn
+
+class Model(nn.Module):
+    """
+    Simple model that performs a ReLU activation.
+    """
+    def __init__(self):
+        super(Model, self).__init__()
+    
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        """
+        Applies ReLU activation to the input tensor.
+
+        Args:
+            x (torch.Tensor): Input tensor of any shape.
+
+        Returns:
+            torch.Tensor: Output tensor with ReLU applied, same shape as input.
+        """
+        return torch.relu(x)
+
+batch_size = 4096
+dim = 393216
+
+def get_inputs():
+    x = torch.rand(batch_size, dim)
+    return [x]
+
+def get_init_inputs():
+    return []  # No special initialization inputs needed
+
+
+# CUDA candidate
+```python
+# <complete ModelNew code>
+import torch
+import torch.nn as nn
+from torch.utils.cpp_extension import load_inline
+
+# Define the custom CUDA kernel for ReLU activation with optimized branch prediction
+source = """
+#include <torch/extension.h>
+#include <cuda_runtime.h>
+
+__global__ void relu_optimized_kernel(const float* x, float* out, int size) {
+    int idx = blockIdx.x * blockDim.x + threadIdx.x;
+    if (idx < size) {
+        float value = x[idx];
+        out[idx] = value * (value > 0.0f);
+    }
+}
+
+torch::Tensor relu_optimized_cuda(torch::Tensor x) {
+    auto size = x.numel();
+    auto out = torch::zeros_like(x);
+
+    const int block_size = 256;
+    const int num_blocks = (size + block_size - 1) / block_size;
+
+    relu_optimized_kernel<<<num_blocks, block_size>>>(x.data_ptr<float>(), out.data_ptr<float>(), size);
+
+    return out;
+}
+"""
+
+cpp_src = (
+    "torch::Tensor relu_optimized_cuda(torch::Tensor x);"
+)
+
+# Compile the inline CUDA code for optimized ReLU activation
+relu_optimized = load_inline(
+    name="relu_optimized",
+    cpp_sources=cpp_src,
+    cuda_sources=source,
+    functions=["relu_optimized_cuda"],
+    verbose=True,
+    extra_cflags=[""],
+    extra_ldflags=[""],
+)
+
+
+class ModelNew(nn.Module):
+    def __init__(self) -> None:
+        super().__init__()
+        self.relu = relu_optimized
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        return self.relu.relu_optimized_cuda(x)
+```
+
+# Nsight Compute metrics (verbatim)
+{
+  "relu_kernel(const float *, float *, int)": {
+    "sm__cycles_active.avg": 13664227.12,
+    "sm__warps_active.avg.pct_of_peak_sustained_active": 78.73,
+    "launch__occupancy_limit_blocks": 24,
+    "launch__occupancy_limit_registers": 16,
+    "launch__occupancy_limit_shared_mem": 16,
+    "launch__registers_per_thread": 16,
+    "sm__inst_executed.sum": 855638016,
+    "sm__inst_executed_pipe_tensor.avg.pct_of_peak_sustained_active": 0,
+    "dram__bytes_read.sum": 6442569984,
+    "dram__bytes_write.sum": 6366133248,
+    "dram__throughput.avg.pct_of_peak_sustained_elapsed": 86.93,
+    "dram__bytes.sum.per_second": 1485735407000.48,
+    "gpu__dram_throughput.avg.pct_of_peak_sustained_elapsed": 86.93,
+    "l1tex__t_sector_hit_rate.pct": 0,
+    "l1tex__throughput.avg.pct_of_peak_sustained_active": 17.84,
+    "lts__t_sector_hit_rate.pct": 0.0,
+    "lts__throughput.avg.pct_of_peak_sustained_active": 22.66,
+    "smsp__warp_issue_stalled_short_scoreboard_per_warp_active.pct": 3.24,
+    "smsp__warp_issue_stalled_long_scoreboard_per_warp_active.pct": 90.45,
+    "smsp__warp_issue_stalled_barrier_per_warp_active.pct": 0,
+    "smsp__warp_issue_stalled_branch_resolving_per_warp_active.pct": 0.42,
+    "smsp__sass_average_branch_targets_threads_uniform.pct": 0
+  }
+}
+
+Read everything and follow the Rules exactly. Return the JSON in the specified format.

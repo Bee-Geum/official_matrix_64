@@ -1,0 +1,7 @@
+```json
+{
+  "bottleneck": "Long scoreboard stalls due to branch resolution.",
+  "optimisation method": "Optimize branch prediction by using conditional moves instead of branches.",
+  "modification plan": "Replace `if` statement with `__syncthreads()` and conditional moves."
+}
+```

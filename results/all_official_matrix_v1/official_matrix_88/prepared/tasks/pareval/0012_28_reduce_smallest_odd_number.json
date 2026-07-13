@@ -1,0 +1,13 @@
+{
+  "benchmark": "pareval",
+  "task_id": "28_reduce_smallest_odd_number",
+  "official_task": true,
+  "prompt_obj": {
+    "problem_type": "reduce",
+    "language": "cpp",
+    "name": "28_reduce_smallest_odd_number",
+    "parallelism_model": "cuda",
+    "prompt": "/* Find the value of the smallest odd number in the vector x. Store it in smallest.\n   Use CUDA to compute in parallel. The kernel is launched with the same number of threads as elements in x.\n   Examples:\n\n   input: [7, 9, 5, 2, 8, 16, 4, 1]\n   output: 1\n\n   input: [8, 36, 7, 2, 11]\n   output: 7\n*/\n__global__ void smallestOdd(const int *x, size_t N, int *smallest) {"
+  },
+  "prompt": "Benchmark: pareval\nOfficial task: 28_reduce_smallest_odd_number\nReturn only source code, without Markdown fences or explanations.\n\nThis is a ParEval CUDA COMPLETION task. Below is the BEGINNING of a CUDA C++ file; its last line is a function signature ending with '{' and the body is missing. Your output will be appended VERBATIM right after it and compiled by ParEval's official C++ driver.\n\nOutput ONLY the code that completes that open function body, ending with its closing '}'. Do NOT repeat anything shown below: no #include, no struct/typedef, no 'using', no function signature, and no main(). Emit raw C++ only (no Markdown fences, no prose).\n\n--- code so far (context only; do NOT repeat it) ---\n/* Find the value of the smallest odd number in the vector x. Store it in smallest.\n   Use CUDA to compute in parallel. The kernel is launched with the same number of threads as elements in x.\n   Examples:\n\n   input: [7, 9, 5, 2, 8, 16, 4, 1]\n   output: 1\n\n   input: [8, 36, 7, 2, 11]\n   output: 7\n*/\n__global__ void smallestOdd(const int *x, size_t N, int *smallest) {"
+}

@@ -1,0 +1,48 @@
+{
+  "task": "KernelBench/level1/19_ReLU.py",
+  "base_kernel": "kernel_20260713_135241",
+  "base_score": 0.5311919272411829,
+  "best_kernel": "kernel_20260713_135241",
+  "best_score": 0.5311919272411829,
+  "kernels": {
+    "kernel_20260713_135146": {
+      "parent": null,
+      "kernel_name": "kernel_20260713_135146",
+      "kernel_path": "/home/bi_geum/official_matrix_88/third_party/KernelMem/run_repro/20260713_135134_19_ReLU_vllm_qwen14b/19_ReLU/code/kernel_20260713_135146.py",
+      "speedup": null,
+      "runnable": false,
+      "ncu_passed": false,
+      "phase": "seed",
+      "round": 0,
+      "strategy": null,
+      "method_matched": false,
+      "timestamp": "2026-07-13T13:52:25.791107"
+    },
+    "kernel_20260713_135241": {
+      "parent": "kernel_20260713_135146",
+      "kernel_name": "kernel_20260713_135241",
+      "kernel_path": "/home/bi_geum/official_matrix_88/third_party/KernelMem/run_repro/20260713_135134_19_ReLU_vllm_qwen14b/19_ReLU/code/kernel_20260713_135241.py",
+      "speedup": 0.5311919272411829,
+      "runnable": true,
+      "ncu_passed": false,
+      "phase": "repair",
+      "round": 1,
+      "strategy": {
+        "critical_issue": "Compiler command-line option error",
+        "evidence": [
+          "x86_64-conda-linux-gnu-c++: error: unrecognized debug output level 'encode=arch=compute_80,code=sm_80'",
+          "x86_64-conda-linux-gnu-c++: error: unrecognized command-line option '--expt-relaxed-constexpr'"
+        ],
+        "root_cause": "Compiler does not recognize certain options, such as 'encode=arch=compute_80,code=sm_80' and '--expt-relaxed-constexpr'.",
+        "trigger_condition": "Building the extension with unrecognized compiler options.",
+        "must_hold_invariants": [],
+        "minimal_fix": "Remove the unrecognized options from extra_cflags.",
+        "patch_anchor": "extra_cflags=[",
+        "confidence": "high"
+      },
+      "method_matched": false,
+      "timestamp": "2026-07-13T13:53:17.911003"
+    }
+  },
+  "timestamp": "2026-07-13T13:53:20.443272"
+}

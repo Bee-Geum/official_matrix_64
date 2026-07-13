@@ -1,0 +1,6 @@
+{
+  "benchmark": "robust_kbench",
+  "task_id": "54_Conv2d_Multiply_LeakyReLU_GELU",
+  "source_path": "/home/bi_geum/official_matrix_88/third_party/KernelBench/KernelBench/level2/54_Conv2d_Multiply_LeakyReLU_GELU.py",
+  "official_task": true
+}

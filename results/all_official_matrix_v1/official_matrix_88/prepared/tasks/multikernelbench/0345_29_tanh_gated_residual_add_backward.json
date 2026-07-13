@@ -1,0 +1,8 @@
+{
+  "benchmark": "multikernelbench",
+  "task_id": "29_tanh_gated_residual_add_backward",
+  "op": "29_tanh_gated_residual_add_backward",
+  "official_task": true,
+  "prompt_path": "",
+  "prompt": "Benchmark: multikernelbench\nOfficial task: 29_tanh_gated_residual_add_backward\nReturn only source code, without Markdown fences or explanations.\n\nGenerate a kernel response for the exact MultiKernelBench operator '29_tanh_gated_residual_add_backward'. Use CUDA C++ or Triton and do not replace the computation with eager PyTorch.\n\nMultiKernelBench operator: 29_tanh_gated_residual_add_backward\nOfficial dataset entry: {'category': 'npukernelbench_level2', 'source': 'NPUKernelBench'}\n"
+}

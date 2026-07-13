@@ -1,0 +1,6 @@
+{
+  "benchmark": "robust_kbench",
+  "task_id": "16_Matmul_with_transposed_A",
+  "source_path": "/home/bi_geum/official_matrix_88/third_party/KernelBench/KernelBench/level1/16_Matmul_with_transposed_A.py",
+  "official_task": true
+}

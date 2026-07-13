@@ -1,0 +1,7 @@
+{
+  "benchmark": "tritonbench_t",
+  "task_id": "cos",
+  "source_path": "/home/bi_geum/official_matrix_88/third_party/TritonBench/data/TritonBench_T_v1/cos.py",
+  "official_task": true,
+  "prompt": "Benchmark: tritonbench_t\nOfficial task: cos\nReturn only source code, without Markdown fences or explanations.\n\nImplement the official TritonBench task as a Python module and preserve its public interface.\n\nimport torch\n\ndef cos(input_tensor):\n    \"\"\"\n    计算输入张量中每个元素的余弦值并返回一个新的张量。\n    \n    参数:\n    input_tensor (torch.Tensor): 输入的张量。\n    \n    返回:\n    torch.Tensor: 计算每个元素的余弦值后的新张量。\n    \"\"\"\n    return torch.cos(input_tensor)\n\n##################################################################################################################################################\n\n\nimport torch\n\ndef test_cos():\n    results = {}\n\n    # Test case 1: Single positive value\n    input_tensor_1 = torch.tensor([0.0], device='cuda')\n    results[\"test_case_1\"] = cos(input_tensor_1)\n\n    # Test case 2: Single negative value\n    input_tensor_2 = torch.tensor([-3.14159265 / 2], device='cuda')\n    results[\"test_case_2\"] = cos(input_tensor_2)\n\n    # Test case 3: Multiple values\n    input_tensor_3 = torch.tensor([0.0, 3.14159265 / 2, 3.14159265], device='cuda')\n    results[\"test_case_3\"] = cos(input_tensor_3)\n\n    # Test case 4: Large tensor\n    input_tensor_4 = torch.linspace(-3.14159265, 3.14159265, steps=1000, device='cuda')\n    results[\"test_case_4\"] = cos(input_tensor_4)\n\n    return results\n\ntest_results = test_cos()\n"
+}

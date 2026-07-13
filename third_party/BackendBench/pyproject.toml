@@ -1,0 +1,73 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "backendbench"
+version = "0.1.0"
+description = "A PyTorch backend evaluation suite"
+readme = "README.md"
+requires-python = ">=3.10"
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+]
+dependencies = [
+    "torch",
+    "click",
+    "numpy",
+    "expecttest",
+    "anthropic>=0.34.0",
+    "pytest",
+    "requests",
+    "huggingface_hub",
+    "pandas",
+    "datasets",
+    "tenacity",
+    "ninja",
+    "nvidia-cutlass-dsl",
+]
+
+[project.optional-dependencies]
+flaggems = [
+    # flag_gems must be installed from source: https://github.com/FlagOpen/FlagGems
+]
+facto = [
+    # facto must be installed from source: https://github.com/pytorch-labs/FACTO
+]
+
+[project.scripts]
+backendbench = "BackendBench.scripts.main:cli"
+
+[tool.hatch.build.targets.wheel]
+packages = ["BackendBench"]
+
+[tool.uv]
+dev-dependencies = [
+    "pytest",
+    "pytest-cov",
+    "pytest-mock",
+    "pytest-timeout",
+    "ruff==0.12.1",
+    "pre-commit",
+    "torch",
+    "numpy",
+    "pyarrow",
+    # cupy-cuda12x is platform specific, install manually if needed
+]
+
+[tool.ruff]
+line-length = 100
+
+[tool.ruff.lint]
+extend-select = ["I", "W292", "W291"]  # Enable isort rules, final newline rule, and trailing whitespace rule
+
+[tool.ruff.lint.isort]
+case-sensitive = false
+combine-as-imports = true
+detect-same-package = false
+order-by-type = false

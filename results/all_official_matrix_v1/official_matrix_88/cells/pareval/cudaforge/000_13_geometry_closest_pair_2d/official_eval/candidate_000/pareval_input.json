@@ -1,0 +1,12 @@
+[
+  {
+    "problem_type": "geometry",
+    "language": "cpp",
+    "name": "13_geometry_closest_pair_2d",
+    "parallelism_model": "cuda",
+    "prompt": "struct Point {\n\tdouble x, y;\n};\n\n__device__ double distanceBetweenPoints(Point const& p1, Point const& p2) {\n\treturn sqrt(pow(p2.x-p1.x, 2) + pow(p2.y-p1.y, 2));\n}\n\n/* Compute the distance between the closest two points in the vector points.\n   Store the result in distance.\n   Use CUDA to compute in parallel. The kernel is launched with at least as many threads as points.\n   Example: \n\n   input: [{2, 3}, {12, 30}, {40, 50}, {5, 1}, {12, 10}, {3, 4}]\n   output: 1.41421\n*/\n__global__ void closestPair(const Point *points, size_t numPoints, double *distance) {",
+    "outputs": [
+      "__shared__ double minDist;\n\tif (threadIdx.x == 0) {\n\t\tminDist = DBL_MAX;\n\t}\n\t__syncthreads();\n\n\tfor (size_t i = threadIdx.x; i < numPoints - 1; i += blockDim.x) {\n\t\tfor (size_t j = i + 1; j < numPoints; ++j) {\n\t\t\tdouble dist = distanceBetweenPoints(points[i], points[j]);\n\t\t\tif (dist < minDist) {\n\t\t\t\tminDist = dist;\n\t\t\t}\n\t\t}\n\t}\n\t__syncthreads();\n\n\tif (threadIdx.x == 0) {\n\t\tatomicMin(&minDist, minDist);\n\t\t*distance = minDist;\n\t}\n}\n"
+    ]
+  }
+]

@@ -1,0 +1,26 @@
+import torch
+import triton
+import triton.language as tl
+
+@triton.jit
+def _div_kernel(x_ptr, y_ptr, z_ptr, n_elements, BLOCK_SIZE: tl.constexpr):
+    pid = tl.program_id(axis=0)
+    block_start = pid * BLOCK_SIZE
+    offsets = block_start + tl.arange(0, BLOCK_SIZE)
+    mask = offsets < n_elements
+    x = tl.load(x_ptr + offsets, mask=mask)
+    y = tl.load(y_ptr + offsets, mask=mask)
+    z = x / y
+    tl.store(z_ptr + offsets, z, mask=mask)
+
+def div_kernel_impl(x, y):
+    assert x.is_cuda and y.is_cuda, "Inputs must be on CUDA devices"
+    assert x.dtype == y.dtype, "Inputs must have the same dtype"
+    assert x.shape == y.shape, "Inputs must have the same shape"
+
+    n_elements = x.numel()
+    BLOCK_SIZE = 1024
+    grid = lambda meta: (triton.cdiv(n_elements, meta['BLOCK_SIZE']),)
+    z = torch.empty_like(x)
+    _div_kernel[grid](x, y, z, n_elements, BLOCK_SIZE=BLOCK_SIZE)
+    return z

@@ -1,0 +1,1 @@
+{"ref_path": "third_party/KernelBench/KernelBench/level1/19_ReLU.py", "cand_path": "/home/bi_geum/official_matrix_88/results/repro/kernelskill_relu_cand/kernel_20260713_135146.py", "trials": 5, "atol": 0.01, "rtol": 0.01, "warmup": 10, "timing_iters": 100, "input_seed_base": 2657153428, "out_path": "results/repro/kernelskill_relu_oracle2/verdict_000.json"}

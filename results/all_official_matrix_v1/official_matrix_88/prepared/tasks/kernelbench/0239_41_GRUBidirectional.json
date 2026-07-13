@@ -1,0 +1,6 @@
+{
+  "benchmark": "kernelbench",
+  "task_id": "41_GRUBidirectional",
+  "source_path": "/home/bi_geum/official_matrix_88/third_party/KernelBench/KernelBench/level3/41_GRUBidirectional.py",
+  "official_task": true
+}

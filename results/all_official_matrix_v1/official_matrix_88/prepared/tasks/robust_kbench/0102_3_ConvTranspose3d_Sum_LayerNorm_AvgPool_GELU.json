@@ -1,0 +1,6 @@
+{
+  "benchmark": "robust_kbench",
+  "task_id": "3_ConvTranspose3d_Sum_LayerNorm_AvgPool_GELU",
+  "source_path": "/home/bi_geum/official_matrix_88/third_party/KernelBench/KernelBench/level2/3_ConvTranspose3d_Sum_LayerNorm_AvgPool_GELU.py",
+  "official_task": true
+}

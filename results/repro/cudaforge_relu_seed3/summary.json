@@ -1,0 +1,29 @@
+[
+  {
+    "task": "third_party/KernelBench/KernelBench/level1/19_ReLU.py",
+    "task_dir": "/home/bi_geum/official_matrix_88/results/repro/cudaforge_relu_seed3",
+    "n_candidates": 1,
+    "n_compiled": 1,
+    "n_correct": 1,
+    "runnable_rate": 1.0,
+    "correct_rate": 1.0,
+    "pass@1": 1.0,
+    "pass@k_analytic": 1.0,
+    "fast_1": 0.0,
+    "best_score": 0.2894859773793531,
+    "best_runnable": true,
+    "geomean_speedup": 0.2894859773793531,
+    "median_speedup": 0.2894859773793531,
+    "compile_attempts": 1,
+    "correctness_trials_executed": 5,
+    "profile_runs": 220,
+    "first_compiled_candidate_index": 0,
+    "first_correct_candidate_index": 0,
+    "first_faster_candidate_index": null,
+    "unified_eval_wall_s": 82.90691189200152,
+    "compile_s": 37.66830949904397,
+    "correctness_s": 28.067605421005283,
+    "benchmark_s": 5.120920951012522,
+    "model_init_s": 0.00012625101953744888
+  }
+]

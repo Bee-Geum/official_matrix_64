@@ -1,0 +1,8 @@
+{
+  "benchmark": "multikernelbench",
+  "task_id": "conv2d_mish_mish",
+  "op": "conv2d_mish_mish",
+  "official_task": true,
+  "prompt_path": "/home/bi_geum/official_matrix_88/third_party/MultiKernelBench/reference/fuse/conv2d_mish_mish.py",
+  "prompt": "Benchmark: multikernelbench\nOfficial task: conv2d_mish_mish\nReturn only source code, without Markdown fences or explanations.\n\nGenerate a kernel response for the exact MultiKernelBench operator 'conv2d_mish_mish'. Use CUDA C++ or Triton and do not replace the computation with eager PyTorch.\n\nimport torch\nimport torch.nn as nn\n\nclass Model(nn.Module):\n    \"\"\"\n    Simple model that performs a convolution, applies Mish, and another Mish.\n    \"\"\"\n    def __init__(self, in_channels, out_channels, kernel_size):\n        super(Model, self).__init__()\n        self.conv = nn.Conv2d(in_channels, out_channels, kernel_size)\n\n    def forward(self, x):\n        x = self.conv(x)\n        x = torch.nn.functional.mish(x)\n        x = torch.nn.functional.mish(x)\n        return x\n\nbatch_size   = 64  \nin_channels  = 64  \nout_channels = 128  \nheight = width = 256\nkernel_size = 3\n\ndef get_inputs():\n    return [torch.rand(batch_size, in_channels, height, width)]\n\ndef get_init_inputs():\n    return [in_channels, out_channels, kernel_size]"
+}

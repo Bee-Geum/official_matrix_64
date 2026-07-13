@@ -1,0 +1,8 @@
+{
+  "benchmark": "multikernelbench",
+  "task_id": "bilinear_upsample",
+  "op": "bilinear_upsample",
+  "official_task": true,
+  "prompt_path": "/home/bi_geum/official_matrix_88/third_party/MultiKernelBench/reference/resize/bilinear_upsample.py",
+  "prompt": "Benchmark: multikernelbench\nOfficial task: bilinear_upsample\nReturn only source code, without Markdown fences or explanations.\n\nGenerate a kernel response for the exact MultiKernelBench operator 'bilinear_upsample'. Use CUDA C++ or Triton and do not replace the computation with eager PyTorch.\n\nimport torch\nimport torch.nn as nn\nimport torch.nn.functional as F\n\nclass Model(nn.Module):\n    def forward(self, x):\n        return F.interpolate(x, scale_factor=2.0, mode='bilinear', align_corners=False)\n\ndef get_inputs():\n    x = torch.rand(8, 256, 64, 64)\n    return [x]\n\ndef get_init_inputs():\n    return []\n"
+}

@@ -1,0 +1,8 @@
+{
+  "benchmark": "multikernelbench",
+  "task_id": "bicubic_upsample",
+  "op": "bicubic_upsample",
+  "official_task": true,
+  "prompt_path": "/home/bi_geum/official_matrix_88/third_party/MultiKernelBench/reference/resize/bicubic_upsample.py",
+  "prompt": "Benchmark: multikernelbench\nOfficial task: bicubic_upsample\nReturn only source code, without Markdown fences or explanations.\n\nGenerate a kernel response for the exact MultiKernelBench operator 'bicubic_upsample'. Use CUDA C++ or Triton and do not replace the computation with eager PyTorch.\n\nimport torch\nimport torch.nn as nn\nimport torch.nn.functional as F\nclass Model(nn.Module):\n    def forward(self, x):\n        return F.interpolate(x, size=(256, 256), mode='bicubic', align_corners=True)\n\ndef get_inputs():\n    x = torch.rand(4, 64, 64, 64)\n    return [x]\n\n\ndef get_init_inputs():\n    return []"
+}

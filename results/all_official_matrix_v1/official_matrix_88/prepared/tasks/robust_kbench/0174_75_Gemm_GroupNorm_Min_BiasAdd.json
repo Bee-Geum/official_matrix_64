@@ -1,0 +1,6 @@
+{
+  "benchmark": "robust_kbench",
+  "task_id": "75_Gemm_GroupNorm_Min_BiasAdd",
+  "source_path": "/home/bi_geum/official_matrix_88/third_party/KernelBench/KernelBench/level2/75_Gemm_GroupNorm_Min_BiasAdd.py",
+  "official_task": true
+}

@@ -1,0 +1,197 @@
+% !TEX program = xelatex
+% 컴파일: tectonic -X compile campaign_plan.tex  (또는 xelatex campaign_plan.tex)
+\documentclass[11pt]{article}
+
+\usepackage{kotex}
+\setmainhangulfont{Noto Serif CJK KR}
+\setsanshangulfont{Noto Sans CJK KR}
+\setmonohangulfont{Noto Sans CJK KR}
+\usepackage[margin=24mm]{geometry}
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage{longtable}
+\usepackage{xcolor}
+\usepackage{enumitem}
+\usepackage{amsmath}
+\usepackage[hidelinks]{hyperref}
+\usepackage{titlesec}
+
+\newcommand{\yes}{\textcolor{green!55!black}{\textbf{O}}}
+\newcommand{\no}{\textcolor{red!70!black}{\textbf{X}}}
+\newcommand{\warn}{\textcolor{orange!85!black}{\textbf{$\triangle$}}}
+\newcommand{\code}[1]{\texttt{\small #1}}
+
+\titleformat{\section}{\large\bfseries}{\thesection}{0.6em}{}
+\titleformat{\subsection}{\normalsize\bfseries}{\thesubsection}{0.5em}{}
+\setlist{itemsep=2pt, topsep=3pt}
+
+\title{\textbf{official\_matrix\_88 완전 재현 캠페인 실행 계획서}\\[3pt]
+\large 커널 생성 에이전트 8종 $\times$ 공식 벤치마크 8개 = 64셀 매트릭스}
+\author{}
+\date{2026년 7월 13일}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+\noindent
+본 문서는 \code{official\_matrix\_88} 완전 충실(faithful) 재현 매트릭스(8 에이전트 $\times$ 8 벤치마크
+= 64셀)를 실제로 실행하기 위한 계획서다. \textbf{선행 인프라 작업은 모두 완료}되었다:
+(1) 8종 에이전트를 각자의 실제 구현/모델로 재현하여 KernelBench 공식 오라클 판정을 확보하였고,
+(2) 8개 벤치마크의 공식 오라클을 전부 NVIDIA RTX PRO 6000 (Blackwell, sm\_120)에서 배선·검증하였다.
+따라서 남은 것은 GPU 실행뿐이며 \textbf{즉시 착수 가능}하다. 본 계획서는 GPU 요건, 시간/비용(실측 기반),
+예상 결과물과 결론, 실험 설계, 논문 연결 방안을 제시한다. 모든 소요 시간은 본 하드웨어에서 실제로
+측정한 값에 근거하며 추정치는 명시한다.
+\end{abstract}
+
+\section{배경 및 현재 상태}
+매트릭스는 서로 다른 오픈소스 커널 생성 에이전트를, 각자의 실제 구현/모델로 구동하여, 각 벤치마크의
+\emph{공식 오라클}로 통일 평가한다. 저장소에 커밋된 기존 88셀은 모든 에이전트가 하나의 제너릭
+드라이버로 ``smoke용 단순 torch 코드''를 생성한 것으로 에이전트 성능이 아니다.
+
+\textbf{두 축이 모두 준비 완료되었다:}
+\begin{itemize}
+  \item \textbf{에이전트 축(8종 재현 완료)}: cudaforge, autokernel, autotriton, kernelllm, ksearch,
+        kernelskill, drkernel, incoder32b. 각 드라이버와 서빙 절차 확립. KernelBench(level1/19\_ReLU)
+        공식 판정: \textbf{6/8 correct, 2/8 충실한 실패}(kernelllm 차원 하드코딩, incoder32b 커널 구조
+        오류 --- 모델 자체 오류).
+  \item \textbf{벤치마크 축(8 오라클 배선 완료)}: 8개 벤치마크의 공식 오라클을 전부 Blackwell에서 실행하여
+        구조화된 공식 판정 반환을 확인. 러너의 배선은 코드 수정 없이 동작(환경 설정 + \code{prepare}만 필요).
+  \item \textbf{범위 외 3종}: cuda\_l1, cuda\_agent(RL 모델 비공개), geak(AMD 전용).
+\end{itemize}
+
+\section{GPU 요건}
+\subsection{최소 요건 (실측)}
+본 재현/배선 전 과정을 \textbf{단일 RTX PRO 6000 (Blackwell, 96GB) 한 장}으로 수행하였다. 핵심 제약:
+\begin{itemize}
+  \item \textbf{VRAM}: \code{incoder32b}(32B) 가중치가 \textbf{약 60GB}라 대용량 카드가 필요하다.
+        서빙과 커널 eval이 같은 GPU를 공유하므로, 32B는 ``서빙$\to$생성$\to$서버 내림$\to$eval'' 순차로 처리하였다.
+  \item \textbf{툴체인}: \code{nvcc} + 해당 GPU 아키텍처. Blackwell은 \code{TORCH\_CUDA\_ARCH\_LIST=12.0}(sm\_120).
+        타 GPU 이전 시 이 값을 변경(H100=9.0, H200=9.0).
+\end{itemize}
+
+\subsection{4-GPU 캠페인 권장 구성}
+\begin{table}[h]
+\centering
+\begin{tabular}{@{}lllc@{}}
+\toprule
+\textbf{옵션} & \textbf{VRAM/장} & \textbf{32B(incoder) 처리} & \textbf{권장도} \\
+\midrule
+4$\times$ B200 & 180GB & 서빙+eval \textbf{동시 가능} & \yes\ 최상 (sm\_120 검증) \\
+4$\times$ H200 & 141GB & 동시 가능 & \yes\ 좋음 \\
+4$\times$ H100 & 80GB  & 서빙$\to$생성$\to$내림$\to$eval 순차 & \warn\ 저렴, 32B만 느림 \\
+1$\times$ RTX PRO 6000 & 96GB & 순차(현재 방식) & 무료지만 $\sim$2.8$\times$ 느림 \\
+\bottomrule
+\end{tabular}
+\caption{GPU 옵션. 역할 분담: 2장은 에이전트 모델 서빙(vLLM, 모델별 스왑), 2장은 컴파일·오라클 eval 병렬.
+병렬효율 약 70\% $\Rightarrow$ 유효 배속 $\approx 2.8\times$.}
+\end{table}
+
+\section{시간 및 비용 (실측 기반)}
+셀당 시간 $=$ 태스크 수 $T \times$(생성 $+$ eval). 본 세션에서 실제 측정한 태스크당 평균:
+
+\begin{table}[h]
+\centering
+\begin{tabular}{@{}llc@{}}
+\toprule
+\textbf{에이전트 유형} & \textbf{생성 방식} & \textbf{태스크당(생성+eval)} \\
+\midrule
+반복형 5종(cudaforge, autokernel, ksearch, kernelskill, drkernel) & 다라운드 루프/추론 & $\sim$8분 \\
+단발형 2종(autotriton, kernelllm) & 1회 생성 & $\sim$4분 \\
+incoder32b (32B) & 무거운 로드+생성 & $\sim$6분 (+모델 스왑) \\
+\bottomrule
+\end{tabular}
+\caption{태스크당 실측 평균. 벤치마크 1개(8 에이전트)당 $\approx 52T$분, $\times 8$벤치 $= 416T$분(단일 GPU 직렬).}
+\end{table}
+
+4-GPU 유효배속($\div 2.8$)을 적용한 총 시간·비용:
+
+\begin{table}[h]
+\centering
+\begin{tabular}{@{}lcccc@{}}
+\toprule
+\textbf{$T$ (셀당 태스크)} & \textbf{벽시계(4$\times$GPU)} & \textbf{GPU-시간} & \textbf{4$\times$H100(\textasciitilde\$10/hr)} & \textbf{4$\times$B200(\textasciitilde\$20/hr)} \\
+\midrule
+1 (현재 검증 수준)   & $\sim$2.5시간 & $\sim$10    & \textasciitilde\$25    & \textasciitilde\$50 \\
+\textbf{10 (권장 최소)} & \textbf{$\sim$25시간} & $\sim$99 & \textbf{\textasciitilde\$250} & \textasciitilde\$500 \\
+50                   & $\sim$5.2일   & $\sim$496   & \textasciitilde\$1{,}240 & \textasciitilde\$2{,}480 \\
+전체 태스크셋         & $\sim$15일    & $\sim$1{,}480 & \textasciitilde\$3{,}700 & \textasciitilde\$7{,}400 \\
+\bottomrule
+\end{tabular}
+\caption{총 시간·비용. ``전체 태스크셋''은 각 벤치마크의 실제 태스크를 전부 도는 경우:
+prepare로 확인한 태스크 수(kernelbench 249, robust 200, tritonbench\_t 166, \_g 184,
+\textbf{multikernel 401}, backendbench 15, pareval 60, sol 21) $\Rightarrow$ 에이전트당 $\sim$1{,}300개.
+multikernel(401)이 커서 전체 실행이 비싸므로, 표준 하위집합 사용을 권장한다.}
+\end{table}
+
+\noindent\textbf{핵심 변화:} 일회성 통합 엔지니어링(8종 통합 + 8 오라클 배선)이 \textbf{이미 완료}되었으므로,
+남은 비용은 위 표의 \textbf{GPU 실행비뿐}이며 즉시 착수 가능하다. 로컬 RTX PRO 6000 1장으로 실행하면
+전기요금만 들지만 약 2.8배 느리다($T{=}10 \to \sim$70시간).
+
+\section{예상 결과물}
+\textbf{64셀 매트릭스}(8 에이전트 $\times$ 8 벤치마크), 셀마다 공식 오라클 지표:
+\begin{itemize}
+  \item 정확도: \code{correct\_rate}, \code{pass@1}
+  \item 성능: \code{speedup} / \code{fast\_p} (fast\_1.0/1.5/2.0/3.0)
+  \item 원출력 및 verdict JSON 전량 보존(재현성). 전 셀 원본 충실이므로 replay/N-A 각주 불필요.
+\end{itemize}
+
+\section{실험 설계와 내릴 수 있는 결론}
+\subsection{설계: 스캐폴딩 효과와 모델 효과의 분리}
+8종은 백본 기준으로 두 그룹으로 나뉘어, 두 가지 독립 변인을 분리 측정한다.
+\begin{itemize}
+  \item \textbf{백본 공유 4종}(cudaforge, autokernel, ksearch, kernelskill --- 전부 Qwen2.5-Coder-14B):
+        동일 모델 위에서 \textbf{에이전트 스캐폴딩(루프/피드백/메모리/탐색)의 효과}만을 통제 비교.
+  \item \textbf{자체 모델 4종}(autotriton 8B, kernelllm 8B, drkernel 14B, incoder32b 32B):
+        각자의 \textbf{훈련된 모델의 효과}를 비교.
+\end{itemize}
+
+\subsection{예비 신호(T=1에서 관측) $\rightarrow$ 확대 시 결론}
+\begin{enumerate}
+  \item \textbf{반복형 에이전트가 단발 모델보다 견고하다.} ReLU 단일 태스크에서도 단발 모델 2종
+        (kernelllm 차원 하드코딩, incoder32b 커널 구조 오류)이 실패한 반면, 반복형(cudaforge/ksearch/
+        kernelskill 등)은 통과했다. 특히 ksearch는 1라운드 실패 후 \textbf{2라운드에서 자가수정}하여 통과,
+        kernelskill은 메모리 루프로 자가수정하였다 $\Rightarrow$ ``하드웨어 피드백/자가수정 루프의 가치''.
+  \item \textbf{벤치마크 난이도 구조.} pareval(C++ 완성)은 어렵고, backendbench는 커버리지 갭
+        (add/mul/sub/div 미커버), kb/triton 계열은 상대적으로 쉬움.
+  \item \textbf{패러다임 효과.} 반복형(NCU 피드백/메모리)/단발 모델/RL 모델의 상대 우위를 벤치마크 계열별로 규명.
+\end{enumerate}
+
+\subsection{못 내리는 결론(정직한 한계)}
+geak/AMD 비교, cuda\_agent/cuda\_l1의 라이브 성능(모델 비공개), $T$가 작을 때의 세밀한 순위.
+
+\section{논문 연결}
+\begin{itemize}
+  \item \textbf{Table 2 (Taxonomy)}: 에이전트 분류(라이브/모델-온리/replay) + 재현 가능성(faithful 8 / replay 2 / N-A 1).
+  \item \textbf{Contribution --- 인프라}: 모든 벤치마크의 공식 오라클을 하나로 배선한 이식형 통합 하네스 +
+        8종 에이전트 실제 구현 통합, \textbf{Blackwell(sm\_120)에서 end-to-end 검증 완료}.
+  \item \textbf{Table 3 (Main Results)}: 64셀 완전 충실 매트릭스(정확도 + fast\_p). 논문의 핵심 표.
+  \item \textbf{Analysis}: \S5.1의 분리 설계에 기반 --- 백본 통제 4종으로 ``스캐폴딩 효과'', 자체모델 4종으로 ``모델 효과''.
+  \item \textbf{Limitations / Threats to Validity}: 제외 3종(모델 비공개 2, AMD 1), 백본 통제(공유 4종은 모델이
+        아닌 루프만 비교), $T$ 규모, 하드웨어(sm\_120) 특수성.
+  \item \textbf{Reproducibility 부록}: 하드-원 이슈(arch 핀, stale lock, GPU 공유, flashinfer,
+        PYTHONPATH/timeout, grid 심, Llama 오버라이드, 오라클 배선 등) + 커맨드.
+\end{itemize}
+
+\section{실행 계획(권장)}
+\begin{enumerate}
+  \item \textbf{운영점 선택}: 논문 초판은 \textbf{$T=10$}(4$\times$H100 기준 $\sim$25시간, $\sim$\$250)로 통계적 최소
+        의미를 확보. 필요 시 핵심 벤치마크만 $T$를 높여 심화.
+  \item \textbf{실행 순서}: 백본 공유 4종(Qwen14B)을 먼저 묶어 실행(모델 스왑 최소화) $\to$ 자체 모델 4종을
+        모델별로 배치(autotriton $\to$ kernelllm $\to$ drkernel $\to$ incoder32b 순, 각 서빙 후 8벤치 일괄).
+  \item \textbf{산출}: 64셀 매트릭스 CSV/JSON $\to$ \code{summarize\_matrix\_88.py}로 표 생성 $\to$ 논문 Table 3.
+  \item \textbf{환경}: 각 실행에 \code{TORCH\_CUDA\_ARCH\_LIST}(대상 GPU arch), 실행별 새 \code{TORCH\_EXTENSIONS\_DIR},
+        오프라인 플래그, LLM 엔드포인트 설정(\code{repro\_env.sh} 참조).
+\end{enumerate}
+
+\section*{부록: 준비 완료 체크리스트}
+\begin{itemize}[label=\yes]
+  \item 8종 에이전트 재현 드라이버 + 서빙 절차
+  \item 8개 벤치마크 공식 오라클 배선(Blackwell 검증)
+  \item 태스크 매니페스트 prepare 완료
+  \item 환경 스크립트(\code{repro\_env.sh}) + 하드-원 이슈 문서화
+  \item 재현 보고서(\code{docs/repro\_report.tex} + PDF)
+\end{itemize}
+\noindent\textbf{남은 작업 = 위 실행 계획대로 GPU 캠페인 실행($T{>}1$)뿐.}
+
+\end{document}

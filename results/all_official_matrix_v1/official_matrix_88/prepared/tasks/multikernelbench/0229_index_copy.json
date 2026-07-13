@@ -1,0 +1,8 @@
+{
+  "benchmark": "multikernelbench",
+  "task_id": "index_copy",
+  "op": "index_copy",
+  "official_task": true,
+  "prompt_path": "/home/bi_geum/official_matrix_88/third_party/MultiKernelBench/reference/index/index_copy.py",
+  "prompt": "Benchmark: multikernelbench\nOfficial task: index_copy\nReturn only source code, without Markdown fences or explanations.\n\nGenerate a kernel response for the exact MultiKernelBench operator 'index_copy'. Use CUDA C++ or Triton and do not replace the computation with eager PyTorch.\n\nimport torch\nimport torch.nn as nn\n\nclass Model(nn.Module):\n    def forward(self, x, indices, src):\n        return x.index_copy(0, indices, src)\n\ndef get_inputs():\n    x = torch.zeros(8192, 1024)\n    indices = torch.randint(0, 8192, (2048,))\n    src = torch.rand(2048, 1024)\n    return [x, indices, src]\n\ndef get_init_inputs():\n    return []\n"
+}

@@ -1,0 +1,6 @@
+{
+  "benchmark": "kernelbench",
+  "task_id": "90_Conv3d_LeakyReLU_Sum_Clamp_GELU",
+  "source_path": "/home/bi_geum/official_matrix_88/third_party/KernelBench/KernelBench/level2/90_Conv3d_LeakyReLU_Sum_Clamp_GELU.py",
+  "official_task": true
+}

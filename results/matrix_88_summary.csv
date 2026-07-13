@@ -1,0 +1,9 @@
+benchmark,official_oracle,agents_ran,official_eval_cells,correct_cells
+kernelbench,kb_instrumented,11/11,11/11,11/11
+robust_kbench,kb_instrumented,11/11,11/11,11/11
+tritonbench_t,TritonBench EVAL,11/11,11/11,11/11
+tritonbench_g,TritonBench EVAL,11/11,11/11,11/11
+multikernelbench,eval_single_runner,11/11,10/11,8/11
+backendbench,BackendBench CLI,11/11,11/11,1/11
+pareval,ParEval run-all,11/11,11/11,0/11
+sol_execbench,sol_execbench.cli,11/11,11/11,11/11

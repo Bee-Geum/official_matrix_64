@@ -1,0 +1,8 @@
+{
+  "benchmark": "multikernelbench",
+  "task_id": "matmul_mish_mish",
+  "op": "matmul_mish_mish",
+  "official_task": true,
+  "prompt_path": "/home/bi_geum/official_matrix_88/third_party/MultiKernelBench/reference/fuse/matmul_mish_mish.py",
+  "prompt": "Benchmark: multikernelbench\nOfficial task: matmul_mish_mish\nReturn only source code, without Markdown fences or explanations.\n\nGenerate a kernel response for the exact MultiKernelBench operator 'matmul_mish_mish'. Use CUDA C++ or Triton and do not replace the computation with eager PyTorch.\n\nimport torch\nimport torch.nn as nn\n\nclass Model(nn.Module):\n    \"\"\"\n    Simple model that performs a matrix multiplication, applies Mish, and applies Mish again.\n    \"\"\"\n    def __init__(self, in_features, out_features):\n        super(Model, self).__init__()\n        self.linear = nn.Linear(in_features, out_features)\n\n    def forward(self, x):\n        x = self.linear(x)\n        x = torch.nn.functional.mish(x)\n        x = torch.nn.functional.mish(x)\n        return x\n\nbatch_size = 1024\nin_features = 8192\nout_features = 8192\n\ndef get_inputs():\n    return [torch.rand(batch_size, in_features)]\n\ndef get_init_inputs():\n    return [in_features, out_features]"
+}

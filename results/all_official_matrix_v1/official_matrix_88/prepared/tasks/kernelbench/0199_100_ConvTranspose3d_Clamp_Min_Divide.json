@@ -1,0 +1,6 @@
+{
+  "benchmark": "kernelbench",
+  "task_id": "100_ConvTranspose3d_Clamp_Min_Divide",
+  "source_path": "/home/bi_geum/official_matrix_88/third_party/KernelBench/KernelBench/level2/100_ConvTranspose3d_Clamp_Min_Divide.py",
+  "official_task": true
+}

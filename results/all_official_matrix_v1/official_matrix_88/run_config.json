@@ -1,0 +1,47 @@
+{
+  "root": "/home/bi_geum/official_matrix_88",
+  "run_root": "/home/bi_geum/official_matrix_88/results/all_official_matrix_v1/official_matrix_88",
+  "benchmarks": [
+    "robust_kbench"
+  ],
+  "agents": [
+    {
+      "name": "cudaforge",
+      "model": "qwen14b",
+      "langs": [
+        "cuda"
+      ],
+      "driver": "/home/bi_geum/official_matrix_88/drivers/cudaforge_inline.py",
+      "out_flag": "--cand_dir",
+      "gen_args": "--task {TASK} --cand_dir {CAND} --rounds {ROUNDS} --seed {SEED} --temperature {TEMP}",
+      "glob": "round*_kernel.py"
+    }
+  ],
+  "args": {
+    "mode": "run",
+    "root": "/home/bi_geum/official_matrix_88",
+    "run_id": "official_matrix_88",
+    "benchmarks": "robust_kbench",
+    "agents": "cudaforge",
+    "limit": 1,
+    "rounds": 1,
+    "repeat": 1,
+    "temp": 0.2,
+    "seed": 0,
+    "gpu": "0",
+    "port": 8000,
+    "generation_timeout": 1200,
+    "eval_timeout": 1800,
+    "cell_timeout": 7200,
+    "cell_attempts": 1,
+    "max_candidates": 1,
+    "pareval_build_timeout": 60,
+    "pareval_run_timeout": 180,
+    "sol_warmup": 1,
+    "sol_iterations": 3,
+    "sol_compile_timeout": 180,
+    "sol_run_timeout": 600,
+    "force": true
+  },
+  "generated_at": "2026-07-13T15:13:28+0900"
+}

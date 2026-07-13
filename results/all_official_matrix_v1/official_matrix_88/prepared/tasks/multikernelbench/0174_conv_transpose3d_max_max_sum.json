@@ -1,0 +1,8 @@
+{
+  "benchmark": "multikernelbench",
+  "task_id": "conv_transpose3d_max_max_sum",
+  "op": "conv_transpose3d_max_max_sum",
+  "official_task": true,
+  "prompt_path": "/home/bi_geum/official_matrix_88/third_party/MultiKernelBench/reference/fuse/conv_transpose3d_max_max_sum.py",
+  "prompt": "Benchmark: multikernelbench\nOfficial task: conv_transpose3d_max_max_sum\nReturn only source code, without Markdown fences or explanations.\n\nGenerate a kernel response for the exact MultiKernelBench operator 'conv_transpose3d_max_max_sum'. Use CUDA C++ or Triton and do not replace the computation with eager PyTorch.\n\nimport torch\nimport torch.nn as nn\n\nclass Model(nn.Module):\n    \"\"\"\n    Model that performs a 3D transposed convolution, followed by two max pooling layers and a sum operation.\n    \"\"\"\n    def __init__(self, in_channels, out_channels, kernel_size, stride, padding):\n        super(Model, self).__init__()\n        self.conv_transpose = nn.ConvTranspose3d(in_channels, out_channels, kernel_size, stride=stride, padding=padding)\n        self.max_pool1 = nn.MaxPool3d(kernel_size=2)\n        self.max_pool2 = nn.MaxPool3d(kernel_size=3)\n\n    def forward(self, x):\n        x = self.conv_transpose(x)\n        x = self.max_pool1(x)\n        x = self.max_pool2(x)\n        x = torch.sum(x, dim=1, keepdim=True) \n        return x\n\nbatch_size = 16\nin_channels = 32\nout_channels = 64\ndepth, height, width = 32, 32, 32\nkernel_size = 5\nstride = 2\npadding = 2\n\ndef get_inputs():\n    return [torch.rand(batch_size, in_channels, depth, height, width)]\n\ndef get_init_inputs():\n    return [in_channels, out_channels, kernel_size, stride, padding]"
+}

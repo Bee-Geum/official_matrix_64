@@ -1,0 +1,58 @@
+```python
+# <complete ModelNew code>
+import torch
+import torch.nn as nn
+from torch.utils.cpp_extension import load_inline
+
+# Define the custom CUDA kernel for ReLU activation with predicated execution
+source = """
+#include <torch/extension.h>
+#include <cuda_runtime.h>
+
+__global__ void relu_kernel_predicated(const float* x, float* out, int size) {
+    int idx = blockIdx.x * blockDim.x + threadIdx.x;
+    if (idx < size) {
+        float result = x[idx];
+        int condition = result > 0.0f;
+        result *= condition;
+        out[idx] = result;
+    }
+}
+
+torch::Tensor relu_cuda_predicated(torch::Tensor x) {
+    auto size = x.numel();
+    auto out = torch::zeros_like(x);
+
+    const int block_size = 256;
+    const int num_blocks = (size + block_size - 1) / block_size;
+
+    relu_kernel_predicated<<<num_blocks, block_size>>>(x.data_ptr<float>(), out.data_ptr<float>(), size);
+
+    return out;
+}
+"""
+
+cpp_src = (
+    "torch::Tensor relu_cuda_predicated(torch::Tensor x);"
+)
+
+# Compile the inline CUDA code for ReLU activation with predicated execution
+relu_predicated = load_inline(
+    name="relu_predicated",
+    cpp_sources=cpp_src,
+    cuda_sources=source,
+    functions=["relu_cuda_predicated"],
+    verbose=True,
+    extra_cflags=[""],
+    extra_ldflags=[""],
+)
+
+
+class ModelNew(nn.Module):
+    def __init__(self) -> None:
+        super().__init__()
+        self.relu_predicated = relu_predicated
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        return self.relu_predicated.relu_cuda_predicated(x)
+```

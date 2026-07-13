@@ -1,0 +1,8 @@
+{
+  "benchmark": "multikernelbench",
+  "task_id": "causal_attention",
+  "op": "causal_attention",
+  "official_task": true,
+  "prompt_path": "/home/bi_geum/official_matrix_88/third_party/MultiKernelBench/reference/attention/causal_attention.py",
+  "prompt": "Benchmark: multikernelbench\nOfficial task: causal_attention\nReturn only source code, without Markdown fences or explanations.\n\nGenerate a kernel response for the exact MultiKernelBench operator 'causal_attention'. Use CUDA C++ or Triton and do not replace the computation with eager PyTorch.\n\nimport torch\nimport torch.nn as nn\n\nclass Model(nn.Module):\n    \"\"\"\n    Causal (decoder) self-attention with an upper-triangular mask.\n    Mask is precomputed and registered as a non-trainable buffer.\n    \"\"\"\n    def __init__(self, d_model=256, num_heads=4, max_seq_len=4096):\n        super().__init__()\n        self.mha = nn.MultiheadAttention(d_model, num_heads, batch_first=True)\n        self.max_seq_len = max_seq_len\n\n        # Precompute causal mask (1 for disallowed positions)\n        mask = torch.triu(torch.ones(max_seq_len, max_seq_len), diagonal=1).bool()\n        self.register_buffer(\"causal_mask\", mask, persistent=False)\n\n    def forward(self, x):\n        \"\"\"\n        Args:\n            x: (batch, seq_len, d_model)\n        Returns:\n            output: (batch, seq_len, d_model)\n        \"\"\"\n        seq_len = x.size(1)\n        attn_mask = self.causal_mask[:seq_len, :seq_len]\n        out, _ = self.mha(x, x, x, attn_mask=attn_mask)\n        return out\n\nbatch_size = 32\nseq_len = 64\nd_model = 512\n\ndef get_inputs():\n    x = torch.rand(batch_size, seq_len, d_model)\n    return [x]\n\ndef get_init_inputs():\n    return [d_model, 4]\n"
+}

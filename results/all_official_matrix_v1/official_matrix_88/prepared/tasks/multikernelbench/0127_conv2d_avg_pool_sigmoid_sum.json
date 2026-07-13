@@ -1,0 +1,8 @@
+{
+  "benchmark": "multikernelbench",
+  "task_id": "conv2d_avg_pool_sigmoid_sum",
+  "op": "conv2d_avg_pool_sigmoid_sum",
+  "official_task": true,
+  "prompt_path": "/home/bi_geum/official_matrix_88/third_party/MultiKernelBench/reference/fuse/conv2d_avg_pool_sigmoid_sum.py",
+  "prompt": "Benchmark: multikernelbench\nOfficial task: conv2d_avg_pool_sigmoid_sum\nReturn only source code, without Markdown fences or explanations.\n\nGenerate a kernel response for the exact MultiKernelBench operator 'conv2d_avg_pool_sigmoid_sum'. Use CUDA C++ or Triton and do not replace the computation with eager PyTorch.\n\nimport torch\nimport torch.nn as nn\n\nclass Model(nn.Module):\n    \"\"\"\n    This model performs a convolution, average pooling, applies sigmoid, and sums the result.\n    \"\"\"\n    def __init__(self, in_channels, out_channels, kernel_size, pool_kernel_size):\n        super(Model, self).__init__()\n        self.conv = nn.Conv2d(in_channels, out_channels, kernel_size)\n        self.avg_pool = nn.AvgPool2d(pool_kernel_size)\n\n    def forward(self, x):\n        x = self.conv(x)\n        x = self.avg_pool(x)\n        x = torch.sigmoid(x)\n        x = torch.sum(x, dim=[1,2,3]) # Sum over all spatial dimensions\n        return x\n\nbatch_size = 128\nin_channels = 8\nout_channels = 64\nheight, width = 384, 384\nkernel_size = 3\npool_kernel_size = 4\n\ndef get_inputs():\n    return [torch.rand(batch_size, in_channels, height, width)]\n\ndef get_init_inputs():\n    return [in_channels, out_channels, kernel_size, pool_kernel_size]"
+}

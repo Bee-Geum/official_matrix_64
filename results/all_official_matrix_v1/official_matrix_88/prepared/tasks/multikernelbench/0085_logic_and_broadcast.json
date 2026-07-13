@@ -1,0 +1,8 @@
+{
+  "benchmark": "multikernelbench",
+  "task_id": "logic_and_broadcast",
+  "op": "logic_and_broadcast",
+  "official_task": true,
+  "prompt_path": "/home/bi_geum/official_matrix_88/third_party/MultiKernelBench/reference/broadcast/logic_and_broadcast.py",
+  "prompt": "Benchmark: multikernelbench\nOfficial task: logic_and_broadcast\nReturn only source code, without Markdown fences or explanations.\n\nGenerate a kernel response for the exact MultiKernelBench operator 'logic_and_broadcast'. Use CUDA C++ or Triton and do not replace the computation with eager PyTorch.\n\nimport torch\nimport torch.nn as nn\n\nclass Model(nn.Module):\n    def __init__(self):\n        super().__init__()\n\n    def forward(self, a, b):\n        return a & b\n\ndef get_inputs():\n    a = torch.randint(0, 2, (128, 512, 1024), dtype=torch.bool)\n    b = torch.randint(0, 2, (1, 512, 1), dtype=torch.bool)\n    return [a, b]\n\ndef get_init_inputs():\n    return []\n"
+}

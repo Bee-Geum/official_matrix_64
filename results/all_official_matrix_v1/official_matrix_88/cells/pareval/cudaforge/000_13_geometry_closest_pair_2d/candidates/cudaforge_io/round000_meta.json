@@ -1,0 +1,7 @@
+{
+  "system": "cudaforge",
+  "round": 0,
+  "latency_s": 3.132258892059326,
+  "candidate": "/home/bi_geum/official_matrix_88/results/all_official_matrix_v1/official_matrix_88/cells/pareval/cudaforge/000_13_geometry_closest_pair_2d/candidates/round000_kernel.py",
+  "first_line": "cpp"
+}

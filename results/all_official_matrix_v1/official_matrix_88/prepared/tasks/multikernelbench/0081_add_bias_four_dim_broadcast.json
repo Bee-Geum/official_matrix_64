@@ -1,0 +1,8 @@
+{
+  "benchmark": "multikernelbench",
+  "task_id": "add_bias_four_dim_broadcast",
+  "op": "add_bias_four_dim_broadcast",
+  "official_task": true,
+  "prompt_path": "/home/bi_geum/official_matrix_88/third_party/MultiKernelBench/reference/broadcast/add_bias_four_dim_broadcast.py",
+  "prompt": "Benchmark: multikernelbench\nOfficial task: add_bias_four_dim_broadcast\nReturn only source code, without Markdown fences or explanations.\n\nGenerate a kernel response for the exact MultiKernelBench operator 'add_bias_four_dim_broadcast'. Use CUDA C++ or Triton and do not replace the computation with eager PyTorch.\n\nimport torch\nimport torch.nn as nn\n\nclass Model(nn.Module):\n    def __init__(self):\n        super().__init__()\n\n    def forward(self, x, bias):\n        return x + bias.view(1, -1, 1, 1)\n\ndef get_inputs():\n    x = torch.rand(8, 512, 32, 32)\n    bias = torch.rand(512)\n    return [x, bias]\n\ndef get_init_inputs():\n    return []\n"
+}

@@ -1,0 +1,8 @@
+$ /home/bi_geum/anaconda3/envs/survey/bin/python3 /home/bi_geum/official_matrix_88/third_party/TritonBench/EVAL/eval_T/0_call_acc.py --source /home/bi_geum/official_matrix_88/results/all_official_matrix_v1/official_matrix_88/cells/tritonbench_t/cudaforge/000_Adam/official_eval/candidate_000/stage/source --target /home/bi_geum/official_matrix_88/results/all_official_matrix_v1/official_matrix_88/cells/tritonbench_t/cudaforge/000_Adam/official_eval/candidate_000/stage/target --GPUs 0
+cwd=/home/bi_geum/official_matrix_88/third_party/TritonBench/EVAL/eval_T
+returncode=0
+wall_s=0.028763
+----- STDOUT -----
+
+----- STDERR -----
+

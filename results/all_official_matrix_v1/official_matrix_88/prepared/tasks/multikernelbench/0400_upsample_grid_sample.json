@@ -1,0 +1,8 @@
+{
+  "benchmark": "multikernelbench",
+  "task_id": "upsample_grid_sample",
+  "op": "upsample_grid_sample",
+  "official_task": true,
+  "prompt_path": "/home/bi_geum/official_matrix_88/third_party/MultiKernelBench/reference/resize/upsample_grid_sample.py",
+  "prompt": "Benchmark: multikernelbench\nOfficial task: upsample_grid_sample\nReturn only source code, without Markdown fences or explanations.\n\nGenerate a kernel response for the exact MultiKernelBench operator 'upsample_grid_sample'. Use CUDA C++ or Triton and do not replace the computation with eager PyTorch.\n\nimport torch\nimport torch.nn as nn\nimport torch.nn.functional as F\nclass Model(nn.Module):\n    def forward(self, x, theta):\n        x_up = F.interpolate(x, scale_factor=2.0, mode='bilinear', align_corners=False)\n        grid = F.affine_grid(theta, x_up.size(), align_corners=False)\n        return F.grid_sample(x_up, grid, mode='bilinear', align_corners=False)\n\ndef get_inputs():\n    x = torch.rand(2, 64, 64, 64)\n    theta = torch.tensor([[[1.0, 0, 0], [0, 1.0, 0]]] * 2)\n    return [x, theta]\n\ndef get_init_inputs():\n    return []"
+}

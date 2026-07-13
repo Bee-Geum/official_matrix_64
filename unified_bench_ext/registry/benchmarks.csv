@@ -1,0 +1,33 @@
+# benchmarks.csv  --  one row per open-source benchmark from the survey (Table 2 + repos)
+#
+# Columns:
+#   benchmark    run-dir benchmark tag
+#   family       kb = PyTorch Model->ModelNew (lang-agnostic, reuses instrumented_final_eval)
+#                op = operator-fill suite (BackendBench)
+#                triton_standalone = bare Triton kernel + driver/tests (TritonBench-G)
+#                parallel = general parallel-code prompts (ParEval)
+#                inference = LLM-inference kernel schema (FlashInfer-Bench)
+#                sol = speed-of-light subgraph scoring (SOL-ExecBench)
+#   langs        languages a candidate may be written in, '|' separated. 'any' = cuda|triton|...
+#   hardware     target hardware, '|' separated: nvidia|amd|npu|tpu
+#   a100         yes = fully runnable on one RTX PRO 6000; partial = a subset runs; no = needs other HW
+#   eval_mode    kb_instrumented | backendbench | native
+#   task_format  kb_model | op_fill | triton_standalone | parallel_prompt | inference_schema | sol_subgraph
+#   prepare      prepare script (relative to unified_bench_ext/)
+#   repo         upstream git repo (prepare.sh pins the resolved SHA into repo_lock_ext.json)
+#   ref          paper / citation key
+#
+# NOTE: CUDAEval (Table 2, ReGraphT 'From Large to Small', 10/2025, NVIDIA) is a Table 2 benchmark
+# but its code/data are NOT publicly released (paper-only), so it is intentionally NOT included as a
+# runnable open-source benchmark. Add a row here if/when ReGraphT releases CUDAEval.
+benchmark,family,langs,hardware,a100,eval_mode,task_format,prepare,repo,ref
+kernelbench,kb,any,nvidia,yes,kb_instrumented,kb_model,benchmarks/kernelbench/prepare.sh,https://github.com/ScalingIntelligence/KernelBench,Ouyang2025
+robust_kbench,kb,any,nvidia,yes,kb_instrumented,kb_model,benchmarks/robust_kbench/prepare.sh,https://github.com/SakanaAI/robust-kbench,Lange2025
+multikernelbench,kb,any,nvidia|npu|tpu,partial,native,prompt_or_python,benchmarks/multikernelbench/prepare.sh,https://github.com/wzzll123/MultiKernelBench,Wen2025
+tritonbench_t,kb,any,nvidia,yes,native,triton_python,benchmarks/tritonbench/prepare.sh,https://github.com/thunlp/TritonBench,Li2025c
+tritonbench_g,triton_standalone,any,nvidia,yes,native,triton_python,benchmarks/tritonbench/prepare.sh,https://github.com/thunlp/TritonBench,Li2025c
+backendbench,op,any,nvidia,yes,native,op_fill,benchmarks/backendbench/prepare.sh,https://github.com/meta-pytorch/BackendBench,Saroufim2025
+pareval,parallel,any,nvidia,partial,native,parallel_prompt,benchmarks/pareval/prepare.sh,https://github.com/parallelcodefoundry/ParEval,Nichols2024
+flashinfer_bench,inference,any,nvidia,partial,native,inference_schema,benchmarks/flashinfer_bench/prepare.sh,https://github.com/flashinfer-ai/flashinfer-bench,Xing2026
+sol_execbench,sol,any,nvidia,partial,native,sol_subgraph,benchmarks/sol_execbench/prepare.sh,https://github.com/sol-execbench/SOL-ExecBench,Lin2026
+rocm_tritonbench,triton_standalone,triton,amd,no,native,triton_standalone,benchmarks/rocm_tritonbench/prepare.sh,https://github.com/AMD-AGI/GEAK-agent,Wang2025

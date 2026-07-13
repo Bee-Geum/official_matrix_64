@@ -1,0 +1,29 @@
+[
+  {
+    "task": "third_party/KernelBench/KernelBench/level1/19_ReLU.py",
+    "task_dir": "results/repro/kernelskill_relu_oracle2",
+    "n_candidates": 2,
+    "n_compiled": 1,
+    "n_correct": 1,
+    "runnable_rate": 0.5,
+    "correct_rate": 0.5,
+    "pass@1": 0.0,
+    "pass@k_analytic": 0.5,
+    "fast_1": 0.0,
+    "best_score": 0.6953840757752877,
+    "best_runnable": true,
+    "geomean_speedup": 0.6953840757752877,
+    "median_speedup": 0.6953840757752877,
+    "compile_attempts": 2,
+    "correctness_trials_executed": 5,
+    "profile_runs": 220,
+    "first_compiled_candidate_index": 1,
+    "first_correct_candidate_index": 1,
+    "first_faster_candidate_index": null,
+    "unified_eval_wall_s": 87.29341799399117,
+    "compile_s": 48.20924018905498,
+    "correctness_s": 24.503932426974643,
+    "benchmark_s": 2.3895711390068755,
+    "model_init_s": 0.00012627302203327417
+  }
+]

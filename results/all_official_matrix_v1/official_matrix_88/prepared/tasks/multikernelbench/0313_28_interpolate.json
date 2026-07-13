@@ -1,0 +1,8 @@
+{
+  "benchmark": "multikernelbench",
+  "task_id": "28_interpolate",
+  "op": "28_interpolate",
+  "official_task": true,
+  "prompt_path": "",
+  "prompt": "Benchmark: multikernelbench\nOfficial task: 28_interpolate\nReturn only source code, without Markdown fences or explanations.\n\nGenerate a kernel response for the exact MultiKernelBench operator '28_interpolate'. Use CUDA C++ or Triton and do not replace the computation with eager PyTorch.\n\nMultiKernelBench operator: 28_interpolate\nOfficial dataset entry: {'category': 'npukernelbench_level1', 'source': 'NPUKernelBench'}\n"
+}

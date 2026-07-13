@@ -1,0 +1,8 @@
+{
+  "benchmark": "multikernelbench",
+  "task_id": "8_conv_standard3d",
+  "op": "8_conv_standard3d",
+  "official_task": true,
+  "prompt_path": "",
+  "prompt": "Benchmark: multikernelbench\nOfficial task: 8_conv_standard3d\nReturn only source code, without Markdown fences or explanations.\n\nGenerate a kernel response for the exact MultiKernelBench operator '8_conv_standard3d'. Use CUDA C++ or Triton and do not replace the computation with eager PyTorch.\n\nMultiKernelBench operator: 8_conv_standard3d\nOfficial dataset entry: {'category': 'npukernelbench_level3', 'source': 'NPUKernelBench'}\n"
+}

@@ -1,0 +1,63 @@
+{
+  "benchmark": "sol_execbench",
+  "task_id": "linear_backward",
+  "official_task": true,
+  "problem_dir": "/home/bi_geum/official_matrix_88/third_party/SOL-ExecBench/tests/sol_execbench/samples/linear_backward",
+  "definition": {
+    "name": "linear_backward",
+    "op_type": "backward",
+    "axes": {
+      "M": {
+        "type": "var"
+      },
+      "N": {
+        "type": "var"
+      },
+      "K": {
+        "type": "var"
+      }
+    },
+    "custom_inputs_entrypoint": "generate_inputs",
+    "inputs": {
+      "grad_output": {
+        "shape": [
+          "M",
+          "N"
+        ],
+        "dtype": "float32"
+      },
+      "x": {
+        "shape": [
+          "M",
+          "K"
+        ],
+        "dtype": "float32"
+      },
+      "weight": {
+        "shape": [
+          "N",
+          "K"
+        ],
+        "dtype": "float32"
+      }
+    },
+    "outputs": {
+      "grad_input": {
+        "shape": [
+          "M",
+          "K"
+        ],
+        "dtype": "float32"
+      },
+      "grad_weight": {
+        "shape": [
+          "N",
+          "K"
+        ],
+        "dtype": "float32"
+      }
+    },
+    "reference": "import torch\n\ndef generate_inputs(axes_and_scalars, device):\n    M = axes_and_scalars['M']\n    N = axes_and_scalars['N']\n    K = axes_and_scalars['K']\n    grad_output = torch.randn(M, N, dtype=torch.float32, device=device) / N ** 0.5\n    x = torch.randn(M, K, dtype=torch.float32, device=device) / K ** 0.5\n    weight = torch.randn(N, K, dtype=torch.float32, device=device) / K ** 0.5\n    return {'grad_output': grad_output, 'x': x, 'weight': weight}\n\n@torch.no_grad()\ndef run(grad_output, x, weight):\n    grad_input = grad_output @ weight\n    grad_weight = grad_output.mT @ x\n    return grad_input, grad_weight\n"
+  },
+  "prompt": "Benchmark: sol_execbench\nOfficial task: linear_backward\nReturn only source code, without Markdown fences or explanations.\n\nImplement the SOL-ExecBench Definition below. Prefer a Python or Triton module with a callable `run`; CUDA C++ is also accepted. The adapter will package the source into the official Solution schema.\n\nDefinition:\n{\n  \"name\": \"linear_backward\",\n  \"op_type\": \"backward\",\n  \"axes\": {\n    \"M\": {\n      \"type\": \"var\"\n    },\n    \"N\": {\n      \"type\": \"var\"\n    },\n    \"K\": {\n      \"type\": \"var\"\n    }\n  },\n  \"custom_inputs_entrypoint\": \"generate_inputs\",\n  \"inputs\": {\n    \"grad_output\": {\n      \"shape\": [\n        \"M\",\n        \"N\"\n      ],\n      \"dtype\": \"float32\"\n    },\n    \"x\": {\n      \"shape\": [\n        \"M\",\n        \"K\"\n      ],\n      \"dtype\": \"float32\"\n    },\n    \"weight\": {\n      \"shape\": [\n        \"N\",\n        \"K\"\n      ],\n      \"dtype\": \"float32\"\n    }\n  },\n  \"outputs\": {\n    \"grad_input\": {\n      \"shape\": [\n        \"M\",\n        \"K\"\n      ],\n      \"dtype\": \"float32\"\n    },\n    \"grad_weight\": {\n      \"shape\": [\n        \"N\",\n        \"K\"\n      ],\n      \"dtype\": \"float32\"\n    }\n  },\n  \"reference\": \"import torch\\n\\ndef generate_inputs(axes_and_scalars, device):\\n    M = axes_and_scalars['M']\\n    N = axes_and_scalars['N']\\n    K = axes_and_scalars['K']\\n    grad_output = torch.randn(M, N, dtype=torch.float32, device=device) / N ** 0.5\\n    x = torch.randn(M, K, dtype=torch.float32, device=device) / K ** 0.5\\n    weight = torch.randn(N, K, dtype=torch.float32, device=device) / K ** 0.5\\n    return {'grad_output': grad_output, 'x': x, 'weight': weight}\\n\\n@torch.no_grad()\\ndef run(grad_output, x, weight):\\n    grad_input = grad_output @ weight\\n    grad_weight = grad_output.mT @ x\\n    return grad_input, grad_weight\\n\"\n}\n\nFirst workload:\n{\"axes\": {\"M\": 64, \"K\": 128, \"N\": 64}, \"inputs\": {\"grad_output\": {\"type\": \"custom\"}, \"x\": {\"type\": \"custom\"}, \"weight\": {\"type\": \"custom\"}}, \"uuid\": \"linbwd-001\"}"
+}

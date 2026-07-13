@@ -1,0 +1,23 @@
+{
+  "compiled": false,
+  "correct": false,
+  "latency_ms": null,
+  "ref_latency_ms": null,
+  "speedup": null,
+  "error": "compile: Traceback (most recent call last):\n  File \"/home/bi_geum/anaconda3/envs/survey/lib/python3.10/site-packages/torch/utils/cpp_extension.py\", line 2774, in _run_ninja_build\n    subprocess.run(\n  File \"/home/bi_geum/anaconda3/envs/survey/lib/python3.10/subprocess.py\", line 526, in run\n    raise CalledProcessError(retcode, process.args,\nsubprocess.CalledProcessError: Command '['ninja', '-v']' returned non-zero exit status 1.\n\nThe above exception was the direct cause of the following exception:\n\nTraceback (most recent call last):\n  File \"/home/bi_geum/official_matrix_88/telemetry/instrumented_eval_worker.py\", line 87, in main\n    candidate_module = load_module(job[\"cand_path\"], \"cand_mod\")\n  File \"/home/bi_geum/official_matrix_88/telemetry/instrumented_eval_worker.py\", line 19, in load_module\n    spec.loader.exec_module(module)\n  File \"<frozen importlib._bootstrap_external>\", line 883, in exec_module\n  File \"<frozen importlib._bootstrap>\", line 241, in _call_with_frames_removed\n  File \"/home/bi_geum/official_matrix_88/results/repro/incoder32b_relu_cand/round0_kernel.py\", line 36, in <module>\n    relu_extension = load_inline(\n  File \"/home/bi_geum/anaconda3/envs/survey/lib/python3.10/site-packages/torch/utils/cpp_extension.py\", line 2174, in load_inline\n    return _jit_compile(\n  File \"/home/bi_geum/anaconda3/envs/survey/lib/python3.10/site-packages/torch/utils/cpp_extension.py\", line 2268, in _jit_compile\n    _write_ninja_file_and_build_library(\n  File \"/home/bi_geum/anaconda3/envs/survey/lib/python3.10/site-packages/torch/utils/cpp_extension.py\", line 2429, in _write_ninja_file_and_build_library\n    _run_ninja_build(\nRuntimeError: Error building extension 'relu_extension': [1/2] /home/bi_geum/anaconda3/envs/survey/bin/x86_64-conda-linux-gnu-c++ -MMD -MF main.o.d -DTORCH_EXTENSION_NAME=relu_extension -DTORCH_API_INCLUDE_EXTENSION_H -isystem /home/bi_geum/anaconda3/envs/survey/lib/python3.10/site-packages/torch/include -isystem /home/bi_geum/anaconda3/envs/survey/lib/python3.10/site-packages/torch/include/torch/csrc/api/include -isystem /home/bi_geum/anaconda3/envs/survey/include/python3.10 -fPIC -std=c++17 -c /home/bi_geum/official_matrix_88/results/repro/_extdir_incoder32b/relu_extension/main.cpp -o main.o \nFAILED: [code=1] main.o \n/home/bi_geum/anaconda3/envs/survey/bin/x86_64-conda-linux-gnu-c++ -MMD -MF main.o.d -DTORCH_EXTENSION_NAME=relu_extension -DTORCH_API_INCLUDE_EXTENSION_H -isystem /home/bi_geum/anaconda3/envs/survey/lib/python3.10/site-packages/torch/include -isystem /home/bi_geum/anaconda3/envs/survey/lib/python3.10/site-packages/torch/include/torch/csrc/api/include -isystem /home/bi_geum/anaconda3/envs/survey/include/python3.10 -fPIC -std=c++17 -c /home/bi_geum/official_matrix_88/results/repro/_extdir_incoder32b/relu_extension/main.cpp -o main.o \n/home/bi_geum/official_matrix_88/results/repro/_extdir_incoder32b/relu_extension/main.cpp:4:10: fatal error: cuda.h: No such file or directory\n    4 | #include <cuda.h>\n      |          ^~~~~~~~\ncompilation terminated.\nninja: build stopped: subcommand failed.\n\n",
+  "stage_s": {
+    "reference_import": 0.0002454740460962057,
+    "candidate_compile_import": 1.2232425769907422,
+    "model_init": 0.0,
+    "correctness": 0.0,
+    "reference_benchmark": 0.0,
+    "candidate_benchmark": 0.0,
+    "total": 2.3132524670218118
+  },
+  "correctness_trials_requested": 5,
+  "correctness_trials_executed": 0,
+  "warmup": 10,
+  "timing_iters": 100,
+  "compile_attempts": 1,
+  "profile_runs": 0
+}

@@ -1,0 +1,8 @@
+{
+  "benchmark": "multikernelbench",
+  "task_id": "22_nonzero",
+  "op": "22_nonzero",
+  "official_task": true,
+  "prompt_path": "",
+  "prompt": "Benchmark: multikernelbench\nOfficial task: 22_nonzero\nReturn only source code, without Markdown fences or explanations.\n\nGenerate a kernel response for the exact MultiKernelBench operator '22_nonzero'. Use CUDA C++ or Triton and do not replace the computation with eager PyTorch.\n\nMultiKernelBench operator: 22_nonzero\nOfficial dataset entry: {'category': 'npukernelbench_level1', 'source': 'NPUKernelBench'}\n"
+}

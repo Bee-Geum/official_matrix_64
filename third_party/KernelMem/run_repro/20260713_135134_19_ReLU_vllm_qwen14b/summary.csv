@@ -1,0 +1,6 @@
+task,best_score,best_runnable,task_dir,figure
+KernelBench/level1/19_ReLU.py,0.531192,1,/home/bi_geum/official_matrix_88/third_party/KernelMem/run_repro/20260713_135134_19_ReLU_vllm_qwen14b/19_ReLU,/home/bi_geum/official_matrix_88/third_party/KernelMem/run_repro/20260713_135134_19_ReLU_vllm_qwen14b/19_ReLU/figures/19_ReLU_score.png
+
+avg_speedup,0.531192
+accuracy,1.000000
+total_tokens_sum,0

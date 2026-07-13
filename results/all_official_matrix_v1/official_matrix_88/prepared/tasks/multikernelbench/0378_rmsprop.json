@@ -1,0 +1,8 @@
+{
+  "benchmark": "multikernelbench",
+  "task_id": "rmsprop",
+  "op": "rmsprop",
+  "official_task": true,
+  "prompt_path": "/home/bi_geum/official_matrix_88/third_party/MultiKernelBench/reference/optimizer/rmsprop.py",
+  "prompt": "Benchmark: multikernelbench\nOfficial task: rmsprop\nReturn only source code, without Markdown fences or explanations.\n\nGenerate a kernel response for the exact MultiKernelBench operator 'rmsprop'. Use CUDA C++ or Triton and do not replace the computation with eager PyTorch.\n\nimport torch\nimport torch.nn as nn\n\nclass Model(nn.Module):\n    def __init__(self, lr=1e-3, alpha=0.99, eps=1e-8):\n        super().__init__()\n        self.lr = lr\n        self.alpha = alpha\n        self.eps = eps\n\n    def forward(self, param, grad, v):\n        v = self.alpha * v + (1 - self.alpha) * grad.pow(2)\n        param = param - self.lr * grad / (v.sqrt() + self.eps)\n        return param\n\ndef get_inputs():\n    param = torch.rand(2048, 2048)\n    grad = torch.rand_like(param)\n    v = torch.zeros_like(param)\n    return [param, grad, v]\n\ndef get_init_inputs():\n    return []\n"
+}

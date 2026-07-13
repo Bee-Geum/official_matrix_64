@@ -1,0 +1,15 @@
+```json
+{
+  "critical_issue": "Compiler command-line option error",
+  "evidence": [
+    "x86_64-conda-linux-gnu-c++: error: unrecognized debug output level 'encode=arch=compute_80,code=sm_80'",
+    "x86_64-conda-linux-gnu-c++: error: unrecognized command-line option '--expt-relaxed-constexpr'"
+  ],
+  "root_cause": "Compiler does not recognize certain options, such as 'encode=arch=compute_80,code=sm_80' and '--expt-relaxed-constexpr'.",
+  "trigger_condition": "Building the extension with unrecognized compiler options.",
+  "must_hold_invariants": [],
+  "minimal_fix": "Remove the unrecognized options from extra_cflags.",
+  "patch_anchor": "extra_cflags=[",
+  "confidence": "high"
+}
+```

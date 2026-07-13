@@ -1,0 +1,7 @@
+```json
+{
+  "critical_issue": "CUDA out of memory during execution.",
+  "why_it_matters": "Insufficient GPU memory leads to runtime failure.",
+  "minimal_fix_hint": "Reduce batch size or optimize memory usage."
+}
+```

@@ -1,0 +1,7 @@
+```json
+{
+  "bottleneck": "Long scoreboard stalls due to high percentage of stalled instructions.",
+  "optimisation method": "Optimize branch prediction and reduce long scoreboard stalls.",
+  "modification plan": "Refactor kernel to improve branch prediction and reduce dependencies."
+}
+```

@@ -1,0 +1,8 @@
+{
+  "benchmark": "multikernelbench",
+  "task_id": "grid_sample_random_warp",
+  "op": "grid_sample_random_warp",
+  "official_task": true,
+  "prompt_path": "/home/bi_geum/official_matrix_88/third_party/MultiKernelBench/reference/resize/grid_sample_random_warp.py",
+  "prompt": "Benchmark: multikernelbench\nOfficial task: grid_sample_random_warp\nReturn only source code, without Markdown fences or explanations.\n\nGenerate a kernel response for the exact MultiKernelBench operator 'grid_sample_random_warp'. Use CUDA C++ or Triton and do not replace the computation with eager PyTorch.\n\nimport torch\nimport torch.nn as nn\nimport torch.nn.functional as F\nclass Model(nn.Module):\n    def forward(self, x, grid):\n        return F.grid_sample(x, grid, mode='bilinear', align_corners=False)\n\ndef get_inputs():\n    N, C, H, W = 4, 3, 256, 256\n    x = torch.rand(N, C, H, W)\n    # random warped grid\n    base = F.affine_grid(torch.eye(2, 3).unsqueeze(0).repeat(N,1,1).to(x), size=x.size(), align_corners=False)\n    noise = torch.rand_like(base) * 0.05\n    grid = base + noise\n    return [x, grid]\n\ndef get_init_inputs():\n    return []"
+}

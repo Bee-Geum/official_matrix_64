@@ -1,0 +1,6 @@
+{
+  "benchmark": "kernelbench",
+  "task_id": "74_conv_transposed_1D_dilated",
+  "source_path": "/home/bi_geum/official_matrix_88/third_party/KernelBench/KernelBench/level1/74_conv_transposed_1D_dilated.py",
+  "official_task": true
+}
