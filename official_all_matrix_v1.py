@@ -18,19 +18,24 @@ have official_eval=1 and correct=0, which is the intended behavior.
 from __future__ import annotations
 
 import argparse
+import copy
 import csv
 import dataclasses
+import functools
 import hashlib
 import json
 import math
 import os
+import queue
 import re
 import shlex
 import shutil
 import subprocess
 import sys
+import threading
 import time
 from collections import Counter, defaultdict
+from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 from typing import Any, Iterable, Optional
 
@@ -180,6 +185,74 @@ def run_cmd(
             errors="ignore",
         )
         return CommandResult(125, "", repr(exc), wall, str(log_path), [str(x) for x in cmd])
+
+
+def detect_gpu_indices() -> list[str]:
+    """Physical GPU indices visible to nvidia-smi, honoring CUDA_VISIBLE_DEVICES."""
+    visible = os.environ.get("CUDA_VISIBLE_DEVICES")
+    if visible is not None and visible.strip():
+        return [part.strip() for part in visible.split(",") if part.strip()]
+    try:
+        proc = subprocess.run(["nvidia-smi", "--query-gpu=index", "--format=csv,noheader"],
+                              capture_output=True, text=True, timeout=60)
+        if proc.returncode == 0:
+            found = [line.strip() for line in proc.stdout.splitlines() if line.strip()]
+            if found:
+                return found
+    except Exception:
+        pass
+    return ["0"]
+
+
+@functools.lru_cache(maxsize=None)
+def detect_gpu_name(index: str = "0") -> str:
+    """Real device name, so the agent prompt describes the GPU it actually runs on."""
+    override = os.environ.get("GPU_NAME")
+    if override:
+        return override
+    try:
+        proc = subprocess.run(["nvidia-smi", "--query-gpu=name", "--format=csv,noheader", "-i", str(index)],
+                              capture_output=True, text=True, timeout=60)
+        if proc.returncode == 0 and proc.stdout.strip():
+            return proc.stdout.strip().splitlines()[0].strip()
+    except Exception:
+        pass
+    return "NVIDIA GPU"
+
+
+def resolve_gpu_slots(args: argparse.Namespace) -> list[str]:
+    """Ordered list of GPU indices, one entry per concurrently runnable cell.
+
+    --workers-per-gpu > 1 repeats each index, which co-locates cells on a GPU and
+    makes the official timing numbers contend. Correctness stays valid; perf does not.
+    """
+    spec = str(getattr(args, "gpus", "") or "").strip()
+    if not spec:
+        indices = [str(args.gpu)]
+    elif spec.lower() == "all":
+        indices = detect_gpu_indices()
+    else:
+        indices = [part.strip() for part in spec.split(",") if part.strip()]
+    per_gpu = max(1, int(getattr(args, "workers_per_gpu", 1)))
+    return [index for index in indices for _ in range(per_gpu)]
+
+
+def isolation_env(args: argparse.Namespace) -> dict[str, str]:
+    """Per-cell env: pin the GPU and give the cell private compile/temp caches.
+
+    A cell killed by timeout leaves a stale torch FileBaton `lock` behind; a shared
+    TORCH_EXTENSIONS_DIR would then hang every later cell that builds the same kernel
+    name, and concurrent cells would race on the same build dir. Keep them separate.
+    """
+    env = {"CUDA_VISIBLE_DEVICES": str(args.gpu)}
+    scratch = str(getattr(args, "cell_scratch", "") or "")
+    if scratch:
+        for key, sub in (("TORCH_EXTENSIONS_DIR", "torch_extensions"), ("TRITON_CACHE_DIR", "triton"),
+                         ("TMPDIR", "tmp"), ("CUDA_CACHE_PATH", "nv_cache")):
+            path = Path(scratch) / sub
+            path.mkdir(parents=True, exist_ok=True)
+            env[key] = str(path)
+    return env
 
 
 def list_agents(root: Path, selected: str) -> list[Agent]:
@@ -721,14 +794,15 @@ def generate_candidates(root: Path, agent: Agent, task: Task, cell_dir: Path, ar
     prompt_path = cell_dir / "official_prompt.txt"
     prompt_path.write_text(task.prompt_text, errors="ignore")
     task_argument = task.source_path if task.benchmark in KB_BENCHMARKS and task.source_path else prompt_path
-    gpu_json = json.dumps({"name": os.environ.get("GPU_NAME", "NVIDIA RTX PRO 6000"), "index": args.gpu}, separators=(",", ":"))
+    # index 0: the child is pinned via CUDA_VISIBLE_DEVICES, so it only ever sees one device.
+    gpu_json = json.dumps({"name": detect_gpu_name(args.gpu), "index": 0}, separators=(",", ":"))
     template = agent.gen_args or f"--task {{TASK}} {agent.out_flag} {{CAND}} --rounds {{ROUNDS}} --seed {{SEED}} --temperature {{TEMP}}"
     replacements = {"{TASK}": str(task_argument), "{CAND}": str(candidate_dir), "{ROUNDS}": str(args.rounds), "{SEED}": str(args.seed), "{TEMP}": str(args.temp), "{GPU_JSON}": gpu_json}
     rendered = template
     for key, value in replacements.items():
         rendered = rendered.replace(key, value)
     cmd = [sys.executable, str(agent.driver)] + shlex.split(rendered)
-    env = {"CUDA_VISIBLE_DEVICES": str(args.gpu), "OPENAI_BASE_URL": os.environ.get("OPENAI_BASE_URL", f"http://127.0.0.1:{args.port}/v1"), "PYTHONPATH": f"{root}:{os.environ.get('PYTHONPATH', '')}", "PYTHONUNBUFFERED": "1"}
+    env = {**isolation_env(args), "OPENAI_BASE_URL": os.environ.get("OPENAI_BASE_URL", f"http://127.0.0.1:{args.port}/v1"), "PYTHONPATH": f"{root}:{os.environ.get('PYTHONPATH', '')}", "PYTHONUNBUFFERED": "1"}
     result = run_cmd(cmd, root, cell_dir / "generation.log.txt", timeout=args.generation_timeout, env=env)
     files = candidate_files(candidate_dir, agent)
     normalized: list[Path] = []
@@ -828,7 +902,7 @@ def evaluate_kb_cell(root: Path, run_root: Path, agent: Agent, benchmark: str, t
     label = "kernelbench_all250" if benchmark == "kernelbench" else "robust_kbench_l12"
     pattern = f"runs/{agent.name}_{agent.model}_{label}_round{args.rounds}_repeat{args.repeat}_temp{args.temp}*"
     backup_existing_run(root, pattern, backup_root)
-    env = {"CUDA_VISIBLE_DEVICES": str(args.gpu), "PYTHONPATH": f"{root}:{os.environ.get('PYTHONPATH', '')}", "OPENAI_BASE_URL": os.environ.get("OPENAI_BASE_URL", f"http://127.0.0.1:{args.port}/v1"), "FORCE": "1", "PYTHONUNBUFFERED": "1"}
+    env = {**isolation_env(args), "PYTHONPATH": f"{root}:{os.environ.get('PYTHONPATH', '')}", "OPENAI_BASE_URL": os.environ.get("OPENAI_BASE_URL", f"http://127.0.0.1:{args.port}/v1"), "FORCE": "1", "PYTHONUNBUFFERED": "1"}
     cmd = ["bash", str(runner), "matrix", "--benchmark", benchmark, "--agent", agent.name, "--rounds", str(args.rounds), "--repeat", str(args.repeat), "--temp", str(args.temp), "--timeout", str(args.eval_timeout), "--limit", str(len(tasks))]
     result = run_cmd(cmd, root, cell_dir / "kb_matrix.log.txt", timeout=args.cell_timeout, env=env)
     run_dirs = [path for path in (root / "runs").glob(f"{agent.name}_{agent.model}_{label}_round{args.rounds}_repeat{args.repeat}_temp{args.temp}*") if path.is_dir()]
@@ -940,9 +1014,10 @@ def evaluate_triton(root: Path, benchmark: str, task: Task, candidate: Path, out
     source_file, target_file = source_dir / f"{stem}.py", target_dir / f"{stem}.py"
     source_file.write_text(task.source_path.read_text(errors="ignore"), errors="ignore")
     target_file.write_text(candidate.read_text(errors="ignore"), errors="ignore")
-    common_env = {"CUDA_VISIBLE_DEVICES": str(args.gpu), "PYTHONPATH": f"{repo}:{root}:{os.environ.get('PYTHONPATH', '')}"}
-    c0 = run_cmd([sys.executable, str(call_script), "--source", str(source_dir), "--target", str(target_dir), "--GPUs", str(args.gpu)], eval_dir, out_dir / "0_call_acc.log.txt", args.eval_timeout, common_env)
-    c1 = run_cmd([sys.executable, str(exe_script), "--folder", str(target_dir), "--GPUs", str(args.gpu)], eval_dir, out_dir / "1_exe_acc.log.txt", args.eval_timeout, common_env)
+    common_env = {**isolation_env(args), "PYTHONPATH": f"{repo}:{root}:{os.environ.get('PYTHONPATH', '')}"}
+    # "0": common_env pins the physical GPU, so the child's only visible device is 0.
+    c0 = run_cmd([sys.executable, str(call_script), "--source", str(source_dir), "--target", str(target_dir), "--GPUs", "0"], eval_dir, out_dir / "0_call_acc.log.txt", args.eval_timeout, common_env)
+    c1 = run_cmd([sys.executable, str(exe_script), "--folder", str(target_dir), "--GPUs", "0"], eval_dir, out_dir / "1_exe_acc.log.txt", args.eval_timeout, common_env)
     row["official_attempted"] = 1; row["evaluator_rc"] = max(c0.rc, c1.rc); row["logs"] = [c0.log, c1.log]
     correctness_text = c0.stdout + c0.stderr + "\n" + c1.stdout + c1.stderr
     rate_match = re.search(r"Correct execution rate:\s*([0-9.]+)%", correctness_text, re.I)
@@ -1068,7 +1143,7 @@ def evaluate_multikernel(root: Path, task: Task, candidate: Path, out_dir: Path,
     response = out_dir / "generated_response.txt"; response.parent.mkdir(parents=True, exist_ok=True)
     response.write_text(candidate.read_text(errors="ignore"), errors="ignore")
     result_path = out_dir / "official_result.json"
-    result = run_cmd([sys.executable, str(evaluator), "--input", str(response), "--op", str(task.metadata["op"]), "--language", infer_candidate_language(candidate), "--result", str(result_path)], repo, out_dir / "official_eval.log.txt", args.eval_timeout, {"CUDA_VISIBLE_DEVICES": str(args.gpu), "PYTHONPATH": f"{repo}:{root}:{os.environ.get('PYTHONPATH', '')}"})
+    result = run_cmd([sys.executable, str(evaluator), "--input", str(response), "--op", str(task.metadata["op"]), "--language", infer_candidate_language(candidate), "--result", str(result_path)], repo, out_dir / "official_eval.log.txt", args.eval_timeout, {**isolation_env(args), "PYTHONPATH": f"{repo}:{root}:{os.environ.get('PYTHONPATH', '')}"})
     row["official_attempted"] = 1; row["evaluator_rc"] = result.rc; row["logs"] = [result.log]
     data = read_json(result_path, None)
     if isinstance(data, dict):
@@ -1184,7 +1259,7 @@ def evaluate_backendbench(root: Path, task: Task, candidate: Path, out_dir: Path
     # any other suite). Try opinfo first, then torchbench for the overhead ops.
     for index, (suite, extra) in enumerate([("opinfo", []), ("torchbench", ["--check-overhead-dominated-ops"]), ("smoke", [])]):
         log_dir = out_dir / f"results_{index}_{suite}"; clean_directory(log_dir)
-        result = run_cmd([sys.executable, str(main), "--suite", suite, "--backend", "directory", "--ops-directory", str(ops_dir), "--log-dir", str(log_dir)] + extra, repo, out_dir / f"official_{index}_{suite}.log.txt", args.eval_timeout, {"CUDA_VISIBLE_DEVICES": str(args.gpu), "PYTHONPATH": f"{repo}:{root}:{os.environ.get('PYTHONPATH', '')}"})
+        result = run_cmd([sys.executable, str(main), "--suite", suite, "--backend", "directory", "--ops-directory", str(ops_dir), "--log-dir", str(log_dir)] + extra, repo, out_dir / f"official_{index}_{suite}.log.txt", args.eval_timeout, {**isolation_env(args), "PYTHONPATH": f"{repo}:{root}:{os.environ.get('PYTHONPATH', '')}"})
         row["logs"].append(result.log); all_text += result.stdout + result.stderr + "\n"
         full_path = log_dir / "full_results.json"; full = read_json(full_path, None)
         if not isinstance(full, list) or not full:
@@ -1252,7 +1327,7 @@ def evaluate_pareval(root: Path, task: Task, candidate: Path, out_dir: Path, arg
             row["infrastructure_error"] = f"ParEval official config missing: {name}"; return row
         config_paths[name] = path
     cmd = [sys.executable, str(run_all), str(input_path), "--launch-configs", str(config_paths["launch-configs.json"]), "--build-configs", str(config_paths["build-configs.json"]), "--problem-sizes", str(config_paths["problem-sizes.json"]), "--include-models", "cuda", "--problem", str(prompt["name"]), "-o", str(result_path), "--yes-to-all", "--hide-progress", "--early-exit-runs", "--build-timeout", str(args.pareval_build_timeout), "--run-timeout", str(args.pareval_run_timeout)]
-    result = run_cmd(cmd, repo, out_dir / "official_eval.log.txt", args.eval_timeout, {"CUDA_VISIBLE_DEVICES": str(args.gpu), "PAREVAL_ROOT": str(repo), "PYTHONPATH": f"{repo / 'drivers'}:{repo}:{root}:{os.environ.get('PYTHONPATH', '')}"})
+    result = run_cmd(cmd, repo, out_dir / "official_eval.log.txt", args.eval_timeout, {**isolation_env(args), "PAREVAL_ROOT": str(repo), "PYTHONPATH": f"{repo / 'drivers'}:{repo}:{root}:{os.environ.get('PYTHONPATH', '')}"})
     row["official_attempted"] = 1; row["evaluator_rc"] = result.rc; row["logs"] = [result.log]
     data = read_json(result_path, None)
     if isinstance(data, list) and data and isinstance(data[0], dict):
@@ -1384,7 +1459,7 @@ def evaluate_sol(root: Path, task: Task, candidate: Path, out_dir: Path, args: a
     config = out_dir / "bench_config.json"
     write_json(config, {"warmup_runs": args.sol_warmup, "iterations": args.sol_iterations, "lock_clocks": False, "benchmark_reference": False, "seed": args.seed})
     trace_path = out_dir / "trace.jsonl"
-    env = {"CUDA_VISIBLE_DEVICES": str(args.gpu), "PYTHONPATH": f"{repo / 'src'}:{repo}:{root}:{os.environ.get('PYTHONPATH', '')}"}
+    env = {**isolation_env(args), "PYTHONPATH": f"{repo / 'src'}:{repo}:{root}:{os.environ.get('PYTHONPATH', '')}"}
     cmd = [sys.executable, "-m", "sol_execbench.cli.main", str(problem_dir), "--solution", str(solution), "--config", str(config), "--compile-timeout", str(args.sol_compile_timeout), "--timeout", str(args.sol_run_timeout), "-o", str(trace_path), "--json"]
     result = run_cmd(cmd, repo, out_dir / "official_eval.log.txt", args.eval_timeout, env)
     row["official_attempted"] = 1; row["evaluator_rc"] = result.rc; row["logs"] = [result.log]
@@ -1542,26 +1617,63 @@ def run_matrix(root: Path, run_root: Path, agents: list[Agent], benchmarks: list
     missing = [benchmark for benchmark, tasks in tasks_by_benchmark.items() if not tasks]
     if missing:
         raise RuntimeError(f"No prepared official tasks for: {missing}. Run prepare first.")
-    total = len(benchmarks) * len(agents); index = 0
+    plan: list[tuple[str, Agent, list[Task]]] = []
     for benchmark in benchmarks:
         tasks = tasks_by_benchmark[benchmark][:args.limit]
         if not tasks:
             raise RuntimeError(f"Official task limit produced zero tasks for {benchmark}")
         for agent in agents:
-            index += 1
-            print(f"[{index}/{total}] official benchmark={benchmark} agent={agent.name} tasks={len(tasks)}", flush=True)
-            original_force = args.force
+            plan.append((benchmark, agent, tasks))
+
+    # One GPU slot is leased per in-flight cell, so a cell never shares a GPU unless
+    # --workers-per-gpu (or an oversized --cell-workers) explicitly asks for it.
+    slots = resolve_gpu_slots(args)
+    workers = int(getattr(args, "cell_workers", 0) or 0) or len(slots)
+    if workers > len(slots):
+        slots = [slots[index % len(slots)] for index in range(workers)]
+    workers = max(1, min(workers, len(plan)))
+    gpu_pool: "queue.Queue[str]" = queue.Queue()
+    for slot in slots:
+        gpu_pool.put(slot)
+    total = len(plan)
+    done = 0
+    report_lock = threading.Lock()
+    print(f"matrix: {total} cells, {workers} concurrent, gpus={sorted(set(slots))} "
+          f"({len(slots)} slots, {args.workers_per_gpu}/gpu)", flush=True)
+
+    def run_cell_job(item: tuple[str, Agent, list[Task]]) -> dict[str, Any]:
+        nonlocal done
+        benchmark, agent, tasks = item
+        gpu = gpu_pool.get()
+        try:
+            # Per-cell args copy: --force flips on retry and --gpu differs per thread,
+            # so threads must not share one namespace.
+            cell_args = copy.copy(args)
+            cell_args.gpu = gpu
+            cell_args.cell_scratch = str(run_root / "cells" / benchmark / agent.name / "_scratch")
             cell: dict[str, Any] = {}
             for attempt in range(1, args.cell_attempts + 1):
-                cell = run_one_cell(root, run_root, agent, benchmark, tasks, args)
+                cell = run_one_cell(root, run_root, agent, benchmark, tasks, cell_args)
                 if cell.get("valid_official_cell") == 1:
                     break
                 if attempt < args.cell_attempts:
-                    args.force = True
-                    print(f"  retry {attempt + 1}/{args.cell_attempts}: {cell.get('top_infrastructure_error', '')[:300]}", flush=True)
-            args.force = original_force
+                    cell_args.force = True
+                    print(f"  retry {attempt + 1}/{args.cell_attempts} gpu={gpu} {benchmark}/{agent.name}: "
+                          f"{cell.get('top_infrastructure_error', '')[:300]}", flush=True)
+        finally:
+            gpu_pool.put(gpu)
+        with report_lock:
+            done += 1
             collect_run(run_root, agents, benchmarks)
-            print(json.dumps({"benchmark": benchmark, "agent": agent.name, "valid_official_cell": cell.get("valid_official_cell", 0), "official_eval_task_count": cell.get("official_eval_task_count", 0), "n_tasks": cell.get("n_tasks", 0), "correct_task_count": cell.get("correct_task_count", 0)}, ensure_ascii=False), flush=True)
+            print(f"[{done}/{total}] gpu={gpu} " + json.dumps({"benchmark": benchmark, "agent": agent.name, "valid_official_cell": cell.get("valid_official_cell", 0), "official_eval_task_count": cell.get("official_eval_task_count", 0), "n_tasks": cell.get("n_tasks", 0), "correct_task_count": cell.get("correct_task_count", 0)}, ensure_ascii=False), flush=True)
+        return cell
+
+    if workers == 1:
+        for item in plan:
+            run_cell_job(item)
+    else:
+        with ThreadPoolExecutor(max_workers=workers) as pool:
+            list(pool.map(run_cell_job, plan))
     return collect_run(run_root, agents, benchmarks)
 
 
@@ -1600,6 +1712,9 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--temp", type=float, default=float(os.environ.get("TEMP", "0.2")))
     parser.add_argument("--seed", type=int, default=int(os.environ.get("SEED", "0")))
     parser.add_argument("--gpu", default=os.environ.get("GPU", "0"))
+    parser.add_argument("--gpus", default=os.environ.get("GPUS", ""), help="'all', or '0,1,2,3'. Empty = just --gpu.")
+    parser.add_argument("--cell-workers", type=int, default=int(os.environ.get("CELL_WORKERS", "0")), help="Concurrent cells. 0 = one per GPU slot.")
+    parser.add_argument("--workers-per-gpu", type=int, default=int(os.environ.get("WORKERS_PER_GPU", "1")), help="Cells co-located per GPU. >1 speeds wall-clock but makes official timings contend.")
     parser.add_argument("--port", type=int, default=int(os.environ.get("PORT", "8000")))
     parser.add_argument("--generation-timeout", type=int, default=int(os.environ.get("GENERATION_TIMEOUT", "1200")))
     parser.add_argument("--eval-timeout", type=int, default=int(os.environ.get("EVAL_TIMEOUT", "1800")))

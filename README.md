@@ -90,7 +90,13 @@ tail -f run_matrix_64.out
 | `LIMIT` | `1` | tasks per cell |
 | `AGENTS` / `BENCHMARKS` | `all` | comma list to subset |
 | `MAX_CANDIDATES` / `CELL_ATTEMPTS` | `1` / `1` | candidates per task / retries per cell |
-| `GPU` | `0` | CUDA device |
+| `GPUS` | `all` | eval GPUs: `all`, or `0,1,2,3`. `GPUS=0` = single-GPU serial run |
+| `WORKERS_PER_GPU` | `1` | cells co-located per GPU (see the warning below) |
+| `CELL_WORKERS` | `#GPUs × WORKERS_PER_GPU` | concurrent cells |
+| `SERVER_GPU` / `DEDICATE_SERVER_GPU` | `0` / `1` | with `AUTO_START_SERVER=1`, the LLM gets this GPU and eval uses the rest |
+| `GPU` | first of `GPUS` | single-GPU fallback; `--gpus` takes precedence |
+| `TORCH_CUDA_ARCH_LIST` | auto (`compute_cap`) | `9.0` on H100, `12.0` on Blackwell |
+| `MAX_JOBS` | `nproc / CELL_WORKERS` | nvcc build jobs per cell |
 | `REPREPARE` | `0` | `1` = regenerate task manifests |
 
 Examples:
@@ -98,6 +104,27 @@ Examples:
 LIMIT=3 ./run_matrix_64.sh
 AGENTS=cudaforge,geak BENCHMARKS=pareval,sol_execbench ./run_matrix_64.sh
 ```
+
+### Multi-GPU
+
+By default every visible GPU runs one cell at a time, and cells are dispatched to
+whichever GPU frees up first. Each cell is pinned with `CUDA_VISIBLE_DEVICES` and gets a
+private `TORCH_EXTENSIONS_DIR` / `TRITON_CACHE_DIR` / `TMPDIR` under its own cell
+directory, so concurrent cells never race on a build dir and a cell killed by timeout
+cannot strand a stale torch `FileBaton` lock in a shared cache.
+
+```bash
+# 4 GPUs, external LLM endpoint -> 4 cells at a time
+LLM_BASE_URL=http://HOST:8000/v1 GPUS=0,1,2,3 ./run_matrix_64.sh
+
+# 4 GPUs, bundled server on GPU 0 -> eval runs 3-wide on GPUs 1,2,3
+AUTO_START_SERVER=1 SERVER_GPU=0 ./run_matrix_64.sh
+```
+
+> **`WORKERS_PER_GPU>1` invalidates the performance numbers.** Co-located cells contend
+> for SMs and memory bandwidth, so `best_score` / speedup stop being meaningful. Use it
+> only when you care about `correct` alone. One cell per GPU keeps timings comparable to
+> the single-GPU run.
 
 ## Outputs
 
