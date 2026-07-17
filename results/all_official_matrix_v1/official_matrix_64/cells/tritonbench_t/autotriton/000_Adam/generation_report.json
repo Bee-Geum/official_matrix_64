@@ -1,0 +1,28 @@
+{
+  "agent": "autotriton",
+  "driver": "/home/bi_geum/official_matrix_64/drivers/trained_model.py",
+  "cmd": [
+    "/home/bi_geum/official_matrix_64/.venv/bin/python3",
+    "/home/bi_geum/official_matrix_64/drivers/trained_model.py",
+    "--task",
+    "/home/bi_geum/official_matrix_64/results/all_official_matrix_v1/official_matrix_64/cells/tritonbench_t/autotriton/000_Adam/official_prompt.txt",
+    "--cand_dir",
+    "/home/bi_geum/official_matrix_64/results/all_official_matrix_v1/official_matrix_64/cells/tritonbench_t/autotriton/000_Adam/candidates",
+    "--rounds",
+    "1",
+    "--seed",
+    "0",
+    "--temperature",
+    "0.2"
+  ],
+  "returncode": 0,
+  "wall_s": 6.895853042602539,
+  "log": "/home/bi_geum/official_matrix_64/results/all_official_matrix_v1/official_matrix_64/cells/tritonbench_t/autotriton/000_Adam/generation.log.txt",
+  "candidate_count": 1,
+  "raw_candidates": [
+    "/home/bi_geum/official_matrix_64/results/all_official_matrix_v1/official_matrix_64/cells/tritonbench_t/autotriton/000_Adam/candidates/round000_kernel.py"
+  ],
+  "normalized_candidates": [
+    "/home/bi_geum/official_matrix_64/results/all_official_matrix_v1/official_matrix_64/cells/tritonbench_t/autotriton/000_Adam/candidates/official_candidate_000.py"
+  ]
+}

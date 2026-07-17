@@ -1,0 +1,42 @@
+$ /home/bi_geum/official_matrix_64/.venv/bin/python3 /home/bi_geum/official_matrix_64/third_party/BackendBench/BackendBench/scripts/main.py --suite torchbench --backend directory --ops-directory /home/bi_geum/official_matrix_64/results/all_official_matrix_v1/official_7/cells/backendbench/kernelllm/000_add/official_eval/candidate_001/ops --log-dir /home/bi_geum/official_matrix_64/results/all_official_matrix_v1/official_7/cells/backendbench/kernelllm/000_add/official_eval/candidate_001/results_1_torchbench --check-overhead-dominated-ops
+cwd=/home/bi_geum/official_matrix_64/third_party/BackendBench
+returncode=0
+wall_s=8.533105
+----- STDOUT -----
+correctness score (mean pass rate over all operators): 1.00
+performance score (geomean speedup over all operators): 1.00
+perf@p score (rate of correct samples with a speedup greater than p, p=1.0): 1.00
+Results saved to directory: /home/bi_geum/official_matrix_64/results/all_official_matrix_v1/official_7/cells/backendbench/kernelllm/000_add/official_eval/candidate_001/results_1_torchbench
+Overall summary saved to: /home/bi_geum/official_matrix_64/results/all_official_matrix_v1/official_7/cells/backendbench/kernelllm/000_add/official_eval/candidate_001/results_1_torchbench/OVERALL_SUMMARY.md
+
+----- STDERR -----
+[2026-07-16 15:45:45][INFO][_client.py] HTTP Request: HEAD https://huggingface.co/datasets/GPUMODE/backendbench_tests/resolve/ca7b1361b162d1499cb22ea4ad589dae506ead5d/backendbench_tests.py "HTTP/1.1 404 Not Found"
+Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+[2026-07-16 15:45:45][WARNING][_http.py] Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+[2026-07-16 15:45:45][INFO][_client.py] HTTP Request: HEAD https://s3.amazonaws.com/datasets.huggingface.co/datasets/datasets/GPUMODE/backendbench_tests/GPUMODE/backendbench_tests.py "HTTP/1.1 404 Not Found"
+[2026-07-16 15:45:46][INFO][_client.py] HTTP Request: GET https://huggingface.co/api/datasets/GPUMODE/backendbench_tests/revision/ca7b1361b162d1499cb22ea4ad589dae506ead5d "HTTP/1.1 200 OK"
+[2026-07-16 15:45:46][INFO][_client.py] HTTP Request: HEAD https://huggingface.co/datasets/GPUMODE/backendbench_tests/resolve/ca7b1361b162d1499cb22ea4ad589dae506ead5d/.huggingface.yaml "HTTP/1.1 404 Not Found"
+[2026-07-16 15:45:46][INFO][_client.py] HTTP Request: GET https://huggingface.co/api/datasets/GPUMODE/backendbench_tests/tree/ca7b1361b162d1499cb22ea4ad589dae506ead5d?recursive=false&expand=false "HTTP/1.1 200 OK"
+[2026-07-16 15:45:46][INFO][_client.py] HTTP Request: HEAD https://huggingface.co/datasets/GPUMODE/backendbench_tests/resolve/ca7b1361b162d1499cb22ea4ad589dae506ead5d/dataset_infos.json "HTTP/1.1 404 Not Found"
+[2026-07-16 15:45:47][INFO][directory.py] Loaded div from div_implementation_1.py -> div
+[2026-07-16 15:45:47][INFO][directory.py] Loaded relu from relu_implementation_1.py -> relu
+[2026-07-16 15:45:47][INFO][directory.py] Loaded mm from mm_implementation_1.py -> mm
+[2026-07-16 15:45:47][INFO][directory.py] Loaded sigmoid from sigmoid_implementation_1.py -> sigmoid
+[2026-07-16 15:45:47][INFO][directory.py] Loaded add from add_implementation_1.py -> add
+[2026-07-16 15:45:47][INFO][directory.py] Loaded mean from mean_implementation_1.py -> mean
+[2026-07-16 15:45:47][INFO][directory.py] Loaded tanh from tanh_implementation_1.py -> tanh
+[2026-07-16 15:45:47][WARNING][utils.py] Could not find PyTorch operation for softmax
+[2026-07-16 15:45:47][INFO][directory.py] Loaded mul from mul_implementation_1.py -> mul
+[2026-07-16 15:45:47][INFO][directory.py] Loaded bmm from bmm_implementation_1.py -> bmm
+[2026-07-16 15:45:47][INFO][directory.py] Loaded gelu from gelu_implementation_1.py -> gelu
+[2026-07-16 15:45:47][INFO][directory.py] Loaded layer_norm from layer_norm_implementation_1.py -> layer_norm
+[2026-07-16 15:45:47][INFO][directory.py] Loaded sub from sub_implementation_1.py -> sub
+[2026-07-16 15:45:47][INFO][directory.py] Loaded sum from sum_implementation_1.py -> sum
+[2026-07-16 15:45:47][INFO][directory.py] Loaded matmul from matmul_implementation_1.py -> matmul
+[2026-07-16 15:45:47][INFO][directory.py] DirectoryBackend loaded 14 kernels from /home/bi_geum/official_matrix_64/results/all_official_matrix_v1/official_7/cells/backendbench/kernelllm/000_add/official_eval/candidate_001/ops/
+[2026-07-16 15:45:48][INFO][output.py] Full results saved to /home/bi_geum/official_matrix_64/results/all_official_matrix_v1/official_7/cells/backendbench/kernelllm/000_add/official_eval/candidate_001/results_1_torchbench/full_results.json
+[2026-07-16 15:45:48][INFO][output.py] Operator summary CSV saved to /home/bi_geum/official_matrix_64/results/all_official_matrix_v1/official_7/cells/backendbench/kernelllm/000_add/official_eval/candidate_001/results_1_torchbench/operator_summary.csv
+[2026-07-16 15:45:48][INFO][output.py] Failed operations log saved to /home/bi_geum/official_matrix_64/results/all_official_matrix_v1/official_7/cells/backendbench/kernelllm/000_add/official_eval/candidate_001/results_1_torchbench/failed_tests.json
+[2026-07-16 15:45:48][INFO][output.py] Overall summary saved to /home/bi_geum/official_matrix_64/results/all_official_matrix_v1/official_7/cells/backendbench/kernelllm/000_add/official_eval/candidate_001/results_1_torchbench/OVERALL_SUMMARY.md
+[2026-07-16 15:45:48][INFO][output.py] Results saved to directory: /home/bi_geum/official_matrix_64/results/all_official_matrix_v1/official_7/cells/backendbench/kernelllm/000_add/official_eval/candidate_001/results_1_torchbench
+

@@ -1,0 +1,57 @@
+benchmark,agent,n_tasks,candidate_task_count,official_eval_task_count,correct_task_count,valid_official_cell,all_tasks_official,wall_s,top_infrastructure_error,finished_at
+kernelbench,cudaforge,1,1,1,1,1,1,9.811549663543701,,2026-07-16T12:48:28+0900
+kernelbench,autokernel,1,1,1,1,1,1,9.103025674819946,,2026-07-16T12:48:28+0900
+kernelbench,kernelskill,1,1,1,1,1,1,7.9309375286102295,,2026-07-16T12:48:51+0900
+kernelbench,drkernel,1,1,1,1,1,1,8.06710958480835,,2026-07-16T12:48:36+0900
+kernelbench,autotriton,1,1,1,1,1,1,7.539700508117676,,2026-07-16T12:48:32+0900
+kernelbench,kernelllm,1,1,1,1,1,1,7.76966118812561,,2026-07-16T12:48:44+0900
+kernelbench,incoder32b,1,1,1,1,1,1,7.8334479331970215,,2026-07-16T12:48:47+0900
+robust_kbench,cudaforge,1,1,1,1,1,1,7.611724376678467,,2026-07-16T12:48:51+0900
+robust_kbench,autokernel,1,1,1,1,1,1,7.866062164306641,,2026-07-16T12:48:55+0900
+robust_kbench,kernelskill,1,1,1,1,1,1,7.970052242279053,,2026-07-16T12:49:19+0900
+robust_kbench,drkernel,1,1,1,1,1,1,7.729728937149048,,2026-07-16T12:49:03+0900
+robust_kbench,autotriton,1,1,1,1,1,1,7.774617433547974,,2026-07-16T12:48:59+0900
+robust_kbench,kernelllm,1,1,1,1,1,1,8.02527666091919,,2026-07-16T12:49:13+0900
+robust_kbench,incoder32b,1,1,1,1,1,1,7.7523205280303955,,2026-07-16T12:49:15+0900
+tritonbench_t,cudaforge,1,1,1,1,1,1,46.53016257286072,,2026-07-16T12:49:59+0900
+tritonbench_t,autokernel,1,1,1,1,1,1,5.425682783126831,,2026-07-16T12:49:20+0900
+tritonbench_t,kernelskill,1,1,1,1,1,1,61.459283113479614,,2026-07-16T12:52:27+0900
+tritonbench_t,drkernel,1,1,1,1,1,1,61.08187174797058,,2026-07-16T12:51:00+0900
+tritonbench_t,autotriton,1,1,1,1,1,1,58.88166880607605,,2026-07-16T12:50:19+0900
+tritonbench_t,kernelllm,1,1,1,1,1,1,61.48390817642212,,2026-07-16T12:52:02+0900
+tritonbench_t,incoder32b,1,1,1,1,1,1,60.51661992073059,,2026-07-16T12:52:07+0900
+tritonbench_g,cudaforge,1,1,1,1,1,1,93.13456511497498,,2026-07-16T12:53:35+0900
+tritonbench_g,autokernel,1,1,1,1,1,1,93.2736394405365,,2026-07-16T12:53:40+0900
+tritonbench_g,kernelskill,0,0,0,0,0,,0,cell_result.json missing,
+tritonbench_g,drkernel,1,1,1,1,1,1,85.53317379951477,,2026-07-16T12:55:06+0900
+tritonbench_g,autotriton,1,1,1,1,1,1,88.28363299369812,,2026-07-16T12:55:03+0900
+tritonbench_g,kernelllm,0,0,0,0,0,,0,cell_result.json missing,
+tritonbench_g,incoder32b,0,0,0,0,0,,0,cell_result.json missing,
+multikernelbench,cudaforge,0,0,0,0,0,,0,cell_result.json missing,
+multikernelbench,autokernel,0,0,0,0,0,,0,cell_result.json missing,
+multikernelbench,kernelskill,0,0,0,0,0,,0,cell_result.json missing,
+multikernelbench,drkernel,0,0,0,0,0,,0,cell_result.json missing,
+multikernelbench,autotriton,0,0,0,0,0,,0,cell_result.json missing,
+multikernelbench,kernelllm,0,0,0,0,0,,0,cell_result.json missing,
+multikernelbench,incoder32b,0,0,0,0,0,,0,cell_result.json missing,
+backendbench,cudaforge,0,0,0,0,0,,0,cell_result.json missing,
+backendbench,autokernel,0,0,0,0,0,,0,cell_result.json missing,
+backendbench,kernelskill,0,0,0,0,0,,0,cell_result.json missing,
+backendbench,drkernel,0,0,0,0,0,,0,cell_result.json missing,
+backendbench,autotriton,0,0,0,0,0,,0,cell_result.json missing,
+backendbench,kernelllm,0,0,0,0,0,,0,cell_result.json missing,
+backendbench,incoder32b,0,0,0,0,0,,0,cell_result.json missing,
+pareval,cudaforge,0,0,0,0,0,,0,cell_result.json missing,
+pareval,autokernel,0,0,0,0,0,,0,cell_result.json missing,
+pareval,kernelskill,0,0,0,0,0,,0,cell_result.json missing,
+pareval,drkernel,0,0,0,0,0,,0,cell_result.json missing,
+pareval,autotriton,0,0,0,0,0,,0,cell_result.json missing,
+pareval,kernelllm,0,0,0,0,0,,0,cell_result.json missing,
+pareval,incoder32b,0,0,0,0,0,,0,cell_result.json missing,
+sol_execbench,cudaforge,0,0,0,0,0,,0,cell_result.json missing,
+sol_execbench,autokernel,0,0,0,0,0,,0,cell_result.json missing,
+sol_execbench,kernelskill,0,0,0,0,0,,0,cell_result.json missing,
+sol_execbench,drkernel,0,0,0,0,0,,0,cell_result.json missing,
+sol_execbench,autotriton,0,0,0,0,0,,0,cell_result.json missing,
+sol_execbench,kernelllm,0,0,0,0,0,,0,cell_result.json missing,
+sol_execbench,incoder32b,0,0,0,0,0,,0,cell_result.json missing,

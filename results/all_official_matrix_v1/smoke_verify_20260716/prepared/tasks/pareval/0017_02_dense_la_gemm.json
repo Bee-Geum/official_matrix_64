@@ -1,0 +1,13 @@
+{
+  "benchmark": "pareval",
+  "task_id": "02_dense_la_gemm",
+  "official_task": true,
+  "prompt_obj": {
+    "problem_type": "dense_la",
+    "language": "cpp",
+    "name": "02_dense_la_gemm",
+    "parallelism_model": "cuda",
+    "prompt": "/* Multiply the matrix A by the matrix B. Store the results in the matrix C.\n   A is an MxK matrix, B is a KxN matrix, and C is a MxN matrix. The matrices are stored in row-major.\n   Use CUDA to compute in parallel. The kernel is launched on an MxN grid of threads.\n   Example:\n\n   input: A=[[1, -1, 2], [0, -2, 1]] B=[[4, 1], [-1, 0], [2, 2]]\n   output: C=[[9, 5], [4, 2]]\n*/\n__global__ void gemm(const double *A, const double *B, double *C, size_t M, size_t K, size_t N) {"
+  },
+  "prompt": "Benchmark: pareval\nOfficial task: 02_dense_la_gemm\nReturn only source code, without Markdown fences or explanations.\n\nThis is a ParEval CUDA COMPLETION task. Below is the BEGINNING of a CUDA C++ file; its last line is a function signature ending with '{' and the body is missing. Your output will be appended VERBATIM right after it and compiled by ParEval's official C++ driver.\n\nOutput ONLY the code that completes that open function body, ending with its closing '}'. Do NOT repeat anything shown below: no #include, no struct/typedef, no 'using', no function signature, and no main(). Emit raw C++ only (no Markdown fences, no prose).\n\n--- code so far (context only; do NOT repeat it) ---\n/* Multiply the matrix A by the matrix B. Store the results in the matrix C.\n   A is an MxK matrix, B is a KxN matrix, and C is a MxN matrix. The matrices are stored in row-major.\n   Use CUDA to compute in parallel. The kernel is launched on an MxN grid of threads.\n   Example:\n\n   input: A=[[1, -1, 2], [0, -2, 1]] B=[[4, 1], [-1, 0], [2, 2]]\n   output: C=[[9, 5], [4, 2]]\n*/\n__global__ void gemm(const double *A, const double *B, double *C, size_t M, size_t K, size_t N) {"
+}

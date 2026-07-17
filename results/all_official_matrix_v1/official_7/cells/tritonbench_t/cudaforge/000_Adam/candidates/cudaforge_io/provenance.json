@@ -1,0 +1,10 @@
+{
+  "agent": "cudaforge",
+  "mode": "live_upstream_agent",
+  "upstream_entry": "/home/bi_geum/official_matrix_64/third_party/CudaForge/main.py",
+  "run_dir": "/home/bi_geum/official_matrix_64/results/all_official_matrix_v1/official_7/cells/tritonbench_t/cudaforge/000_Adam/candidates/cudaforge_run/20260716_142850_official_prompt_vllm_qwen14b",
+  "selected_kernel": "/home/bi_geum/official_matrix_64/results/all_official_matrix_v1/official_7/cells/tritonbench_t/cudaforge/000_Adam/candidates/cudaforge_run/20260716_142850_official_prompt_vllm_qwen14b/official_prompt/code/kernel_20260716_142859.py",
+  "best_score": 0.0,
+  "accuracy": 0.0,
+  "ncu_on_path": "/usr/local/cuda/bin/ncu"
+}

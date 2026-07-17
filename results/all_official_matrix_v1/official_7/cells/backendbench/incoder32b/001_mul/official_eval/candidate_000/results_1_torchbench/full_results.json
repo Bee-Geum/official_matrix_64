@@ -1,0 +1,128 @@
+[
+  {
+    "op_name": "mm.default",
+    "args": "((T([0, 1024], f16), T([1024, 1024], f16),), {})",
+    "is_correct": true,
+    "error_msg": "",
+    "error_type": "",
+    "traceback": "",
+    "max_abs_error": 0.0,
+    "max_rel_error": 0.0,
+    "test_type": "correctness"
+  },
+  {
+    "op_name": "mm.default",
+    "args": "((T([0, 1024], f16), T([1024, 1024], f16),), {})",
+    "speedup": 0.9992149802163616,
+    "benchmark_time_ms": 0.0028865216326029626,
+    "reference_time_ms": 0.002884255656015469,
+    "error_msg": "",
+    "successfully_ran": true,
+    "test_type": "performance"
+  },
+  {
+    "op_name": "mm.default",
+    "args": "((T([0, 1024], f16), T([1024, 12544], f16),), {})",
+    "is_correct": true,
+    "error_msg": "",
+    "error_type": "",
+    "traceback": "",
+    "max_abs_error": 0.0,
+    "max_rel_error": 0.0,
+    "test_type": "correctness"
+  },
+  {
+    "op_name": "mm.default",
+    "args": "((T([0, 1024], f16), T([1024, 12544], f16),), {})",
+    "speedup": 1.0006477631950979,
+    "benchmark_time_ms": 0.002881489697530673,
+    "reference_time_ms": 0.0028833562205037872,
+    "error_msg": "",
+    "successfully_ran": true,
+    "test_type": "performance"
+  },
+  {
+    "op_name": "mm.default",
+    "args": "((T([0, 364], f16), T([364, 1024], f16),), {})",
+    "is_correct": true,
+    "error_msg": "",
+    "error_type": "",
+    "traceback": "",
+    "max_abs_error": 0.0,
+    "max_rel_error": 0.0,
+    "test_type": "correctness"
+  },
+  {
+    "op_name": "mm.default",
+    "args": "((T([0, 364], f16), T([364, 1024], f16),), {})",
+    "speedup": 1.0012839648301208,
+    "benchmark_time_ms": 0.0028843450478105515,
+    "reference_time_ms": 0.0028880484454098737,
+    "error_msg": "",
+    "successfully_ran": true,
+    "test_type": "performance"
+  },
+  {
+    "op_name": "mm.default",
+    "args": "((T([0, 91], f16), T([91, 1024], f16),), {})",
+    "is_correct": true,
+    "error_msg": "",
+    "error_type": "",
+    "traceback": "",
+    "max_abs_error": 0.0,
+    "max_rel_error": 0.0,
+    "test_type": "correctness"
+  },
+  {
+    "op_name": "mm.default",
+    "args": "((T([0, 91], f16), T([91, 1024], f16),), {})",
+    "speedup": 1.0030526032173495,
+    "benchmark_time_ms": 0.002880303228665448,
+    "reference_time_ms": 0.0028890956515682143,
+    "error_msg": "",
+    "successfully_ran": true,
+    "test_type": "performance"
+  },
+  {
+    "op_name": "relu.default",
+    "args": "((T([0, 1024], f16),), {})",
+    "is_correct": true,
+    "error_msg": "",
+    "error_type": "",
+    "traceback": "",
+    "max_abs_error": 0.0,
+    "max_rel_error": 0.0,
+    "test_type": "correctness"
+  },
+  {
+    "op_name": "relu.default",
+    "args": "((T([0, 1024], f16),), {})",
+    "speedup": 1.0008567483556423,
+    "benchmark_time_ms": 0.00287767276954051,
+    "reference_time_ms": 0.0028801382109538906,
+    "error_msg": "",
+    "successfully_ran": true,
+    "test_type": "performance"
+  },
+  {
+    "op_name": "sigmoid.default",
+    "args": "((T([0, 91, 28, 28], f16),), {})",
+    "is_correct": true,
+    "error_msg": "",
+    "error_type": "",
+    "traceback": "",
+    "max_abs_error": 0.0,
+    "max_rel_error": 0.0,
+    "test_type": "correctness"
+  },
+  {
+    "op_name": "sigmoid.default",
+    "args": "((T([0, 91, 28, 28], f16),), {})",
+    "speedup": 1.0016604520324386,
+    "benchmark_time_ms": 0.0028757500412110756,
+    "reference_time_ms": 0.00288052508621179,
+    "error_msg": "",
+    "successfully_ran": true,
+    "test_type": "performance"
+  }
+]

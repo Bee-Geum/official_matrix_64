@@ -1,0 +1,7 @@
+{
+  "benchmark": "tritonbench_t",
+  "task_id": "sqrt_tanh",
+  "source_path": "/home/bi_geum/official_matrix_64/third_party/TritonBench/data/TritonBench_T_v1/sqrt_tanh.py",
+  "official_task": true,
+  "prompt": "Benchmark: tritonbench_t\nOfficial task: sqrt_tanh\nReturn only source code, without Markdown fences or explanations.\n\nImplement the official TritonBench task as a Python module and preserve its public interface.\n\nimport torch\n\n\ndef sqrt_tanh(input, out=None):\n    if out is None:\n        out = torch.empty_like(input)\n    out = torch.sqrt(input)\n    out[input < 0] = float('nan')\n    out = torch.tanh(out)\n    return out\n\n##################################################################################################################################################\n\n\nimport torch\n\ndef test_sqrt_tanh():\n    results = {}\n\n    # Test case 1: Positive values\n    input1 = torch.tensor([4.0, 9.0, 16.0], device='cuda')\n    results[\"test_case_1\"] = sqrt_tanh(input1)\n\n    # Test case 2: Negative values\n    input2 = torch.tensor([-4.0, -9.0, -16.0], device='cuda')\n    results[\"test_case_2\"] = sqrt_tanh(input2)\n\n    # Test case 3: Mixed values\n    input3 = torch.tensor([4.0, -9.0, 16.0, -1.0], device='cuda')\n    results[\"test_case_3\"] = sqrt_tanh(input3)\n\n    # Test case 4: Zero values\n    input4 = torch.tensor([0.0, 0.0, 0.0], device='cuda')\n    results[\"test_case_4\"] = sqrt_tanh(input4)\n\n    return results\n\ntest_results = test_sqrt_tanh()\n"
+}

@@ -61,7 +61,7 @@ def profile_bench(
     bench_py: str = "bench_ref_inputs.py",
     kernel_names: Optional[List[str]] = None,
     kernel_file: Optional[Union[str, Path]] = None,
-    conda_bin: str = "/root/miniconda3/envs/CudaForge/bin",
+    conda_bin: str = os.environ.get("KERNELMEM_CONDA_BIN", str(Path(sys.executable).parent)),
     out_rep: Union[str, Path] = "nsys_temp.nsys-rep",
     device_idx: Optional[int] = None,
     timeout: int = 300,  # 5 minutes default timeout

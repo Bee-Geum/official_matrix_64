@@ -1,0 +1,22 @@
+{
+  "benchmark": "multikernelbench",
+  "task_id": "elu",
+  "task_manifest": "/home/bi_geum/official_matrix_64/results/all_official_matrix_v1/official_7/prepared/tasks/multikernelbench/0000_elu.json",
+  "candidate": "/home/bi_geum/official_matrix_64/results/all_official_matrix_v1/official_7/cells/multikernelbench/incoder32b/000_elu/candidates/official_candidate_000.py",
+  "official_task": 1,
+  "official_attempted": 1,
+  "official_eval": 1,
+  "correct": 1,
+  "performance_available": 0,
+  "score": 0.0,
+  "evaluator_rc": 0,
+  "infrastructure_error": "",
+  "candidate_error": "",
+  "logs": [
+    "/home/bi_geum/official_matrix_64/results/all_official_matrix_v1/official_7/cells/multikernelbench/incoder32b/000_elu/official_eval/candidate_000/official_eval.log.txt"
+  ],
+  "artifacts": [
+    "/home/bi_geum/official_matrix_64/results/all_official_matrix_v1/official_7/cells/multikernelbench/incoder32b/000_elu/official_eval/candidate_000/official_result.json"
+  ],
+  "wall_s": 58.74741530418396
+}

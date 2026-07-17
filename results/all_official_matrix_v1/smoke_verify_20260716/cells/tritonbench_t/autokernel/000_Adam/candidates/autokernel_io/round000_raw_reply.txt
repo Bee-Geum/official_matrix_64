@@ -1,0 +1,15 @@
+```python
+import torch
+
+class ModelNew(torch.nn.Module):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.optimizer = torch.optim.Adam(self.parameters())
+
+    def forward(self, *args, **kwargs):
+        loss = super().forward(*args, **kwargs)
+        self.optimizer.zero_grad()
+        loss.backward()
+        self.optimizer.step()
+        return loss
+```

@@ -1,0 +1,9 @@
+benchmark,cudaforge,autokernel,autotriton,drkernel,kernelllm,incoder32b,kernelskill
+kernelbench,1,1,0,1,0,0,0
+robust_kbench,1,1,0,1,0,1,0
+tritonbench_t,0,1,1,1,1,1,0
+tritonbench_g,0,1,1,1,1,1,0
+multikernelbench,0,0,0,1,0,1,0
+backendbench,0,0,0,0,0,0,0
+pareval,0,0,0,0,0,0,0
+sol_execbench,0,0,0,0,0,0,0

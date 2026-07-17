@@ -1,0 +1,19 @@
+{
+  "benchmark": "tritonbench_g",
+  "task_id": "adam_update_triton",
+  "official_task": 1,
+  "generation_ok": 1,
+  "candidate_count": 1,
+  "official_attempted": 1,
+  "official_eval": 1,
+  "correct": 1,
+  "performance_available": 1,
+  "best_score": 1.71,
+  "infrastructure_error": "",
+  "candidate_error": "",
+  "generation_log": "/home/bi_geum/official_matrix_64/results/all_official_matrix_v1/smoke_verify_20260716/cells/tritonbench_g/autokernel/000_adam_update_triton/generation.log.txt",
+  "official_reports": [],
+  "agent": "autokernel",
+  "cell_dir": "/home/bi_geum/official_matrix_64/results/all_official_matrix_v1/smoke_verify_20260716/cells/tritonbench_g/autokernel",
+  "task_dir": "/home/bi_geum/official_matrix_64/results/all_official_matrix_v1/smoke_verify_20260716/cells/tritonbench_g/autokernel/000_adam_update_triton"
+}

@@ -1,0 +1,6 @@
+{
+  "benchmark": "kernelbench",
+  "task_id": "53_Min_reduction_over_a_dimension",
+  "source_path": "/home/bi_geum/official_matrix_64/third_party/KernelBench/KernelBench/level1/53_Min_reduction_over_a_dimension.py",
+  "official_task": true
+}

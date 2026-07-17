@@ -1,0 +1,19 @@
+{
+  "benchmark": "backendbench",
+  "task_id": "div",
+  "official_task": 1,
+  "generation_ok": 1,
+  "candidate_count": 1,
+  "official_attempted": 1,
+  "official_eval": 0,
+  "correct": 0,
+  "performance_available": 0,
+  "best_score": 0.0,
+  "infrastructure_error": "op 'div' not covered by locally-available BackendBench suites (opinfo/torchbench); no official test case exists for it here",
+  "candidate_error": "",
+  "generation_log": "/home/bi_geum/official_matrix_64/results/all_official_matrix_v1/official_7/cells/backendbench/autotriton/003_div/generation.log.txt",
+  "official_reports": [],
+  "agent": "autotriton",
+  "cell_dir": "/home/bi_geum/official_matrix_64/results/all_official_matrix_v1/official_7/cells/backendbench/autotriton",
+  "task_dir": "/home/bi_geum/official_matrix_64/results/all_official_matrix_v1/official_7/cells/backendbench/autotriton/003_div"
+}

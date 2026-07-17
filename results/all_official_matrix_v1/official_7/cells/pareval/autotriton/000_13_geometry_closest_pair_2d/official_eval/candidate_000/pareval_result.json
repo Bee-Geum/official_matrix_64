@@ -1,0 +1,23 @@
+[
+    {
+        "problem_type": "geometry",
+        "language": "cpp",
+        "name": "13_geometry_closest_pair_2d",
+        "parallelism_model": "cuda",
+        "prompt": "struct Point {\n\tdouble x, y;\n};\n\n__device__ double distanceBetweenPoints(Point const& p1, Point const& p2) {\n\treturn sqrt(pow(p2.x-p1.x, 2) + pow(p2.y-p1.y, 2));\n}\n\n/* Compute the distance between the closest two points in the vector points.\n   Store the result in distance.\n   Use CUDA to compute in parallel. The kernel is launched with at least as many threads as points.\n   Example: \n\n   input: [{2, 3}, {12, 30}, {40, 50}, {5, 1}, {12, 10}, {3, 4}]\n   output: 1.41421\n*/\n__global__ void closestPair(const Point *points, size_t numPoints, double *distance) {",
+        "outputs": [
+            {
+                "generated_output": "<answer>\nTo solve this problem, we need to find the closest pair of points in a 2D plane using Triton kernels. The solution involves two main steps: computing the minimal distance within each block of points and then finding the global minimal distance by comparing the closest points from different blocks. This approach ensures we handle both intra-block and inter-block comparisons efficiently.\n\n### Approach\n1. **Block-wise Minimum Distance Calculation**: \n   - Divide the input points into blocks of a specified size (e.g., 128 points per block).\n   - For each block, compute the minimal distance between any two points within the block. Additionally, store the pair of points that achieve this minimal distance.\n   \n2. **Global Minimum Distance Calculation**:\n   - First, determine the minimal distance found within any block.\n   - Next, compare the closest points from every pair of blocks to find the global minimal distance. This step ensures we check for potential closer pairs across block boundaries.\n\n### Solution Code\n```python\nimport torch\nimport triton\nimport triton.language as tl\n\n@triton.jit\ndef block_minima_kernel(\n    points_ptr,\n    num_points,\n    block_minima_dist_ptr,\n    block_minima_points_ptr,\n    BLOCK_SIZE: tl.constexpr\n):\n    block_idx = tl.program_id(0)\n    start_idx = block_idx * BLOCK_SIZE\n    end_idx = tl.minimum((block_idx + 1) * BLOCK_SIZE, num_points)\n    num_in_block = end_idx - start_idx\n\n    block_x = tl.zeros((BLOCK_SIZE,), dtype=tl.float32)\n    block_y = tl.zeros((BLOCK_SIZE,), dtype=tl.float32)\n    valid = tl.zeros((BLOCK_SIZE,), dtype=tl.int1)\n\n    for i in range(0, num_in_block):\n        idx = start_idx + i\n        x = tl.load(points_ptr + idx * 2)\n        y = tl.load(points_ptr + idx * 2 + 1)\n        block_x = tl.where(i < BLOCK_SIZE, x, block_x)\n        block_y = tl.where(i < BLOCK_SIZE, y, block_y)\n        valid = tl.where(i < BLOCK_SIZE, True, valid)\n\n    min_dist = float('inf')\n    min_i = 0\n    min_j = 0\n    for i in range(0, num_in_block):\n        for j in range(i + 1, num_in_block):\n            dx = block_x[i] - block_x[j]\n            dy = block_y[i] - block_y[j]\n            dist = tl.sqrt(dx * dx + dy * dy)\n            if dist < min_dist:\n                min_dist = dist\n                min_i = i\n                min_j = j\n\n    i_global = start_idx + min_i\n    j_global = start_idx + min_j\n    x1 = tl.load(points_ptr + i_global * 2)\n    y1 = tl.load(points_ptr + i_global * 2 + 1)\n    x2 = tl.load(points_ptr + j_global * 2)\n    y2 = tl.load(points_ptr + j_global * 2 + 1)\n\n    tl.store(block_minima_dist_ptr + block_idx, min_dist)\n    tl.store(block_minima_points_ptr + block_idx * 4 + 0, x1)\n    tl.store(block_minima_points_ptr + block_idx * 4 + 1, y1)\n    tl.store(block_minima_points_ptr + block_idx * 4 + 2, x2)\n    tl.store(block_minima_points_ptr + block_idx * 4 + 3, y2)\n\n@triton.jit\ndef global_min_kernel(\n    block_minima_dist_ptr,\n    block_minima_points_ptr,\n    output_ptr,\n    num_blocks,\n    BLOCK_SIZE: tl.constexpr\n):\n    min_dist = float('inf')\n    for i in range(0, num_blocks):\n        dist = tl.load(block_minima_dist_ptr + i)\n        if dist < min_dist:\n            min_dist = dist\n\n    for i in range(0, num_blocks):\n        for j in range(i + 1, num_blocks):\n            x1 = tl.load(block_minima_points_ptr + i * 4 + 0)\n            y1 = tl.load(block_minima_points_ptr + i * 4 + 1\n",
+                "source_write_success": true,
+                "did_build": false,
+                "is_source_valid": true,
+                "did_any_run": false,
+                "did_all_run": false,
+                "are_any_valid": false,
+                "are_all_valid": false,
+                "best_sequential_runtime": null,
+                "runs": null
+            }
+        ]
+    }
+]

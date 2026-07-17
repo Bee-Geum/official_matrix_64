@@ -1,0 +1,24 @@
+{
+  "benchmark": "tritonbench_g",
+  "task_id": "adam_update_triton",
+  "task_manifest": "/home/bi_geum/official_matrix_64/results/all_official_matrix_v1/official_7/prepared/tasks/tritonbench_g/0000_adam_update_triton.json",
+  "candidate": "/home/bi_geum/official_matrix_64/results/all_official_matrix_v1/official_7/cells/tritonbench_g/kernelskill/000_adam_update_triton/candidates/official_candidate_000.py",
+  "official_task": 1,
+  "official_attempted": 1,
+  "official_eval": 1,
+  "correct": 0,
+  "performance_available": 0,
+  "score": 0.0,
+  "evaluator_rc": 0,
+  "infrastructure_error": "",
+  "candidate_error": "",
+  "logs": [
+    "/home/bi_geum/official_matrix_64/results/all_official_matrix_v1/official_7/cells/tritonbench_g/kernelskill/000_adam_update_triton/official_eval/candidate_000/0_call_acc.log.txt",
+    "/home/bi_geum/official_matrix_64/results/all_official_matrix_v1/official_7/cells/tritonbench_g/kernelskill/000_adam_update_triton/official_eval/candidate_000/1_exe_acc.log.txt"
+  ],
+  "artifacts": [
+    "/home/bi_geum/official_matrix_64/results/all_official_matrix_v1/official_7/cells/tritonbench_g/kernelskill/000_adam_update_triton/official_eval/candidate_000/stage/source/adam_update_triton.py",
+    "/home/bi_geum/official_matrix_64/results/all_official_matrix_v1/official_7/cells/tritonbench_g/kernelskill/000_adam_update_triton/official_eval/candidate_000/stage/target/adam_update_triton.py"
+  ],
+  "wall_s": 45.7099883556366
+}

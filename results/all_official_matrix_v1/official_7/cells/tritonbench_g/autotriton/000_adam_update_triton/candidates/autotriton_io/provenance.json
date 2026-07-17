@@ -1,0 +1,14 @@
+{
+  "agent": "autotriton",
+  "mode": "model_only",
+  "model_repo": "ai9stars/AutoTriton",
+  "served_as": "autotriton8b",
+  "base_url": "http://127.0.0.1:8001/v1",
+  "generator": "/home/bi_geum/official_matrix_64/drivers/autotriton_gen.py",
+  "rounds": 1,
+  "temperature": 0.2,
+  "gen_rc": 0,
+  "kernels": [
+    "/home/bi_geum/official_matrix_64/results/all_official_matrix_v1/official_7/cells/tritonbench_g/autotriton/000_adam_update_triton/candidates/round0_kernel.py"
+  ]
+}

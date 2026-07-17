@@ -53,18 +53,19 @@ BENCHMARKS = [
 
 KB_BENCHMARKS = {"kernelbench", "robust_kbench"}
 
+# The agents that run as themselves: each is wired to its own upstream
+# implementation or its own released weights, not to a shared prompt shim.
+#   live agent   -- upstream repo drives the loop (LLM backbone: qwen14b)
+#   model-only   -- the released model IS the artifact; no agent repo to run
+# cuda_l1, geak, ksearch and cuda_agent have been removed from the matrix.
 DEFAULT_AGENTS = [
-    "cudaforge",
-    "autokernel",
-    "cuda_l1",
-    "autotriton",
-    "drkernel",
-    "geak",
-    "ksearch",
-    "cuda_agent",
-    "kernelllm",
-    "incoder32b",
-    "kernelskill",
+    "cudaforge",    # live: CUDA agent, NCU-guided optimization
+    "autokernel",   # live: CUDA/Triton bridge, bench_kb keep/revert loop
+    "kernelskill",  # live: KernelMem, NCU + static memory bank
+    "drkernel",     # RL model (drkernel-14b) + KernelGYM
+    "autotriton",   # model-only: ai9stars/AutoTriton 8B, Triton
+    "kernelllm",    # model-only: facebook/KernelLLM 8B, Triton
+    "incoder32b",   # model-only: IndustrialCoder 32B
 ]
 
 KNOWN_BACKENDBENCH_OPS = [

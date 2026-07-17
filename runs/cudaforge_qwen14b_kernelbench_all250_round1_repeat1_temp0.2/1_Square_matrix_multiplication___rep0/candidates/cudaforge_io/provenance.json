@@ -1,0 +1,10 @@
+{
+  "agent": "cudaforge",
+  "mode": "live_upstream_agent",
+  "upstream_entry": "/home/bi_geum/official_matrix_64/third_party/CudaForge/main.py",
+  "run_dir": "/home/bi_geum/official_matrix_64/runs/cudaforge_qwen14b_kernelbench_all250_round1_repeat1_temp0.2/1_Square_matrix_multiplication___rep0/cudaforge_run/20260717_135807_1_Square_matrix_multiplication__vllm_qwen14b",
+  "selected_kernel": "/home/bi_geum/official_matrix_64/runs/cudaforge_qwen14b_kernelbench_all250_round1_repeat1_temp0.2/1_Square_matrix_multiplication___rep0/cudaforge_run/20260717_135807_1_Square_matrix_multiplication__vllm_qwen14b/1_Square_matrix_multiplication_/code/kernel_20260717_135813.py",
+  "best_score": 0.10826060273112988,
+  "accuracy": 1.0,
+  "ncu_on_path": "/usr/local/cuda-12/bin/ncu"
+}

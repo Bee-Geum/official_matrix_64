@@ -1,0 +1,7 @@
+{
+  "system": "kernelskill",
+  "round": 0,
+  "latency_s": 16.2767813205719,
+  "candidate": "/home/bi_geum/official_matrix_64/results/all_official_matrix_v1/smoke_verify_20260716/cells/tritonbench_t/kernelskill/000_Adam/candidates/candidate_0000.py",
+  "first_line": "import torch"
+}

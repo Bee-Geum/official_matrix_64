@@ -1,0 +1,23 @@
+$ /home/bi_geum/official_matrix_64/.venv/bin/python3 /home/bi_geum/official_matrix_64/drivers/kernelskill_live_driver.py --task /home/bi_geum/official_matrix_64/results/all_official_matrix_v1/official_7/cells/backendbench/kernelskill/006_tanh/official_prompt.txt --out /home/bi_geum/official_matrix_64/results/all_official_matrix_v1/official_7/cells/backendbench/kernelskill/006_tanh/candidates --rounds 1 --seed 0 --temperature 0.2
+cwd=/home/bi_geum/official_matrix_64
+returncode=1
+wall_s=13.104857
+----- STDOUT -----
+[kernelskill] LIVE upstream agent: /home/bi_geum/official_matrix_64/.venv/bin/python3 /home/bi_geum/official_matrix_64/third_party/KernelMem/main_memory_latest.py /home/bi_geum/official_matrix_64/results/all_official_matrix_v1/official_7/cells/backendbench/kernelskill/006_tanh/official_prompt.txt --server_type vllm --server_address 127.0.0.1 --server_port 8000 --model_name qwen14b --gpu H100 --round 1 --work_dir /home/bi_geum/official_matrix_64/results/all_official_matrix_v1/official_7/cells/backendbench/kernelskill/006_tanh/kernelmem_run --device 0 --max_tokens 8192 --temperature 0.2 --subproc_id 0
+[BATCH] Output folder: /home/bi_geum/official_matrix_64/results/all_official_matrix_v1/official_7/cells/backendbench/kernelskill/006_tanh/kernelmem_run/20260716_152209_official_prompt_vllm_qwen14b
+[official_prompt.txt] Round 0
+[Seed] Generating the initial kernel ...
+[91mTest Error (AttributeError):[0m 'NoneType' object has no attribute 'loader'
+[seed] failed. See metrics.message for details.
+[seed] metrics saved to: /home/bi_geum/official_matrix_64/results/all_official_matrix_v1/official_7/cells/backendbench/kernelskill/006_tanh/kernelmem_run/20260716_152209_official_prompt_vllm_qwen14b/official_prompt/evaluation/eval_0000.json
+[official_prompt.txt] Figure saved to: /home/bi_geum/official_matrix_64/results/all_official_matrix_v1/official_7/cells/backendbench/kernelskill/006_tanh/kernelmem_run/20260716_152209_official_prompt_vllm_qwen14b/official_prompt/figures/official_prompt_score.png
+[official_prompt.txt] Optimization tree saved to: /home/bi_geum/official_matrix_64/results/all_official_matrix_v1/official_7/cells/backendbench/kernelskill/006_tanh/kernelmem_run/20260716_152209_official_prompt_vllm_qwen14b/official_prompt/optimization_tree.json
+[SUMMARY] {'task': '/home/bi_geum/official_matrix_64/results/all_official_matrix_v1/official_7/cells/backendbench/kernelskill/006_tanh/official_prompt.txt', 'best_score': 0.0, 'best_runnable': False, 'task_dir': '/home/bi_geum/official_matrix_64/results/all_official_matrix_v1/official_7/cells/backendbench/kernelskill/006_tanh/kernelmem_run/20260716_152209_official_prompt_vllm_qwen14b/official_prompt', 'figure': '/home/bi_geum/official_matrix_64/results/all_official_matrix_v1/official_7/cells/backendbench/kernelskill/006_tanh/kernelmem_run/20260716_152209_official_prompt_vllm_qwen14b/official_prompt/figures/official_prompt_score.png', 'input_tokens_sum': 0, 'output_tokens_sum': 0, 'total_tokens_sum': 0, 'method_matched_stats': {'total_opt_rounds': 0, 'matched_count': 0, 'unmatched_count': 0}}
+[GLOBAL] Avg speedup=0.0000, Accuracy=0.0000
+[GLOBAL] Saved: /home/bi_geum/official_matrix_64/results/all_official_matrix_v1/official_7/cells/backendbench/kernelskill/006_tanh/kernelmem_run/20260716_152209_official_prompt_vllm_qwen14b/summary.json
+[GLOBAL] Saved: /home/bi_geum/official_matrix_64/results/all_official_matrix_v1/official_7/cells/backendbench/kernelskill/006_tanh/kernelmem_run/20260716_152209_official_prompt_vllm_qwen14b/summary.csv
+[kernelskill] upstream rc=0 wall=13.0s
+
+----- STDERR -----
+[kernelskill] ERROR: KernelMem produced no runnable kernel ({'summary': '/home/bi_geum/official_matrix_64/results/all_official_matrix_v1/official_7/cells/backendbench/kernelskill/006_tanh/kernelmem_run/20260716_152209_official_prompt_vllm_qwen14b/summary.json', 'accuracy': 0.0, 'best_runnable': False, 'best_score': 0.0}); refusing to harvest a crash artifact
+

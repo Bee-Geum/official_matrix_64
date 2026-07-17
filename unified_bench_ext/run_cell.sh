@@ -7,7 +7,7 @@
 # with per-cell timing/telemetry that the original archive was missing.
 #
 # Driver + evaluator CLIs are taken from registry/agents.csv and were observed in the
-# A100 official5 telemetry for cudaforge / autokernel / cuda_l1 / autotriton.
+# A100 official5 telemetry for cudaforge / autokernel / autotriton.
 #
 # Usage:
 #   ./unified_bench_ext/run_cell.sh <agent> <benchmark> [task_list] \

@@ -1,0 +1,28 @@
+{
+  "agent": "autokernel",
+  "driver": "/home/bi_geum/official_matrix_64/drivers/autokernel_live_driver.py",
+  "cmd": [
+    "/home/bi_geum/official_matrix_64/.venv/bin/python3",
+    "/home/bi_geum/official_matrix_64/drivers/autokernel_live_driver.py",
+    "--task",
+    "/home/bi_geum/official_matrix_64/results/all_official_matrix_v1/official_7/cells/backendbench/autokernel/004_relu/official_prompt.txt",
+    "--out",
+    "/home/bi_geum/official_matrix_64/results/all_official_matrix_v1/official_7/cells/backendbench/autokernel/004_relu/candidates",
+    "--rounds",
+    "1",
+    "--seed",
+    "0",
+    "--temperature",
+    "0.2"
+  ],
+  "returncode": 0,
+  "wall_s": 15.384316682815552,
+  "log": "/home/bi_geum/official_matrix_64/results/all_official_matrix_v1/official_7/cells/backendbench/autokernel/004_relu/generation.log.txt",
+  "candidate_count": 1,
+  "raw_candidates": [
+    "/home/bi_geum/official_matrix_64/results/all_official_matrix_v1/official_7/cells/backendbench/autokernel/004_relu/candidates/candidate_0000.py"
+  ],
+  "normalized_candidates": [
+    "/home/bi_geum/official_matrix_64/results/all_official_matrix_v1/official_7/cells/backendbench/autokernel/004_relu/candidates/official_candidate_000.py"
+  ]
+}

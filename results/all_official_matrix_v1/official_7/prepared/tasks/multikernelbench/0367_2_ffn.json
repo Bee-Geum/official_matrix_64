@@ -1,0 +1,8 @@
+{
+  "benchmark": "multikernelbench",
+  "task_id": "2_ffn",
+  "op": "2_ffn",
+  "official_task": true,
+  "prompt_path": "",
+  "prompt": "Benchmark: multikernelbench\nOfficial task: 2_ffn\nReturn only source code, without Markdown fences or explanations.\n\nGenerate a kernel response for the exact MultiKernelBench operator '2_ffn'. Use CUDA C++ or Triton and do not replace the computation with eager PyTorch.\n\nMultiKernelBench operator: 2_ffn\nOfficial dataset entry: {'category': 'npukernelbench_level4', 'source': 'NPUKernelBench'}\n"
+}

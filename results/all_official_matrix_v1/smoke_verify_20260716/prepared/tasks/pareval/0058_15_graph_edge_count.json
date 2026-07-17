@@ -1,0 +1,13 @@
+{
+  "benchmark": "pareval",
+  "task_id": "15_graph_edge_count",
+  "official_task": true,
+  "prompt_obj": {
+    "problem_type": "graph",
+    "language": "cpp",
+    "name": "15_graph_edge_count",
+    "parallelism_model": "cuda",
+    "prompt": "/* Count the number of edges in the directed graph defined by the adjacency matrix A.\n   Store the result in numEdges. A represents a directed graph.\n   A is an NxN adjacency matrix stored in row-major.\n   Use CUDA to compute in parallel. The kernel is launched with at least N threads.\n   Example:\n\n\t input: [[0, 0, 0, 1], [0, 0, 0, 1], [0, 0, 0, 1], [1, 1, 1, 0]]\n   output: 6\n*/\n__global__ void edgeCount(const int *A, size_t N, int *numEdges) {"
+  },
+  "prompt": "Benchmark: pareval\nOfficial task: 15_graph_edge_count\nReturn only source code, without Markdown fences or explanations.\n\nThis is a ParEval CUDA COMPLETION task. Below is the BEGINNING of a CUDA C++ file; its last line is a function signature ending with '{' and the body is missing. Your output will be appended VERBATIM right after it and compiled by ParEval's official C++ driver.\n\nOutput ONLY the code that completes that open function body, ending with its closing '}'. Do NOT repeat anything shown below: no #include, no struct/typedef, no 'using', no function signature, and no main(). Emit raw C++ only (no Markdown fences, no prose).\n\n--- code so far (context only; do NOT repeat it) ---\n/* Count the number of edges in the directed graph defined by the adjacency matrix A.\n   Store the result in numEdges. A represents a directed graph.\n   A is an NxN adjacency matrix stored in row-major.\n   Use CUDA to compute in parallel. The kernel is launched with at least N threads.\n   Example:\n\n\t input: [[0, 0, 0, 1], [0, 0, 0, 1], [0, 0, 0, 1], [1, 1, 1, 0]]\n   output: 6\n*/\n__global__ void edgeCount(const int *A, size_t N, int *numEdges) {"
+}

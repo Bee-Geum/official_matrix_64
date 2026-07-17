@@ -1,0 +1,6 @@
+{
+  "benchmark": "kernelbench",
+  "task_id": "55_Matmul_MaxPool_Sum_Scale",
+  "source_path": "/home/bi_geum/official_matrix_64/third_party/KernelBench/KernelBench/level2/55_Matmul_MaxPool_Sum_Scale.py",
+  "official_task": true
+}

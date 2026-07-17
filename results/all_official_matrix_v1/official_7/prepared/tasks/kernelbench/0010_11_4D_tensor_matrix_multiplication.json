@@ -1,0 +1,6 @@
+{
+  "benchmark": "kernelbench",
+  "task_id": "11_4D_tensor_matrix_multiplication",
+  "source_path": "/home/bi_geum/official_matrix_64/third_party/KernelBench/KernelBench/level1/11_4D_tensor_matrix_multiplication.py",
+  "official_task": true
+}

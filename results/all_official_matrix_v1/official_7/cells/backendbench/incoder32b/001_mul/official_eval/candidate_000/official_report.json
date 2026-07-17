@@ -1,0 +1,22 @@
+{
+  "benchmark": "backendbench",
+  "task_id": "mul",
+  "task_manifest": "/home/bi_geum/official_matrix_64/results/all_official_matrix_v1/official_7/prepared/tasks/backendbench/0001_mul.json",
+  "candidate": "/home/bi_geum/official_matrix_64/results/all_official_matrix_v1/official_7/cells/backendbench/incoder32b/001_mul/candidates/official_candidate_000.py",
+  "official_task": 1,
+  "official_attempted": 1,
+  "official_eval": 0,
+  "correct": 0,
+  "performance_available": 0,
+  "score": 0.0,
+  "evaluator_rc": "",
+  "infrastructure_error": "op 'mul' not covered by locally-available BackendBench suites (opinfo/torchbench); no official test case exists for it here",
+  "candidate_error": "",
+  "logs": [
+    "/home/bi_geum/official_matrix_64/results/all_official_matrix_v1/official_7/cells/backendbench/incoder32b/001_mul/official_eval/candidate_000/official_0_opinfo.log.txt",
+    "/home/bi_geum/official_matrix_64/results/all_official_matrix_v1/official_7/cells/backendbench/incoder32b/001_mul/official_eval/candidate_000/official_1_torchbench.log.txt",
+    "/home/bi_geum/official_matrix_64/results/all_official_matrix_v1/official_7/cells/backendbench/incoder32b/001_mul/official_eval/candidate_000/official_2_smoke.log.txt"
+  ],
+  "artifacts": [],
+  "wall_s": 26.704101085662842
+}

@@ -1,0 +1,2 @@
+benchmark,agent,n_tasks,candidate_task_count,official_eval_task_count,correct_task_count,valid_official_cell,all_tasks_official,wall_s,top_infrastructure_error,finished_at
+backendbench,drkernel,8,8,4,0,0,0,953.5211935043335,op 'add' not covered by locally-available BackendBench suites (opinfo/torchbench); no official test case exists for it here,2026-07-16T16:35:24+0900

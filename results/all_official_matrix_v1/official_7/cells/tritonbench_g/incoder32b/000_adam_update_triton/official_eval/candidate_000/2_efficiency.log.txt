@@ -1,0 +1,19 @@
+$ /home/bi_geum/official_matrix_64/.venv/bin/python3 /home/bi_geum/official_matrix_64/third_party/TritonBench/EVAL/eval_G/2_efficiency.py --gen_folder /home/bi_geum/official_matrix_64/results/all_official_matrix_v1/official_7/cells/tritonbench_g/incoder32b/000_adam_update_triton/official_eval/candidate_000/perf_results
+cwd=/home/bi_geum/official_matrix_64/third_party/TritonBench/EVAL/eval_G
+returncode=0
+wall_s=0.080206
+----- STDOUT -----
+================================================================================================================================================================
+生成棒棒棒！！！: 88.7292 > 51.3949
+adam_update_triton.json: 1.7178
+adam_update_triton.json: 88.7292
+
+[1.7178]
+
+perf_results
+speed up: 1.72
+efficiency: 88.73
+================================================================================================================================================================
+
+----- STDERR -----
+

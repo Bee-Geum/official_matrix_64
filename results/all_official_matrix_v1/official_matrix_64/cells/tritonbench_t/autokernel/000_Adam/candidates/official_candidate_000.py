@@ -1,0 +1,48 @@
+import torch
+
+class ModelNew(torch.nn.Module):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.optimizer = torch.optim.Adam(self.parameters())
+
+    def forward(self, x):
+        # Dummy forward pass
+        return x
+
+    def step(self):
+        self.optimizer.step()
+
+    def zero_grad(self):
+        self.optimizer.zero_grad()
+
+# Test cases
+def test_ModelNew():
+    results = {}
+
+    # Test Case 1: Default parameters
+    model1 = ModelNew()
+    model1.to('cuda')
+    optimizer1 = torch.optim.Adam(model1.parameters())
+    results["test_case_1"] = optimizer1.defaults
+
+    # Test Case 2: Custom learning rate
+    model2 = ModelNew()
+    model2.to('cuda')
+    optimizer2 = torch.optim.Adam(model2.parameters(), lr=0.01)
+    results["test_case_2"] = optimizer2.defaults
+
+    # Test Case 3: Custom betas
+    model3 = ModelNew()
+    model3.to('cuda')
+    optimizer3 = torch.optim.Adam(model3.parameters(), betas=(0.85, 0.95))
+    results["test_case_3"] = optimizer3.defaults
+
+    # Test Case 4: Custom weight decay
+    model4 = ModelNew()
+    model4.to('cuda')
+    optimizer4 = torch.optim.Adam(model4.parameters(), weight_decay=0.01)
+    results["test_case_4"] = optimizer4.defaults
+
+    return results
+
+test_results = test_ModelNew()

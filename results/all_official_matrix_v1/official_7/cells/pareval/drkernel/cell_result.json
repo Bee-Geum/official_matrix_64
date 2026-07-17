@@ -1,0 +1,34 @@
+{
+  "benchmark": "pareval",
+  "agent": "drkernel",
+  "n_tasks": 1,
+  "candidate_task_count": 1,
+  "official_eval_task_count": 1,
+  "correct_task_count": 0,
+  "valid_official_cell": 1,
+  "all_tasks_official": 1,
+  "wall_s": 103.49002265930176,
+  "top_infrastructure_error": "",
+  "task_results": [
+    {
+      "benchmark": "pareval",
+      "task_id": "13_geometry_closest_pair_2d",
+      "official_task": 1,
+      "generation_ok": 1,
+      "candidate_count": 1,
+      "official_attempted": 1,
+      "official_eval": 1,
+      "correct": 0,
+      "performance_available": 0,
+      "best_score": 0.0,
+      "infrastructure_error": "",
+      "candidate_error": "axis=0)\\n    if pid != 0:\\n        return\\n    inf = 1e38\\n    best = inf\\n    for i in range(0, n):\\n        xi = points[2 * i]\\n        yi = points[2 * i + 1]\\n        # check up to 7 neighbors\\n        for d in range(1, 8):\\n            j = i + d\\n            if j < n:\\n                xj = points[2 * j]\\n                yj = points[2 * j + 1]\\n                dx = xj - xi\\n                dy = yj - yi\\n                dist = tl.sqrt(dx * dx + dy * dy)\\n                best = tl.minimum(best, dist)\\n    out[0] = best\\n\\nclass ModelNew:\\n    def __init__(self):\\n        pass\\n\\n    def __call__(self, points: np.ndarray) -> float:\\n        # points is a numpy array of shape (N, 2), float64 by default.\\n        if points.ndim != 2 or points.shape[1] != 2:\\n            raise ValueError(\\\"Expected points as (N, 2) array\\\")\\n        n = points.shape[0]\\n        if n == 0:\\n            return float('inf')\\n        if n == 1:\\n            return 0.0\\n        # Convert to float32 for GPU\\n        pts = points.astype(np.float32)\\n\\n        # If very small, just do it on host:\\n        if n <= 2:\\n            if n == 2:\\n                return float(np.linalg.norm(pts[1] - pts[0]))\\n            else:\\n                return 0.0\\n\\n        # Flatten to (2*N,) as expected by kernels\\n        flat = pts.reshape(-1)\\n\\n        # Allocate output\\n        out_all = np.empty(1, dtype=np.float32)\\n        out_strip = np.empty(1, dtype=np.float32)\\n\\n        # Phase 1: sort by x (host)\\n        sorted_x = np.sort(pts, axis=0)  # sorts rows; maintains y ordering after sort by x\\n        flat_x = sorted_x.reshape(-1)\\n\\n        # Compute delta = min distance over all pairs (GPU kernel)\\n        _pairwise_min_distance[1](flat_x, n, out_all)\\n        delta = float(out_all[0])\\n\\n        # If delta is INF, something went wrong; but for n>1, it should be finite.\\n        # Next, identify strip: points with x distance <= delta around mid.\\n        # For a single split, mid = n//2; but since we only sorted x, we don't have left/right splits.\\n        # To keep the algorithm correct beyond one level, we would recurse; here we implement one level:\\n        # We'll instead use the entire set and just do strip method with delta from global min,\\n        # which is a valid first pass. But that's not a true divide+conquer.\\n        #\\n        # Simplify: do strip over entire set using delta, after sorting by y.\\n        # Note: This is equivalent to \\\"after split\\\" step if we had true recursion.\\n        sorted_y = np.sort(pts, axis=0)  # sort by y\\n        flat_y = sorted_y.reshape(-1)\\n\\n        # Kernel: compare each to next 7 in y-sorted order\\n        _strip_min_distance[1](flat_y, n, out_strip)\\n        result = float(out_strip[0])\\n\\n        return result\\n\", \"source_write_success\": true, \"did_build\": false, \"is_source_valid\": true, \"did_any_run\": false, \"did_all_run\": false, \"are_any_valid\": false, \"are_all_valid\": false, \"best_sequential_runtime\": null, \"runs\": null}]",
+      "generation_log": "/home/bi_geum/official_matrix_64/results/all_official_matrix_v1/official_7/cells/pareval/drkernel/000_13_geometry_closest_pair_2d/generation.log.txt",
+      "official_reports": [],
+      "agent": "drkernel",
+      "cell_dir": "/home/bi_geum/official_matrix_64/results/all_official_matrix_v1/official_7/cells/pareval/drkernel",
+      "task_dir": "/home/bi_geum/official_matrix_64/results/all_official_matrix_v1/official_7/cells/pareval/drkernel/000_13_geometry_closest_pair_2d"
+    }
+  ],
+  "finished_at": "2026-07-16T14:54:17+0900"
+}

@@ -1,0 +1,10 @@
+$ /home/bi_geum/official_matrix_64/.venv/bin/python3 /home/bi_geum/official_matrix_64/drivers/drkernel_live_driver.py --task /home/bi_geum/official_matrix_64/results/all_official_matrix_v1/official_7/cells/tritonbench_t/drkernel/000_Adam/official_prompt.txt --cand_dir /home/bi_geum/official_matrix_64/results/all_official_matrix_v1/official_7/cells/tritonbench_t/drkernel/000_Adam/candidates --rounds 1 --seed 0 --temperature 0.2
+cwd=/home/bi_geum/official_matrix_64
+returncode=0
+wall_s=107.617637
+----- STDOUT -----
+[drkernel] LIVE RL model drkernel14b @ http://127.0.0.1:8004/v1 + KernelGYM @ http://127.0.0.1:10907
+[drkernel] turn 0: compiled=False correct=False decoy=False speedup=0.0000
+
+----- STDERR -----
+

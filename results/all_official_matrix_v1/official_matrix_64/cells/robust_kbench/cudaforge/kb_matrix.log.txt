@@ -1,7 +1,7 @@
-$ bash /home/bi_geum/official_matrix_64/run_ext_rtx6000.sh matrix --benchmark robust_kbench --agent cudaforge --rounds 1 --repeat 1 --temp 0.2 --timeout 1800 --limit 1
+$ bash /home/bi_geum/official_matrix_64/run_ext_rtx6000.sh matrix --benchmark robust_kbench --agent cudaforge --rounds 1 --repeat 1 --temp 0.2 --timeout 900 --limit 1
 cwd=/home/bi_geum/official_matrix_64
 returncode=0
-wall_s=7.382202
+wall_s=9.700495
 ----- STDOUT -----
 
 ==========================================
@@ -13,7 +13,7 @@ cell 1: cudaforge x robust_kbench
 ==========================================
 [cell] RUN cudaforge x robust_kbench  (eval=kb_instrumented fmt=kb_model)  -> runs/cudaforge_qwen14b_robust_kbench_l12_round1_repeat1_temp0.2
 [cell] 1 tasks x 1 repeats
-[cell]   1_Square_matrix_multiplication_ rep0 done (gen 4s)
+[cell]   1_Square_matrix_multiplication_ rep0 done (gen 3s)
 [cell] finished cudaforge_qwen14b_robust_kbench_l12_round1_repeat1_temp0.2
 
 ==========================================

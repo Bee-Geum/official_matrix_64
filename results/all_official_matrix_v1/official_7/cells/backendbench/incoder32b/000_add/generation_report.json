@@ -1,0 +1,28 @@
+{
+  "agent": "incoder32b",
+  "driver": "/home/bi_geum/official_matrix_64/drivers/incoder32b_live_driver.py",
+  "cmd": [
+    "/home/bi_geum/official_matrix_64/.venv/bin/python3",
+    "/home/bi_geum/official_matrix_64/drivers/incoder32b_live_driver.py",
+    "--task",
+    "/home/bi_geum/official_matrix_64/results/all_official_matrix_v1/official_7/cells/backendbench/incoder32b/000_add/official_prompt.txt",
+    "--out",
+    "/home/bi_geum/official_matrix_64/results/all_official_matrix_v1/official_7/cells/backendbench/incoder32b/000_add/candidates",
+    "--rounds",
+    "1",
+    "--seed",
+    "0",
+    "--temperature",
+    "0.2"
+  ],
+  "returncode": 0,
+  "wall_s": 14.680217742919922,
+  "log": "/home/bi_geum/official_matrix_64/results/all_official_matrix_v1/official_7/cells/backendbench/incoder32b/000_add/generation.log.txt",
+  "candidate_count": 1,
+  "raw_candidates": [
+    "/home/bi_geum/official_matrix_64/results/all_official_matrix_v1/official_7/cells/backendbench/incoder32b/000_add/candidates/candidate_0000.py"
+  ],
+  "normalized_candidates": [
+    "/home/bi_geum/official_matrix_64/results/all_official_matrix_v1/official_7/cells/backendbench/incoder32b/000_add/candidates/official_candidate_000.py"
+  ]
+}

@@ -1,0 +1,45 @@
+{
+  "benchmark": "sol_execbench",
+  "task_id": "softmax_h4096",
+  "official_task": true,
+  "problem_dir": "/home/bi_geum/official_matrix_64/third_party/SOL-ExecBench/examples/cudnn/softmax",
+  "definition": {
+    "name": "softmax_h4096",
+    "op_type": "softmax",
+    "description": "Softmax along the last dimension with hidden_size=4096. Common in transformer attention score computation.",
+    "axes": {
+      "batch_size": {
+        "type": "var",
+        "description": "Batch dimension"
+      },
+      "hidden_size": {
+        "type": "const",
+        "value": 4096,
+        "description": "Feature dimension"
+      }
+    },
+    "custom_inputs_entrypoint": null,
+    "inputs": {
+      "input": {
+        "shape": [
+          "batch_size",
+          "hidden_size"
+        ],
+        "dtype": "float32",
+        "description": "Input logits"
+      }
+    },
+    "outputs": {
+      "output": {
+        "shape": [
+          "batch_size",
+          "hidden_size"
+        ],
+        "dtype": "float32",
+        "description": "Softmax probabilities"
+      }
+    },
+    "reference": "import torch\n\n@torch.no_grad()\ndef run(input):\n    return torch.softmax(input, dim=-1)"
+  },
+  "prompt": "Benchmark: sol_execbench\nOfficial task: softmax_h4096\nReturn only source code, without Markdown fences or explanations.\n\nImplement the SOL-ExecBench Definition below. Prefer a Python or Triton module with a callable `run`; CUDA C++ is also accepted. The adapter will package the source into the official Solution schema.\n\nDefinition:\n{\n  \"name\": \"softmax_h4096\",\n  \"op_type\": \"softmax\",\n  \"description\": \"Softmax along the last dimension with hidden_size=4096. Common in transformer attention score computation.\",\n  \"axes\": {\n    \"batch_size\": {\n      \"type\": \"var\",\n      \"description\": \"Batch dimension\"\n    },\n    \"hidden_size\": {\n      \"type\": \"const\",\n      \"value\": 4096,\n      \"description\": \"Feature dimension\"\n    }\n  },\n  \"custom_inputs_entrypoint\": null,\n  \"inputs\": {\n    \"input\": {\n      \"shape\": [\n        \"batch_size\",\n        \"hidden_size\"\n      ],\n      \"dtype\": \"float32\",\n      \"description\": \"Input logits\"\n    }\n  },\n  \"outputs\": {\n    \"output\": {\n      \"shape\": [\n        \"batch_size\",\n        \"hidden_size\"\n      ],\n      \"dtype\": \"float32\",\n      \"description\": \"Softmax probabilities\"\n    }\n  },\n  \"reference\": \"import torch\\n\\n@torch.no_grad()\\ndef run(input):\\n    return torch.softmax(input, dim=-1)\"\n}\n\nFirst workload:\n{\"uuid\": \"b1c2d3e4-0001-4000-8000-000000000001\", \"axes\": {\"batch_size\": 1}, \"inputs\": {\"input\": {\"type\": \"random\"}}}"
+}

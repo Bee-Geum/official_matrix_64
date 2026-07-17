@@ -1,0 +1,6 @@
+{
+  "benchmark": "kernelbench",
+  "task_id": "49_ConvTranspose3d_Softmax_Sigmoid",
+  "source_path": "/home/bi_geum/official_matrix_64/third_party/KernelBench/KernelBench/level2/49_ConvTranspose3d_Softmax_Sigmoid.py",
+  "official_task": true
+}

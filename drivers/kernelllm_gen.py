@@ -87,7 +87,7 @@ def main() -> int:
         )
         raw = resp.choices[0].text or ""
         (out / f"round{r}_raw.txt").write_text(raw, encoding="utf-8")
-        kern = extract_code(raw)
+        kern = maybe_shim(extract_code(raw))
         (out / f"round{r}_kernel.py").write_text(kern, encoding="utf-8")
         print(f"[round {r}] wrote round{r}_kernel.py (ModelNew present: {'class ModelNew' in kern}, {len(kern)} chars)", flush=True)
     return 0

@@ -1,0 +1,6 @@
+task,best_score,best_runnable,task_dir,figure
+/home/bi_geum/official_matrix_64/results/all_official_matrix_v1/official_7/cells/backendbench/cudaforge/004_relu/official_prompt.txt,0.000000,0,/home/bi_geum/official_matrix_64/results/all_official_matrix_v1/official_7/cells/backendbench/cudaforge/004_relu/cudaforge_run/20260716_152121_official_prompt_vllm_qwen14b/official_prompt,/home/bi_geum/official_matrix_64/results/all_official_matrix_v1/official_7/cells/backendbench/cudaforge/004_relu/cudaforge_run/20260716_152121_official_prompt_vllm_qwen14b/official_prompt/figures/official_prompt_score.png
+
+avg_speedup,0.000000
+accuracy,0.000000
+total_tokens_sum,0

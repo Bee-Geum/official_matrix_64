@@ -1,0 +1,23 @@
+{
+  "agent": "kernelskill",
+  "mode": "live_upstream_agent",
+  "upstream_entry": "/home/bi_geum/official_matrix_64/third_party/KernelMem/main_memory_latest.py",
+  "memorybank": [
+    "/home/bi_geum/official_matrix_64/third_party/KernelMem/memorybank/bottleneck_headroom_kernelstructure.yaml",
+    "/home/bi_geum/official_matrix_64/third_party/KernelMem/memorybank/gate_value_from_kernel_struct"
+  ],
+  "run_dir": "/home/bi_geum/official_matrix_64/results/all_official_matrix_v1/official_7/cells/tritonbench_g/kernelskill/000_adam_update_triton/candidates/kernelmem_run/20260716_143006_official_prompt_vllm_qwen14b",
+  "selected_kernel": "/home/bi_geum/official_matrix_64/results/all_official_matrix_v1/official_7/cells/tritonbench_g/kernelskill/000_adam_update_triton/candidates/kernelmem_run/20260716_143006_official_prompt_vllm_qwen14b/official_prompt/code/kernel_20260716_143017.py",
+  "ncu_on_path": "/usr/local/cuda/bin/ncu",
+  "ncu_evidence": {
+    "profile_dirs": [
+      "/home/bi_geum/official_matrix_64/results/all_official_matrix_v1/official_7/cells/tritonbench_g/kernelskill/000_adam_update_triton/candidates/kernelmem_run/20260716_143006_official_prompt_vllm_qwen14b/official_prompt/profile"
+    ],
+    "profile_files": [],
+    "opt_round_files": [],
+    "ncu_error_csvs": [],
+    "ncu_phase_ran": false
+  },
+  "upstream_rc": 0,
+  "optimization_tree": "/home/bi_geum/official_matrix_64/results/all_official_matrix_v1/official_7/cells/tritonbench_g/kernelskill/000_adam_update_triton/candidates/kernelmem_run/20260716_143006_official_prompt_vllm_qwen14b/official_prompt/optimization_tree.json"
+}

@@ -85,10 +85,6 @@ def system_hint(system: str, root: Path) -> str:
                 return "AutoKernel instructions:\n" + txt
     if "triton" in lower:
         return "Triton-oriented generation, but for this smoke run prefer simple Python/torch code unless the task explicitly requires Triton."
-    if "cuda_l1" in lower:
-        return "CUDA-L1-style candidate generation. For smoke fallback use simple torch code."
-    if "ksearch" in lower:
-        return "K-Search-style candidate generation. Return self-contained code."
     return "Generic GPU kernel optimization agent."
 
 

@@ -1,0 +1,6 @@
+{
+  "benchmark": "kernelbench",
+  "task_id": "71_Conv2d_Divide_LeakyReLU",
+  "source_path": "/home/bi_geum/official_matrix_64/third_party/KernelBench/KernelBench/level2/71_Conv2d_Divide_LeakyReLU.py",
+  "official_task": true
+}

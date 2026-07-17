@@ -1,0 +1,8 @@
+{
+  "benchmark": "multikernelbench",
+  "task_id": "11_group_norm",
+  "op": "11_group_norm",
+  "official_task": true,
+  "prompt_path": "",
+  "prompt": "Benchmark: multikernelbench\nOfficial task: 11_group_norm\nReturn only source code, without Markdown fences or explanations.\n\nGenerate a kernel response for the exact MultiKernelBench operator '11_group_norm'. Use CUDA C++ or Triton and do not replace the computation with eager PyTorch.\n\nMultiKernelBench operator: 11_group_norm\nOfficial dataset entry: {'category': 'npukernelbench_level1', 'source': 'NPUKernelBench'}\n"
+}

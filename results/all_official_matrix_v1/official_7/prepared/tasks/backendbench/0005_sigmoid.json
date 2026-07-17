@@ -1,0 +1,24 @@
+{
+  "benchmark": "backendbench",
+  "task_id": "sigmoid",
+  "op": "sigmoid",
+  "official_task": true,
+  "smoke_ops": [
+    "add",
+    "mul",
+    "sub",
+    "div",
+    "relu",
+    "sigmoid",
+    "tanh",
+    "gelu",
+    "matmul",
+    "mm",
+    "bmm",
+    "sum",
+    "mean",
+    "softmax",
+    "layer_norm"
+  ],
+  "prompt": "Benchmark: backendbench\nOfficial task: sigmoid\nReturn only source code, without Markdown fences or explanations.\n\nWrite a Python module for BackendBench DirectoryBackend exposing `sigmoid_kernel_impl`. Use a custom Triton/CUDA/compiled implementation. Do not use the eager PyTorch operator as a fallback.\n"
+}

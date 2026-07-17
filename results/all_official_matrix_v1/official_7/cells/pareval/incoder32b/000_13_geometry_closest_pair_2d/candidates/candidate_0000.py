@@ -1,0 +1,49 @@
+cpp
+const int BLOCK_SIZE = 256;
+const int MAX_POINTS_PER_BLOCK = 1024;
+
+__device__ int atomic_min_d(double* address, double val) {
+    int* address_as_int = (int*)address;
+    int old = *address_as_int;
+    int assumed;
+    do {
+        assumed = old;
+        old = atomicCAS(address_as_int, assumed,
+                        __double_as_int(fmin(val, __int_as_double(assumed))));
+    } while (assumed != old);
+    return old;
+}
+
+__global__ void closestPair(const Point *points, size_t numPoints, double *distance) {
+    __shared__ Point block_points[MAX_POINTS_PER_BLOCK];
+    __shared__ int block_size;
+    
+    if (threadIdx.x == 0) {
+        block_size = min((int)numPoints, MAX_POINTS_PER_BLOCK);
+    }
+    __syncthreads();
+    
+    int tid = threadIdx.x;
+    int gid = blockIdx.x * blockDim.x + tid;
+    
+    if (gid < numPoints && tid < MAX_POINTS_PER_BLOCK) {
+        block_points[tid] = points[gid];
+    }
+    __syncthreads();
+    
+    int local_block_size = block_size;
+    double local_min = INFINITY;
+    
+    for (int i = tid; i < local_block_size - 1; i += blockDim.x) {
+        for (int j = i + 1; j < local_block_size; j++) {
+            double d = distanceBetweenPoints(block_points[i], block_points[j]);
+            if (d < local_min) {
+                local_min = d;
+            }
+        }
+    }
+    
+    if (local_min < INFINITY) {
+        atomic_min_d(distance, local_min);
+    }
+}

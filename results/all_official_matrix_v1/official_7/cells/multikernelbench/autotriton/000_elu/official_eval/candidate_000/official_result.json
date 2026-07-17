@@ -1,0 +1,8 @@
+{
+  "compiled": true,
+  "correctness": false,
+  "performance": null,
+  "hardware": "NVIDIA H100 80GB HBM3",
+  "cheating": false,
+  "correctness_info": "[FAIL] at 15:51:\n    alpha,\n    n_elements,\n    BLOCK_SIZE: tl.constexpr,\n):\n    pid = tl.program_id(axis=0)\n    block_start = pid * BLOCK_SIZE\n    offsets = block_start + tl.arange(0, BLOCK_SIZE)\n    mask = offsets < n_elements\n    x = tl.load(x_ptr + offsets, mask=mask)\n    zero = tl.zeros_like(x)\n    exp_x = tl.math.exp(x)\n    elu_x = tl.where(x > zero, x, alpha * (exp_x - one))\n                                                   ^\nNameError('one is not defined')"
+}

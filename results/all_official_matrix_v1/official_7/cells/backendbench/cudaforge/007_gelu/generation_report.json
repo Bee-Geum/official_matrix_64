@@ -1,0 +1,24 @@
+{
+  "agent": "cudaforge",
+  "driver": "/home/bi_geum/official_matrix_64/drivers/cudaforge_live_driver.py",
+  "cmd": [
+    "/home/bi_geum/official_matrix_64/.venv/bin/python3",
+    "/home/bi_geum/official_matrix_64/drivers/cudaforge_live_driver.py",
+    "--task",
+    "/home/bi_geum/official_matrix_64/results/all_official_matrix_v1/official_7/cells/backendbench/cudaforge/007_gelu/official_prompt.txt",
+    "--cand_dir",
+    "/home/bi_geum/official_matrix_64/results/all_official_matrix_v1/official_7/cells/backendbench/cudaforge/007_gelu/candidates",
+    "--rounds",
+    "1",
+    "--seed",
+    "0",
+    "--temperature",
+    "0.2"
+  ],
+  "returncode": 1,
+  "wall_s": 13.18987488746643,
+  "log": "/home/bi_geum/official_matrix_64/results/all_official_matrix_v1/official_7/cells/backendbench/cudaforge/007_gelu/generation.log.txt",
+  "candidate_count": 0,
+  "raw_candidates": [],
+  "normalized_candidates": []
+}

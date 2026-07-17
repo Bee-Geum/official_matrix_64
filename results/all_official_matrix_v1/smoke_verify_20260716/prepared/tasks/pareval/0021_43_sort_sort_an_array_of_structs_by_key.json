@@ -1,0 +1,13 @@
+{
+  "benchmark": "pareval",
+  "task_id": "43_sort_sort_an_array_of_structs_by_key",
+  "official_task": true,
+  "prompt_obj": {
+    "problem_type": "sort",
+    "language": "cpp",
+    "name": "43_sort_sort_an_array_of_structs_by_key",
+    "parallelism_model": "cuda",
+    "prompt": "struct Result {\n   int startTime, duration;\n   float value;\n};\n\n/* Sort vector of Result structs by start time in ascending order.\n   Use CUDA to sort in parallel. The kernel is launched with at least as many threads as there are elements.\n   Example:\n   \n   input: [{startTime=8, duration=4, value=-1.22}, {startTime=2, duration=10, value=1.0}, {startTime=10, duration=3, value=0.0}]\n   output: [{startTime=2, duration=10, value=1.0}, {startTime=8, duration=4, value=-1.22}, {startTime=10, duration=3, value=0.0}]\n*/\n__global__ void sortByStartTime(Result *results, size_t N) {"
+  },
+  "prompt": "Benchmark: pareval\nOfficial task: 43_sort_sort_an_array_of_structs_by_key\nReturn only source code, without Markdown fences or explanations.\n\nThis is a ParEval CUDA COMPLETION task. Below is the BEGINNING of a CUDA C++ file; its last line is a function signature ending with '{' and the body is missing. Your output will be appended VERBATIM right after it and compiled by ParEval's official C++ driver.\n\nOutput ONLY the code that completes that open function body, ending with its closing '}'. Do NOT repeat anything shown below: no #include, no struct/typedef, no 'using', no function signature, and no main(). Emit raw C++ only (no Markdown fences, no prose).\n\n--- code so far (context only; do NOT repeat it) ---\nstruct Result {\n   int startTime, duration;\n   float value;\n};\n\n/* Sort vector of Result structs by start time in ascending order.\n   Use CUDA to sort in parallel. The kernel is launched with at least as many threads as there are elements.\n   Example:\n   \n   input: [{startTime=8, duration=4, value=-1.22}, {startTime=2, duration=10, value=1.0}, {startTime=10, duration=3, value=0.0}]\n   output: [{startTime=2, duration=10, value=1.0}, {startTime=8, duration=4, value=-1.22}, {startTime=10, duration=3, value=0.0}]\n*/\n__global__ void sortByStartTime(Result *results, size_t N) {"
+}

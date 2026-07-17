@@ -8,22 +8,17 @@
 #   out_flag    the flag this driver uses for the candidate output dir (--out or --cand_dir)
 #   gen_args    full arg template; placeholders {TASK} {CAND} {ROUNDS} {SEED} {TEMP} {GPU_JSON}
 #   glob        glob that instrumented_final_eval.py uses to pick up candidates
-#   confidence  observed = CLI seen in telemetry logs; inferred = ran per campaign table, CLI not seen
+#   confidence  live = agent runs as itself (upstream repo or released weights)
 #   repo        upstream source
 #
-# IMPORTANT: the 4 'observed' rows are taken verbatim from the A100 official5 telemetry
-# (generation_resource.txt "Command being timed"). The 4 'inferred' rows ran in the
-# campaign table but their exact CLI was not in the uploaded archive -- confirm the
-# driver path + gen_args for those 4 before a full matrix run (one line each).
+# The 7 official agents. Each runs as itself: a live upstream loop driven by its
+# own backbone, or its own released weights as the artifact. The earlier
+# cuda_l1 / geak / ksearch / cuda_agent rows have been removed from the matrix.
 agent,model,langs,driver,out_flag,gen_args,glob,confidence,repo
-cudaforge,qwen14b,cuda,drivers/cudaforge_inline.py,--cand_dir,--task {TASK} --cand_dir {CAND} --rounds {ROUNDS} --seed {SEED} --temperature {TEMP},round*_kernel.py,observed,https://github.com/OptimAI-Lab/CudaForge
-autokernel,qwen14b,cuda|triton,drivers/autokernel_kb_program_adapter.py,--out,--task {TASK} --out {CAND} --rounds {ROUNDS} --seed {SEED} --temperature {TEMP},candidate_*.py,observed,https://github.com/rightnow-ai/autokernel
-cuda_l1,qwen14b,cuda,drivers/cuda_l1_artifact_adapter.py,--out,--task {TASK} --out {CAND} --gpu-json {GPU_JSON},candidate_*.py,observed,https://github.com/deepreinforce-ai/CUDA-L1
-autotriton,autotriton8b,triton,drivers/trained_model.py,--cand_dir,--task {TASK} --cand_dir {CAND} --rounds {ROUNDS} --seed {SEED} --temperature {TEMP},round*_kernel.py,observed,https://github.com/AutoTriton/AutoTriton
-drkernel,qwen14b,triton,drivers/drkernel_adapter.py,--cand_dir,--task {TASK} --cand_dir {CAND} --rounds {ROUNDS} --seed {SEED} --temperature {TEMP},round*_kernel.py,inferred,https://github.com/hkust-nlp/KernelGYM
-geak,qwen14b,triton,drivers/geak_adapter.py,--cand_dir,--task {TASK} --cand_dir {CAND} --rounds {ROUNDS} --seed {SEED} --temperature {TEMP},round*_kernel.py,inferred,https://github.com/AMD-AGI/GEAK-agent
-ksearch,qwen14b,cuda|triton,drivers/ksearch_adapter.py,--out,--task {TASK} --out {CAND} --rounds {ROUNDS} --seed {SEED} --temperature {TEMP},candidate_*.py,inferred,https://github.com/caoshiyi/K-Search
-cuda_agent,qwen14b,cuda,drivers/cuda_agent_adapter.py,--out,--task {TASK} --out {CAND} --rounds {ROUNDS} --seed {SEED} --temperature {TEMP},candidate_*.py,inferred,https://github.com/BytedTsinghua-SIA/CUDA-Agent
-kernelllm,kernelllm8b,triton,drivers/kernelllm_adapter.py,--out,--task {TASK} --out {CAND} --rounds {ROUNDS} --seed {SEED} --temperature {TEMP},candidate_*.py,inferred,https://huggingface.co/facebook/KernelLLM
-incoder32b,incoder32b,cuda,drivers/incoder32b_adapter.py,--out,--task {TASK} --out {CAND} --rounds {ROUNDS} --seed {SEED} --temperature {TEMP},candidate_*.py,inferred,https://github.com/CSJianYang/Industrial-Coder
-kernelskill,qwen14b,cuda|triton,drivers/kernelskill_adapter.py,--out,--task {TASK} --out {CAND} --rounds {ROUNDS} --seed {SEED} --temperature {TEMP},candidate_*.py,inferred,https://github.com/0satan0/KernelMem
+cudaforge,qwen14b,cuda,drivers/cudaforge_live_driver.py,--cand_dir,--task {TASK} --cand_dir {CAND} --rounds {ROUNDS} --seed {SEED} --temperature {TEMP},round*_kernel.py,live,https://github.com/OptimAI-Lab/CudaForge
+autokernel,qwen14b,cuda|triton,drivers/autokernel_live_driver.py,--out,--task {TASK} --out {CAND} --rounds {ROUNDS} --seed {SEED} --temperature {TEMP},candidate_*.py,live,https://github.com/rightnow-ai/autokernel
+autotriton,autotriton8b,triton,drivers/autotriton_live_driver.py,--cand_dir,--task {TASK} --cand_dir {CAND} --rounds {ROUNDS} --seed {SEED} --temperature {TEMP},round*_kernel.py,live,https://github.com/AI9Stars/AutoTriton
+drkernel,drkernel14b,triton,drivers/drkernel_live_driver.py,--cand_dir,--task {TASK} --cand_dir {CAND} --rounds {ROUNDS} --seed {SEED} --temperature {TEMP},candidate_*.py,live,https://github.com/hkust-nlp/KernelGYM
+kernelllm,kernelllm8b,triton,drivers/kernelllm_live_driver.py,--out,--task {TASK} --out {CAND} --rounds {ROUNDS} --seed {SEED} --temperature {TEMP},candidate_*.py,live,https://huggingface.co/facebook/KernelLLM
+incoder32b,incoder32b,cuda|triton,drivers/incoder32b_live_driver.py,--out,--task {TASK} --out {CAND} --rounds {ROUNDS} --seed {SEED} --temperature {TEMP},candidate_*.py,live,https://github.com/CSJianYang/Industrial-Coder
+kernelskill,qwen14b,cuda|triton,drivers/kernelskill_live_driver.py,--out,--task {TASK} --out {CAND} --rounds {ROUNDS} --seed {SEED} --temperature {TEMP},candidate_*.py,live,https://github.com/0satan0/KernelMem

@@ -1,0 +1,8 @@
+{
+  "benchmark": "multikernelbench",
+  "task_id": "29_dynamic_quant",
+  "op": "29_dynamic_quant",
+  "official_task": true,
+  "prompt_path": "",
+  "prompt": "Benchmark: multikernelbench\nOfficial task: 29_dynamic_quant\nReturn only source code, without Markdown fences or explanations.\n\nGenerate a kernel response for the exact MultiKernelBench operator '29_dynamic_quant'. Use CUDA C++ or Triton and do not replace the computation with eager PyTorch.\n\nMultiKernelBench operator: 29_dynamic_quant\nOfficial dataset entry: {'category': 'npukernelbench_level1', 'source': 'NPUKernelBench'}\n"
+}

@@ -2,7 +2,7 @@
   "agent": "cudaforge",
   "driver": "/home/bi_geum/official_matrix_64/drivers/cudaforge_inline.py",
   "cmd": [
-    "/home/bi_geum/anaconda3/envs/survey/bin/python3",
+    "/home/bi_geum/official_matrix_64/.venv/bin/python3",
     "/home/bi_geum/official_matrix_64/drivers/cudaforge_inline.py",
     "--task",
     "/home/bi_geum/official_matrix_64/results/all_official_matrix_v1/official_matrix_64/cells/tritonbench_t/cudaforge/000_Adam/official_prompt.txt",
@@ -16,7 +16,7 @@
     "0.2"
   ],
   "returncode": 0,
-  "wall_s": 6.762455224990845,
+  "wall_s": 4.387454986572266,
   "log": "/home/bi_geum/official_matrix_64/results/all_official_matrix_v1/official_matrix_64/cells/tritonbench_t/cudaforge/000_Adam/generation.log.txt",
   "candidate_count": 1,
   "raw_candidates": [

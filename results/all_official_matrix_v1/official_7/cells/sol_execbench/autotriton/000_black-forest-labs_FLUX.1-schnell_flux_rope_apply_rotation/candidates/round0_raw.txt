@@ -1,0 +1,357 @@
+<think>
+We are given a PyTorch model that applies rotary position embeddings (RoPE) to query or key tensors.
+ The rotation is applied by splitting the head dimension into pairs and applying the complex rotation:
+   (x1 * cos - x2 * sin, x1 * sin + x2 * cos)
+ The input tensors are of shape (batch_size, seq_len, num_attention_heads, attention_head_dim).
+ The frequencies are of shape (seq_len, attention_head_dim).
+
+ We are to implement this using Triton kernels. The goal is to write an optimized GPU kernel that performs the same operation.
+
+ Steps for the Triton implementation:
+ 1. We note that the operation is element-wise except for the fact that we need to load pairs of features (x1 and x2) and their corresponding frequencies (cos1, sin1, cos2, sin2).
+ 2. The head dimension is split into pairs. So, if the head dimension is `d`, we have `d//2` pairs.
+ 3. We will design a kernel that processes elements in blocks. Each block will handle a set of elements for a specific batch, sequence, head, and pair index.
+ 4. We need to compute the memory offsets correctly for loading the input data and storing the output.
+ 5. We will use the `tl.arange` and `tl.expand_dims` to handle the indices appropriately.
+
+ Kernel plan:
+ - Let `B` be batch size, `S` sequence length, `H` number of heads, `D` head dimension (which is even, so `D//2` pairs).
+ - We will launch a grid of `B * S * H * (D//2)` blocks. Each block will handle two elements (one from x1 and one from x2) and their corresponding frequencies.
+ - Alternatively, we can launch with `B * S * H * (D//2)` blocks and each block handles two elements. But note that each pair is independent.
+
+ However, note that the frequencies are shared across heads and batches for a given sequence and pair index. So we can load the same frequency for all heads in a batch at the same sequence and pair.
+
+ We can structure the kernel as follows:
+   pid = program_id(axis=0)  # which block we are in
+   total_pairs = (D // 2)
+   num_elems_per_block = 2  # because each pair has two elements: x1 and x2
+
+   We can compute:
+     idx = pid
+     pair_idx = idx % total_pairs
+     idx = idx // total_pairs
+     head_idx = idx % H
+     idx = idx // H
+     seq_idx = idx % S
+     batch_idx = idx // S
+
+   Then, we need to compute the base pointers for the input and output.
+
+   For the input query_or_key:
+     base = batch_idx * (S * H * D) + seq_idx * (H * D) + head_idx * D + pair_idx * 2
+     Then, x1 is at base + 0, x2 at base + 1.
+
+   For the frequencies:
+     The frequencies are of shape (S, D). So for a given seq_idx and pair_idx (which actually spans D//2 pairs, but each pair has two elements), we need to load two frequencies:
+        cos1: at [seq_idx, pair_idx * 2 + 0]
+        sin1: at [seq_idx, pair_idx * 2 + 1]
+        But note: the original code splits the head_dim into pairs and then uses the first element of the pair for cos and the second for sin? Actually, in the code they split the head_dim into pairs and then for each pair, they use the first element as the real part and the second as the imaginary part? But in the rotation, they use two different frequencies (cos1, sin1) for the real part and (cos2, sin2) for the imaginary part? 
+
+   Looking at the code:
+        x_reshaped = ... (batch, seq_len, num_heads, head_dim//2, 2)
+        So the pair index runs from 0 to (head_dim//2 - 1), and each pair has two elements: [0] and [1].
+
+        Then, for frequencies:
+          freqs_cos_reshaped: (1, seq_len, 1, head_dim//2, 2) -> same as above.
+          So for a given pair index `i`, the real part of the frequency is at [0] and the imaginary part at [1]? But note the rotation uses:
+             out1 = x1 * cos1 - x2 * sin1
+             out2 = x1 * sin2 + x2 * cos2
+
+        Here, `cos1` and `sin1` are the first elements of the frequency pair (for the real and imaginary parts) but note that the frequency tensors are of shape (seq_len, head_dim). When reshaped, they become (seq_len, head_dim//2, 2). So for pair index `i`, the real part of the frequency is at position `i*2` and the imaginary part at `i*2+1`.
+
+        Therefore, we need to load:
+          cos1 = freqs_cos[seq_idx, pair_idx * 2]
+          sin1 = freqs_sin[seq_idx, pair_idx * 2 + 1]   # because the imaginary part of the frequency is the second element of the pair?
+          But wait, the code uses:
+             cos1 = freqs_cos_reshaped[..., 0]  # which is the first element of the pair -> real part
+             sin1 = freqs_sin_reshaped[..., 0]   # real part of the sine?
+             cos2 = freqs_cos_reshaped[..., 1]   # imaginary part of the frequency?
+             sin2 = freqs_sin_reshaped[..., 1]
+
+        Actually, the frequency tensor `freqs_cos` is of shape (seq_len, head_dim). When we reshape it to (seq_len, head_dim//2, 2), then for pair `i`, the two elements are at [i*2] and [i*2+1]. The reshaped tensor's last dimension is [real, imag] for each pair.
+
+        So:
+          real_freq = freqs_cos[seq_idx, i*2]   -> corresponds to freqs_cos_reshaped[seq_idx, i, 0]
+          imag_freq = freqs_cos[seq_idx, i*2+1] -> corresponds to freqs_cos_reshaped[seq_idx, i, 1]
+
+        Similarly for sine.
+
+   Therefore, for the frequencies:
+        offset_cos = seq_idx * D + pair_idx * 2
+        offset_sin = seq_idx * D + pair_idx * 2 + 1
+
+   But note: the frequencies are shared across heads and batches. So we can load the same frequency value for all heads at the same (batch, seq, pair) location.
+
+ 5. We then compute:
+        out1 = x1 * cos1 - x2 * sin1
+        out2 = x1 * sin2 + x2 * cos2
+
+ 6. We store out1 at the output location for the first element of the pair and out2 at the second.
+
+ 7. We must be cautious about data types and ensure that we are using the correct pointers.
+
+ Implementation details:
+   - We will use `tl.load` and `tl.store` with appropriate masking to avoid out-of-bounds accesses.
+   - The kernel will be launched with a grid of size `B * S * H * (D//2)`.
+   - We assume that `D` is even (as given in the problem).
+
+ Let's define the kernel:
+
+   @triton.jit
+   def _rope_apply_rotation_kernel(
+        query_or_key_ptr, freqs_cos_ptr, freqs_sin_ptr, output_ptr,
+        batch_size, seq_len, num_attention_heads, attention_head_dim,
+        stride_qb, stride_qs, stride_qh, stride_qd,
+        stride_fs, stride_fd,  # for freqs_cos: (seq_len, head_dim) -> strides: [stride_fs, stride_fd]
+        stride_ks, stride_kd,  # for freqs_sin: same as freqs_cos
+        stride_ob, stride_os, stride_oh, stride_od,
+        D: tl.constexpr,  # attention_head_dim, which is even
+        BLOCK_SIZE: tl.constexpr,  # we might not need a block size if each block handles two elements? Actually, each block handles one pair (two elements) so BLOCK_SIZE=2? But we can set it to 1 and then use two threads? Alternatively, we can let each program handle two elements with one block.
+   ):
+        pid = tl.program_id(0)
+        total_pairs = D // 2
+        total_elems_per_batch_seq_head = num_attention_heads * total_pairs
+        total_elems_per_batch = seq_len * total_elems_per_batch_seq_head
+
+        # Decompose pid into batch, seq, head, pair
+        pair_idx = pid % total_pairs
+        pid_rest = pid // total_pairs
+        head_idx = pid_rest % num_attention_heads
+        pid_rest = pid_rest // num_attention_heads
+        seq_idx = pid_rest % seq_len
+        batch_idx = pid_rest // seq_len
+
+        # Compute base pointers for the current batch, seq, head
+        base_q = batch_idx * stride_qb + seq_idx * stride_qs + head_idx * stride_qh
+        base_f = seq_idx * stride_fs   # because freqs_cos is (seq_len, head_dim), so stride_fs is the stride for seq_len, stride_fd for head_dim
+
+        # Load the two elements of the query/key: x1 and x2
+        # The query/key is at [batch_idx, seq_idx, head_idx, pair_idx*2] and [pair_idx*2+1]
+        x1_ptr = query_or_key_ptr + base_q + pair_idx * 2
+        x2_ptr = query_or_key_ptr + base_q + pair_idx * 2 + 1
+        x1 = tl.load(x1_ptr)
+        x2 = tl.load(x2_ptr)
+
+        # Load the two frequencies: cos1 (real part) and sin1 (imaginary part) for the pair
+        # For freqs_cos: [seq_idx, pair_idx*2]
+        f_cos_ptr = freqs_cos_ptr + base_f + pair_idx * 2
+        f_sin_ptr = freqs_sin_ptr + base_f + pair_idx * 2 + 1   # because the second element of the pair is for sine? Actually, the sine frequency tensor has the same layout: [seq_idx, pair_idx*2+1] is the second element of the pair.
+
+        cos1 = tl.load(f_cos_ptr)
+        sin1 = tl.load(f_sin_ptr)
+        # For the imaginary part of the frequency, we also need cos2 and sin2? But note the rotation formula uses two different frequency pairs: one for the real part (cos1, sin1) and one for the imaginary part (cos2, sin2). However, in our frequency loading, we have already loaded the real part (cos1) and the imaginary part (sin1) for the pair? Actually, no: the sine frequency tensor (freqs_sin) at position [seq_idx, pair_idx*2+1] is the second element of the pair, which is the imaginary part of the sine frequency? 
+
+        # But wait: the code in the reference uses:
+        #   cos1 = freqs_cos_reshaped[..., 0]   # real part of the frequency for the pair
+        #   sin1 = freqs_sin_reshaped[..., 0]    # real part of the sine frequency? -> that doesn't make sense because sine is already sin(x) = cos(x - pi/2). 
+        # Actually, the code uses:
+        #   out1 = x1 * cos1 - x2 * sin1
+        #   out2 = x1 * sin2 + x2 * cos2
+        # Here, `sin1` is the sine frequency at the real part of the pair? But the sine frequency tensor (freqs_sin) is precomputed as sin(freqs) where freqs are the original frequencies (which are cos(freqs) for cosine). So the sine frequency is sin(freqs) = cos(freqs - pi/2). 
+
+        # However, in the rotation, we are using two different frequency tensors: one for cosine (freqs_cos) and one for sine (freqs_sin). The sine frequency tensor is sin(freqs), where freqs are the original frequencies (which are passed to the function). 
+
+        # Therefore, for the pair, we have:
+        #   real_freq = freqs_cos[seq_idx, pair_idx*2]   -> cos(freq)
+        #   imag_freq = freqs_cos[seq_idx, pair_idx*2+1] -> cos(freq + pi/2) = sin(freq)   [because cos(x+pi/2) = sin(x)]
+        # But note: the sine frequency tensor (freqs_sin) is exactly sin(freq). So:
+        #   sin1 = freqs_sin[seq_idx, pair_idx*2]   -> which is sin(freq) at the first element of the pair? 
+        #   sin2 = freqs_sin[seq_idx, pair_idx*2+1] -> sin(freq + pi/2) = cos(freq)
+
+        # Therefore, we need to adjust our frequency loading:
+        #   For the rotation, we need:
+        #      cos1 = freqs_cos[seq_idx, pair_idx*2]   # real part of the frequency
+        #      sin1 = freqs_sin[seq_idx, pair_idx*2]    # real part of the sine frequency (which is sin(freq)) -> but note: we are using it as the imaginary part of the rotation? 
+        #      cos2 = freqs_cos[seq_idx, pair_idx*2+1] # imag part of the frequency (which is sin(freq))
+        #      sin2 = freqs_sin[seq_idx, pair_idx*2+1] # real part of the sine frequency at the next element? which is sin(freq+pi/2) = cos(freq)
+
+        # However, the rotation formula in the reference uses:
+        #      out1 = x1 * cos1 - x2 * sin1   -> which is (x1 + i x2) * (cos1 + i sin1)
+        #      out2 = x1 * sin2 + x2 * cos2   -> which is (x1 + i x2) * (sin2 + i cos2) = (x1 + i x2) * (sin(freq) + i cos(freq)) = (x1 + i x2) * e^{i freq}
+
+        # But note: e^{i freq} = cos(freq) + i sin(freq). So indeed, we have:
+        #      out2 = x1 * sin2 + x2 * cos2 = x1 * sin(freq) + x2 * cos(freq)
+
+        # Therefore, we should load:
+        #   cos1 = freqs_cos[seq_idx, pair_idx*2]
+        #   sin1 = freqs_sin[seq_idx, pair_idx*2]
+        #   cos2 = freqs_cos[seq_idx, pair_idx*2+1]
+        #   sin2 = freqs_sin[seq_idx, pair_idx*2+1]
+
+        # Correction: in the initial plan, we loaded for sin1 from freqs_sin at pair_idx*2+1, which is wrong.
+
+        # Let's fix the frequency loading:
+        f_cos1_ptr = freqs_cos_ptr + base_f + pair_idx * 2
+        f_sin1_ptr = freqs_sin_ptr + base_f + pair_idx * 2
+        f_cos2_ptr = freqs_cos_ptr + base_f + pair_idx * 2 + 1
+        f_sin2_ptr = freqs_sin_ptr + base_f + pair_idx * 2 + 1
+
+        cos1 = tl.load(f_cos1_ptr)
+        sin1 = tl.load(f_sin1_ptr)
+        cos2 = tl.load(f_cos2_ptr)
+        sin2 = tl.load(f_sin2_ptr)
+
+        # Compute the rotated values
+        out1 = x1 * cos1 - x2 * sin1
+        out2 = x1 * sin2 + x2 * cos2
+
+        # Store the results
+        out1_ptr = output_ptr + base_q + pair_idx * 2
+        out2_ptr = output_ptr + base_q + pair_idx * 2 + 1
+        tl.store(out1_ptr, out1)
+        tl.store(out2_ptr, out2)
+
+ 8. We must note that the strides for the frequency tensors are [stride_fs, stride_fd]. For a tensor of shape (seq_len, head_dim), stride_fs is the stride for the sequence dimension (which is head_dim) and stride_fd is 1. Similarly for the sine tensor.
+
+ 9. We will now write the host function that calls this kernel.
+
+ 10. We assume that the input tensors are contiguous in the last dimension (head_dim) and that the strides are accordingly. However, to be safe, we will compute the strides from the tensors.
+
+ 11. We note that the kernel is memory-bound and we are processing each element exactly once.
+
+ 12. We must handle the data types: the kernel uses the same data type as the input (bfloat16).
+
+ 13. We will set the grid to be `(B * S * H * (D//2),)`.
+
+ 14. We must ensure that the kernel is launched with the correct block size. Since each block handles one pair (two elements), we can set the block size to 1. Alternatively, we can use a block size of 1 and let each block handle one element? Actually, each block handles two elements (x1 and x2) but they are independent. We can let each block handle one pair (so two elements) and use one program per pair.
+
+ 15. We'll define the class `ModelNew` that inherits from `torch.nn.Module` and implements the `forward` method.
+
+ 16. We note that the original model uses `torch.no_grad()` and we should do the same.
+
+ 17. We'll write the complete code.
+
+ Let's code:
+</think><answer>
+To solve this problem, we need to implement an optimized GPU kernel for applying Rotary Position Embeddings (RoPE) to query or key tensors as described in the reference model. The RoPE rotation involves splitting the head dimension into pairs and applying a complex rotation formula to each pair. The goal is to leverage Triton for efficient GPU computation while ensuring numerical accuracy and performance.
+
+### Approach
+1. **Problem Analysis**: The reference model applies a complex rotation to each pair of features in the head dimension. The rotation formula is:
+   - \( \text{out1} = x1 \times \text{cos1} - x2 \times \text{sin1} \)
+   - \( \text{out2} = x1 \times \text{sin2} + x2 \times \text{cos2} \)
+   where \( x1 \) and \( x2 \) are consecutive features in the head dimension, and \( \text{cos1}, \text{sin1}, \text{cos2}, \text{sin2} \) are corresponding frequency values.
+
+2. **Triton Kernel Design**: 
+   - **Grid Construction**: Launch a grid where each block processes one pair of features (two elements) across all batches, sequences, and heads.
+   - **Memory Access**: Efficiently load input features and frequency values using computed strides to handle tensor dimensions correctly.
+   - **Computation**: Perform the rotation using loaded values and store results back to the output tensor.
+
+3. **Host Function**: 
+   - Compute necessary strides for input tensors.
+   - Determine grid size based on tensor dimensions.
+   - Invoke the Triton kernel with appropriate parameters.
+
+### Solution Code
+```python
+import torch
+import triton
+import triton.language as tl
+
+@torch.no_grad()
+def run(
+    query_or_key: torch.Tensor,
+    freqs_cos: torch.Tensor,
+    freqs_sin: torch.Tensor,
+) -> torch.Tensor:
+    """
+    Apply rotary position embeddings to query or key tensor using a Triton kernel.
+    
+    The rotation is applied using the formula:
+    - Split features into pairs (x1, x2)
+    - Rotate: (x1 * cos1 - x2 * sin1, x1 * sin2 + x2 * cos2)
+    
+    Args:
+        query_or_key: Input tensor of shape (batch, seq_len, num_heads, head_dim)
+        freqs_cos: Cosine frequencies of shape (seq_len, head_dim)
+        freqs_sin: Sine frequencies of shape (seq_len, head_dim)
+        
+    Returns:
+        Rotated tensor of same shape as input
+    """
+    assert query_or_key.is_cuda, "Input tensor must be on CUDA device"
+    assert freqs_cos.is_cuda and freqs_sin.is_cuda, "Frequency tensors must be on CUDA device"
+    assert query_or_key.shape[-1] % 2 == 0, "Head dimension must be even"
+
+    B, S, H, D = query_or_key.shape
+    total_pairs = D // 2
+    grid = (B * S * H * total_pairs,)
+
+    # Compute strides
+    stride_qb, stride_qs, stride_qh, stride_qd = query_or_key.stride()
+    stride_fs, stride_fd = freqs_cos.stride()
+    stride_ks, stride_kd = freqs_sin.stride()
+    stride_ob, stride_os, stride_oh, stride_od = query_or_key.stride()
+
+    # Launch kernel
+    _rope_apply_rotation_kernel[grid](
+        query_or_key, freqs_cos, freqs_sin, query_or_key,
+        B, S, H, D,
+        stride_qb, stride_qs, stride_qh, stride_qd,
+        stride_fs, stride_fd,
+        stride_ks, stride_kd,
+        stride_ob, stride_os, stride_oh, stride_od,
+        D,
+        total_pairs,
+    )
+    return query_or_key
+
+@triton.jit
+def _rope_apply_rotation_kernel(
+    query_or_key_ptr, freqs_cos_ptr, freqs_sin_ptr, output_ptr,
+    batch_size, seq_len, num_attention_heads, attention_head_dim,
+    stride_qb, stride_qs, stride_qh, stride_qd,
+    stride_fs, stride_fd,
+    stride_ks, stride_kd,
+    stride_ob, stride_os, stride_oh, stride_od,
+    D: tl.constexpr,
+    total_pairs: tl.constexpr,
+):
+    pid = tl.program_id(0)
+    total_elems_per_batch_seq_head = num_attention_heads * total_pairs
+    total_elems_per_batch = seq_len * total_elems_per_batch_seq_head
+
+    pair_idx = pid % total_pairs
+    pid_rest = pid // total_pairs
+    head_idx = pid_rest % num_attention_heads
+    pid_rest = pid_rest // num_attention_heads
+    seq_idx = pid_rest % seq_len
+    batch_idx = pid_rest // seq_len
+
+    base_q = batch_idx * stride_qb + seq_idx * stride_qs + head_idx * stride_qh
+    base_f = seq_idx * stride_fs
+
+    x1_ptr = query_or_key_ptr + base_q + pair_idx * 2
+    x2_ptr = query_or_key_ptr + base_q + pair_idx * 2 + 1
+    x1 = tl.load(x1_ptr)
+    x2 = tl.load(x2_ptr)
+
+    f_cos1_ptr = freqs_cos_ptr + base_f + pair_idx * 2
+    f_sin1_ptr = freqs_sin_ptr + base_f + pair_idx * 2
+    f_cos2_ptr = freqs_cos_ptr + base_f + pair_idx * 2 + 1
+    f_sin2_ptr = freqs_sin_ptr + base_f + pair_idx * 2 + 1
+
+    cos1 = tl.load(f_cos1_ptr)
+    sin1 = tl.load(f_sin1_ptr)
+    cos2 = tl.load(f_cos2_ptr)
+    sin2 = tl.load(f_sin2_ptr)
+
+    out1 = x1 * cos1 - x2 * sin1
+    out2 = x1 * sin2 + x2 * cos2
+
+    out1_ptr = output_ptr + base_q + pair_idx * 2
+    out2_ptr = output_ptr + base_q + pair_idx * 2 + 1
+    tl.store(out1_ptr, out1)
+    tl.store(out2_ptr, out2)
+
+class ModelNew(torch.nn.Module):
+    def __init__(self):
+        super().__init__()
+    
+    def forward(self, query_or_key, freqs_cos, freqs_sin):
+        return run(query_or_key, freqs_cos, freqs_sin)
+```
+
+### Explanation
+1. **Triton Kernel**: The kernel `_rope_apply_rotation_kernel` processes each pair of features in the head dimension. It calculates memory offsets for input features and frequency values, loads these values, applies the rotation formula, and stores results back to the output tensor.
+2. **Host Function**: The `run` function prepares tensor strides, computes the grid size, and invokes the Triton kernel. It ensures inputs are on the GPU and validates tensor dimensions.
+3. **Model Class**: `ModelNew` integrates the `run` function into a PyTorch module, maintaining the original model interface for seamless integration with existing workflows. This ensures numerical accuracy and performance benefits from GPU acceleration.</answer>

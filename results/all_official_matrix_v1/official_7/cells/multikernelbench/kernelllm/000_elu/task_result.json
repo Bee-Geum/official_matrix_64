@@ -1,0 +1,19 @@
+{
+  "benchmark": "multikernelbench",
+  "task_id": "elu",
+  "official_task": 1,
+  "generation_ok": 1,
+  "candidate_count": 2,
+  "official_attempted": 1,
+  "official_eval": 1,
+  "correct": 0,
+  "performance_available": 0,
+  "best_score": 0.0,
+  "infrastructure_error": "",
+  "candidate_error": "",
+  "generation_log": "/home/bi_geum/official_matrix_64/results/all_official_matrix_v1/official_7/cells/multikernelbench/kernelllm/000_elu/generation.log.txt",
+  "official_reports": [],
+  "agent": "kernelllm",
+  "cell_dir": "/home/bi_geum/official_matrix_64/results/all_official_matrix_v1/official_7/cells/multikernelbench/kernelllm",
+  "task_dir": "/home/bi_geum/official_matrix_64/results/all_official_matrix_v1/official_7/cells/multikernelbench/kernelllm/000_elu"
+}

@@ -1,0 +1,27 @@
+{
+  "benchmark": "tritonbench_t",
+  "task_id": "Adam",
+  "task_manifest": "/home/bi_geum/official_matrix_64/results/all_official_matrix_v1/official_matrix_64/prepared/tasks/tritonbench_t/0000_Adam.json",
+  "candidate": "/home/bi_geum/official_matrix_64/results/all_official_matrix_v1/official_matrix_64/cells/tritonbench_t/kernelllm/000_Adam/candidates/official_candidate_000.py",
+  "official_task": 1,
+  "official_attempted": 1,
+  "official_eval": 1,
+  "correct": 1,
+  "performance_available": 1,
+  "score": 0.63,
+  "evaluator_rc": 0,
+  "infrastructure_error": "",
+  "candidate_error": "",
+  "logs": [
+    "/home/bi_geum/official_matrix_64/results/all_official_matrix_v1/official_matrix_64/cells/tritonbench_t/kernelllm/000_Adam/official_eval/candidate_000/0_call_acc.log.txt",
+    "/home/bi_geum/official_matrix_64/results/all_official_matrix_v1/official_matrix_64/cells/tritonbench_t/kernelllm/000_Adam/official_eval/candidate_000/1_exe_acc.log.txt",
+    "/home/bi_geum/official_matrix_64/results/all_official_matrix_v1/official_matrix_64/cells/tritonbench_t/kernelllm/000_Adam/official_eval/candidate_000/perf_write_file.log.txt",
+    "/home/bi_geum/official_matrix_64/results/all_official_matrix_v1/official_matrix_64/cells/tritonbench_t/kernelllm/000_Adam/official_eval/candidate_000/perf_multiprocess.log.txt",
+    "/home/bi_geum/official_matrix_64/results/all_official_matrix_v1/official_matrix_64/cells/tritonbench_t/kernelllm/000_Adam/official_eval/candidate_000/2_efficiency.log.txt"
+  ],
+  "artifacts": [
+    "/home/bi_geum/official_matrix_64/results/all_official_matrix_v1/official_matrix_64/cells/tritonbench_t/kernelllm/000_Adam/official_eval/candidate_000/stage/source/Adam.py",
+    "/home/bi_geum/official_matrix_64/results/all_official_matrix_v1/official_matrix_64/cells/tritonbench_t/kernelllm/000_Adam/official_eval/candidate_000/stage/target/Adam.py"
+  ],
+  "wall_s": 48.952420473098755
+}

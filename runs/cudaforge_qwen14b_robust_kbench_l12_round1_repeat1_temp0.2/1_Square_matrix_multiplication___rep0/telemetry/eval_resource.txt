@@ -1,21 +1,21 @@
-	Command being timed: "timeout --kill-after=60s 1800 env CUDA_VISIBLE_DEVICES=0 GPU_NAME=RTX PRO 6000 python3 /home/bi_geum/official_matrix_64/telemetry/instrumented_final_eval.py --task /home/bi_geum/official_matrix_64/third_party/KernelBench/KernelBench/level1/1_Square_matrix_multiplication_.py --cand_dir /home/bi_geum/official_matrix_64/runs/cudaforge_qwen14b_robust_kbench_l12_round1_repeat1_temp0.2/1_Square_matrix_multiplication___rep0/candidates --glob round*_kernel.py --task_work_dir /home/bi_geum/official_matrix_64/runs/cudaforge_qwen14b_robust_kbench_l12_round1_repeat1_temp0.2/1_Square_matrix_multiplication___rep0/final_eval"
-	User time (seconds): 3.57
-	System time (seconds): 0.59
-	Percent of CPU this job got: 145%
-	Elapsed (wall clock) time (h:mm:ss or m:ss): 0:02.86
+	Command being timed: "timeout --kill-after=60s 1800 env CUDA_VISIBLE_DEVICES=2 GPU_NAME=RTX PRO 6000 python3 /home/bi_geum/official_matrix_64/telemetry/instrumented_final_eval.py --task /home/bi_geum/official_matrix_64/third_party/KernelBench/KernelBench/level1/1_Square_matrix_multiplication_.py --cand_dir /home/bi_geum/official_matrix_64/runs/cudaforge_qwen14b_robust_kbench_l12_round1_repeat1_temp0.2/1_Square_matrix_multiplication___rep0/candidates --glob round*_kernel.py --task_work_dir /home/bi_geum/official_matrix_64/runs/cudaforge_qwen14b_robust_kbench_l12_round1_repeat1_temp0.2/1_Square_matrix_multiplication___rep0/final_eval"
+	User time (seconds): 14.72
+	System time (seconds): 1.32
+	Percent of CPU this job got: 210%
+	Elapsed (wall clock) time (h:mm:ss or m:ss): 0:07.62
 	Average shared text size (kbytes): 0
 	Average unshared data size (kbytes): 0
 	Average stack size (kbytes): 0
 	Average total size (kbytes): 0
-	Maximum resident set size (kbytes): 1012468
+	Maximum resident set size (kbytes): 1052492
 	Average resident set size (kbytes): 0
 	Major (requiring I/O) page faults: 0
-	Minor (reclaiming a frame) page faults: 385561
-	Voluntary context switches: 136
-	Involuntary context switches: 514
+	Minor (reclaiming a frame) page faults: 394859
+	Voluntary context switches: 376
+	Involuntary context switches: 177
 	Swaps: 0
-	File system inputs: 264
-	File system outputs: 72
+	File system inputs: 0
+	File system outputs: 80
 	Socket messages sent: 0
 	Socket messages received: 0
 	Signals delivered: 0

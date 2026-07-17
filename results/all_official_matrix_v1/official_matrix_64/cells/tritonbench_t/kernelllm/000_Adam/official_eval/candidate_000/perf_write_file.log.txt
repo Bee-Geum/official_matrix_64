@@ -1,0 +1,8 @@
+$ /home/bi_geum/official_matrix_64/.venv/bin/python3 /home/bi_geum/official_matrix_64/third_party/TritonBench/performance_metrics/perf_T/run_bench/write_file.py --input_folder_path /home/bi_geum/official_matrix_64/results/all_official_matrix_v1/official_matrix_64/cells/tritonbench_t/kernelllm/000_Adam/official_eval/candidate_000/stage/target --results_path /home/bi_geum/official_matrix_64/results/all_official_matrix_v1/official_matrix_64/cells/tritonbench_t/kernelllm/000_Adam/official_eval/candidate_000/perf_results
+cwd=/home/bi_geum/official_matrix_64/third_party/TritonBench/performance_metrics/perf_T
+returncode=0
+wall_s=0.091311
+----- STDOUT -----
+
+----- STDERR -----
+

@@ -1,7 +1,7 @@
 import sys
 import os
 
-sys.path.append('/home/bi_geum/official_matrix_88/results/all_official_matrix_v1/official_matrix_88/cells/tritonbench_g/cudaforge/000_adam_update_triton/official_eval/candidate_000/stage/target')
+sys.path.append('/home/bi_geum/official_matrix_64/results/all_official_matrix_v1/smoke_prove_20260717/cells/tritonbench_g/incoder32b/000_adam_update_triton/official_eval/candidate_000/stage/target')
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 from adam_update_triton import update_fn

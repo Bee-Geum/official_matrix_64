@@ -1,0 +1,13 @@
+{
+  "benchmark": "pareval",
+  "task_id": "22_histogram_count_quadrants",
+  "official_task": true,
+  "prompt_obj": {
+    "problem_type": "histogram",
+    "language": "cpp",
+    "name": "22_histogram_count_quadrants",
+    "parallelism_model": "cuda",
+    "prompt": "struct Point {\n   double x, y;\n};\n\n/* Count the number of cartesian points in each quadrant. The vector points contains a list of `Point` objects.\n   Store the counts in `bins`.\n   Use CUDA to count in parallel. The kernel is launched with at least N threads.\n   Example:\n\n   input: [{x=1.5, y=0.1}, {x=-3, y=1.1}, {x=5, y=9}, {x=1.5, y=-1}, {x=3, y=-7}, {x=0.1, y=2}]\n   output: [3, 1, 0, 2]\n*/\n__global__ void countQuadrants(const Point *points, size_t N, size_t bins[4]) {"
+  },
+  "prompt": "Benchmark: pareval\nOfficial task: 22_histogram_count_quadrants\nReturn only source code, without Markdown fences or explanations.\n\nThis is a ParEval CUDA COMPLETION task. Below is the BEGINNING of a CUDA C++ file; its last line is a function signature ending with '{' and the body is missing. Your output will be appended VERBATIM right after it and compiled by ParEval's official C++ driver.\n\nOutput ONLY the code that completes that open function body, ending with its closing '}'. Do NOT repeat anything shown below: no #include, no struct/typedef, no 'using', no function signature, and no main(). Emit raw C++ only (no Markdown fences, no prose).\n\n--- code so far (context only; do NOT repeat it) ---\nstruct Point {\n   double x, y;\n};\n\n/* Count the number of cartesian points in each quadrant. The vector points contains a list of `Point` objects.\n   Store the counts in `bins`.\n   Use CUDA to count in parallel. The kernel is launched with at least N threads.\n   Example:\n\n   input: [{x=1.5, y=0.1}, {x=-3, y=1.1}, {x=5, y=9}, {x=1.5, y=-1}, {x=3, y=-7}, {x=0.1, y=2}]\n   output: [3, 1, 0, 2]\n*/\n__global__ void countQuadrants(const Point *points, size_t N, size_t bins[4]) {"
+}

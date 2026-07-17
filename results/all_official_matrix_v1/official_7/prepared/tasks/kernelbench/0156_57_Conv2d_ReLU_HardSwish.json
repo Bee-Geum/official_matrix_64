@@ -1,0 +1,6 @@
+{
+  "benchmark": "kernelbench",
+  "task_id": "57_Conv2d_ReLU_HardSwish",
+  "source_path": "/home/bi_geum/official_matrix_64/third_party/KernelBench/KernelBench/level2/57_Conv2d_ReLU_HardSwish.py",
+  "official_task": true
+}

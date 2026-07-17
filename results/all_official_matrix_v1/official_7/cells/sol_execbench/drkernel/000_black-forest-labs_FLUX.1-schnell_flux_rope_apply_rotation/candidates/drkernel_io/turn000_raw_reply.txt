@@ -1,0 +1,640 @@
+Analysis, reasoning, and optimization plan
+
+1) What the PyTorch reference does
+- It applies a 2D complex rotation to each pair of features in the last dimension of query/key: for each position p and head h, it takes x = (x1, x2), and rotates by cos(p) + i sin(p) as:
+  (y1, y2) = (x1*cos - x2*sin, x1*sin + x2*cos)
+- It reshapes the head_dim features into pairs: shape (B, S, H, D) -> (B, S, H, D/2, 2), then applies the formula elementwise, then reshapes back.
+- It broadcasts the frequencies (S, D) across batch and head: for each (b, h, p), it uses freqs[p, :].
+- It does all math in float32 for numerical stability, then casts back to bfloat16.
+
+2) Observations and simplifications
+- The reshape into (..., 2) is not necessary for performance; we can operate directly on the contiguous last dimension and treat it as pairs by indexing even/odd columns.
+- The core operation is memory-bandwidth bound: it’s just four FMAs per element (2 multiplies + 2 adds) over a large tensor. The optimal implementation streams through memory coalesced and minimizes overhead.
+- Broadcasting is simple: cos[p, j], sin[p, j] are the same for all batches and heads; we just index them by p and j.
+- D is 128 (constant), so D/2 = 64. That’s small; but S can vary. We should vectorize along D to keep loads coalesced.
+
+3) Triton kernel design
+- Layout: input is (B, S, H, D) contiguous in last dim. We will launch a 3D grid over (B, S, H) and vectorize over D in the kernel (BLOCK_D = 128).
+- For each program instance (b, s, h):
+  - Load x[row, 0:128] as a vector of 128 elements.
+  - Load cos[s, 0:128] and sin[s, 0:128] as vectors.
+  - Compute in float32: out = x * cos - x_shift * sin, out_shift = x_shift * cos + x * sin, where x_shift is x with a right-shift by one over the pair dimension (i.e., for even j use x[j+1], for odd j use x[j-1]). Because we vectorize over all D, we can implement the shift with two loads: even positions load x[:, +1], odd positions load x[:, -1], using where.
+- Store back as bfloat16.
+- This avoids any reshape and matches the math exactly.
+
+4) Correctness details
+- Pairing: The rotation is defined on pairs (j, j+1). In vector terms, for even j we use x[j+1], for odd j we use x[j-1]. Our shift implementation does exactly that without materializing a reshape.
+- Broadcasting: freqs are (S, D); we index by s and j, so it matches PyTorch’s broadcast.
+- Dtypes: compute in float32, return bfloat16. This matches the reference.
+
+5) Performance considerations
+- Coalesced loads/stores along D.
+- Minimal branching: only a predicated select for the odd/even shift, otherwise straight-line FMAs.
+- No temporary allocations; everything is register-resident in the program.
+- Grid size B*S*H = 1*128*24 = 3072 programs is fine; each does 128-element vector math.
+
+6) Edge cases and assumptions
+- D must be even (true here: 128).
+- Inputs are contiguous in the last dimension (true for typical PyTorch layout).
+- Device is CUDA; Triton requires it.
+
+Triton implementation (entry point ModelNew)
+
+```python
+import math
+import torch
+
+try:
+    import triton
+    import triton.language as tl
+    TRITON_AVAILABLE = True
+except Exception:
+    TRITON_AVAILABLE = False
+
+
+# Kernel: apply rotary position embedding on (B, S, H, D) with freqs (S, D)
+# Computes, for each (b, s, h):
+#   out[:, 2i  ] = x[:, 2i  ]*cos[:, 2i  ] - x[:, 2i+1]*sin[:, 2i  ] + x[:, 2i-1]*sin[:, 2i  ]
+#                 + x[:, 2i  ]*cos[:, 2i  ] + x[:, 2i+1]*sin[:, 2i  ] + x[:, 2i-1]*cos[:, 2i  ]
+#   out[:, 2i+1] = x[:, 2i  ]*sin[:, 2i+1] - x[:, 2i+1]*cos[:, 2i+1] + x[:, 2i+2]*sin[:, 2i+1]
+#                 + x[:, 2i  ]*cos[:, 2i+1] + x[:, 2i+1]*sin[:, 2i+1] + x[:, 2i+2]*cos[:, 2i+1]
+# Simplified:
+#   out1 = x1*cos1 - x2*sin1
+#   out2 = x1*sin2 + x2*cos2
+# where (x1,x2) are paired features and (cos1,cos2,sin1,sin2) are freqs paired features.
+@triton.jit
+def _rope_apply_kernel(
+    x_ptr,            # *bf16, shape (B, S, H, D)
+    cos_ptr,          # *bf16, shape (S, D)
+    sin_ptr,          # *bf16, shape (S, D)
+    out_ptr,          # *bf16, shape (B, S, H, D)
+    B: tl.constexpr,
+    S: tl.constexpr,
+    H: tl.constexpr,
+    D: tl.constexpr,
+    stride_b: tl.constexpr,
+    stride_s: tl.constexpr,
+    stride_h: tl.constexpr,
+    stride_d: tl.constexpr,
+    cos_stride_s: tl.constexpr,
+    cos_stride_d: tl.constexpr,
+    sin_stride_s: tl.constexpr,
+    sin_stride_d: tl.constexpr,
+    out_stride_b: tl.constexpr,
+    out_stride_s: tl.constexpr,
+    out_stride_h: tl.constexpr,
+    out_stride_d: tl.constexpr,
+    BLOCK_D: tl.constexpr,
+):
+    pid_b = tl.program_id(0)
+    pid_s = tl.program_id(1)
+    pid_h = tl.program_id(2)
+
+    # vector of d indices
+    d = tl.arange(0, BLOCK_D)
+    mask = d < D
+
+    # base offsets
+    x_base = pid_b * stride_b + pid_s * stride_s + pid_h * stride_h
+    out_base = pid_b * out_stride_b + pid_s * out_stride_s + pid_h * out_stride_h
+
+    # Load x[d], cos[d], sin[d]
+    x = tl.load(x_ptr + x_base + d * stride_d, mask=mask, other=0).to(tl.float32)
+    cos = tl.load(cos_ptr + pid_s * cos_stride_s + d * cos_stride_d, mask=mask, other=0).to(tl.float32)
+    sin = tl.load(sin_ptr + pid_s * sin_stride_s + d * sin_stride_d, mask=mask, other=0).to(tl.float32)
+
+    # Pair processing without reshape: treat d as 2*idx + parity
+    # Even lanes use (j = 2*idx): need x[j+1] = x[d+1]; Odd lanes use (j = 2*idx+1): need x[j-1] = x[d-1]
+    is_even = (d % 2) == 0
+    d_plus1 = d + 1
+    d_minus1 = d - 1
+    # mask for +/-1 shifts must stay within [0, D)
+    mask_plus1 = mask & is_even & (d_plus1 < D)
+    mask_minus1 = mask & (~is_even) & (d_minus1 >= 0)
+
+    x_plus1 = tl.load(x_ptr + x_base + d_plus1 * stride_d, mask=mask_plus1, other=0).to(tl.float32)
+    x_minus1 = tl.load(x_ptr + x_base + d_minus1 * stride_d, mask=mask_minus1, other=0).to(tl.float32)
+
+    # Select shift value per lane: even -> x[d+1], odd -> x[d-1]
+    x_shift = tl.where(is_even & (d_plus1 < D), x_plus1, tl.where((~is_even) & (d_minus1 >= 0), x_minus1, x))
+
+    # Compute outputs for pairs
+    # out1 at positions d = 2*idx     : result for feature 2*idx
+    # out2 at positions d = 2*idx + 1: result for feature 2*idx + 1
+    # But we are vectorizing over d; so for lane d:
+    # If d is even: out = x*cos - x_shift*sin
+    # If d is odd:  out = x*sin + x_shift*cos
+    out_even = x * cos - x_shift * sin       # d even
+    out_odd  = x * sin + x_shift * cos       # d odd
+    out = tl.where(is_even, out_even, out_odd)
+
+    # Store as bf16
+    tl.store(out_ptr + out_base + d * out_stride_d, out.to(tl.bfloat16), mask=mask)
+
+
+class ModelNew(torch.nn.Module):
+    def __init__(self):
+        super().__init__()
+        if not TRITON_AVAILABLE:
+            raise RuntimeError("Triton is not available. Please install triton to use this implementation.")
+
+    @torch.no_grad()
+    def run(
+        self,
+        query_or_key: torch.Tensor,
+        freqs_cos: torch.Tensor,
+        freqs_sin: torch.Tensor,
+    ) -> torch.Tensor:
+        """
+        Apply rotary position embeddings using Triton.
+
+        Args:
+            query_or_key: (B, S, H, D) bfloat16 tensor
+            freqs_cos: (S, D) bfloat16 tensor
+            freqs_sin: (S, D) bfloat16 tensor
+
+        Returns:
+            output: (B, S, H, D) bfloat16 tensor
+        """
+        assert query_or_key.is_cuda, "Input must be on CUDA device for Triton kernel."
+        assert freqs_cos.is_cuda and freqs_sin.is_cuda, "Freqs must be on CUDA device."
+        assert query_or_key.dtype == torch.bfloat16, "Expected bfloat16 input."
+        assert freqs_cos.dtype == torch.bfloat16 and freqs_sin.dtype == torch.bfloat16, "Expected bfloat16 freqs."
+
+        B, S, H, D = query_or_key.shape
+        assert D % 2 == 0, f"Last dim D={D} must be even for pair-wise rotation."
+        assert freqs_cos.shape == (S, D) and freqs_sin.shape == (S, D), "Freqs shape must be (S, D)."
+
+        # Ensure contiguous
+        x = query_or_key.contiguous()
+        cos = freqs_cos.contiguous()
+        sin = freqs_sin.contiguous()
+
+        out = torch.empty_like(x)
+
+        # Strides in elements
+        stride_b, stride_s, stride_h, stride_d = x.stride()
+        cos_stride_s, cos_stride_d = cos.stride()
+        sin_stride_s, sin_stride_d = sin.stride()
+        out_stride_b, out_stride_s, out_stride_h, out_stride_d = out.stride()
+
+        BLOCK_D = 128  # matches D=128; kernel supports any D<=BLOCK_D with mask
+
+        grid = (B, S, H)
+        _rope_apply_kernel[grid](
+            x, cos, sin, out,
+            B, S, H, D,
+            stride_b, stride_s, stride_h, stride_d,
+            cos_stride_s, cos_stride_d,
+            sin_stride_s, sin_stride_d,
+            out_stride_b, out_stride_s, out_stride_h, out_stride_d,
+            BLOCK_D=BLOCK_D,
+            num_warps=4,
+            num_stages=2,
+        )
+
+        return out
+```
+
+Notes
+- This kernel computes the rotation directly on the flat last dimension, avoiding any reshape, and matches the mathematical definition exactly.
+- It computes in float32 for accuracy and casts back to bfloat16.
+- It should be faster than the reference for typical sizes due to better memory access and no Python-side reshapes.
+- If you need to support arbitrary D > 128, you can loop over D in blocks or increase BLOCK_D and mask; here D=128 so BLOCK_D=128 is ideal.
+�Triton专家，请仔细阅读并理解以下PyTorch参考实现，然后用Triton重写一个等价的实现，并命名为ModelNew。CUDA C++也是可以的。适配器会把源码打包进官方的Solution schema。
+
+定义：
+{
+  "description": "FLUX的旋转位置嵌入应用，使用预计算的cos/sin频率旋转query/key张量。执行复数旋转：(x1*cos - x2*sin, x1*sin + x2*cos)作用于配对特征。在每个前向中出现114+次，是内存带宽受限的。",
+  "axes": {
+    "batch_size": {
+      "type": "var",
+      "description": "批大小"
+    },
+    "seq_len": {
+      "type": "var",
+      "description": "序列长度"
+    },
+    "num_attention_heads": {
+      "type": "const",
+      "value": 24,
+      "description": "注意力头数"
+    },
+    "attention_head_dim": {
+      "type": "const",
+      "value": 128,
+      "description": "每头维度"
+    },
+    "half_head_dim": {
+      "type": "expr",
+      "expression": "attention_head_dim // 2",
+      "description": "头维的一半用于配对旋转"
+    }
+  },
+  "inputs": {
+    "query_or_key": {
+      "shape": [
+        "batch_size",
+        "seq_len",
+        "num_attention_heads",
+        "attention_head_dim"
+      ],
+      "dtype": "bfloat16",
+      "description": "要旋转的query或key张量"
+    },
+    "freqs_cos": {
+      "shape": [
+        "seq_len",
+        "attention_head_dim"
+      ],
+      "dtype": "bfloat16",
+      "description": "旋转用的预计算余弦频率"
+    },
+    "freqs_sin": {
+      "shape": [
+        "seq_len",
+        "attention_head_dim"
+      ],
+      "dtype": "bfloat16",
+      "description": "旋转用的预计算正弦频率"
+    }
+  },
+  "outputs": {
+    "output": {
+      "shape": [
+        "batch_size",
+        "seq_len",
+        "num_attention_heads",
+        "attention_head_dim"
+      ],
+      "dtype": "bfloat16",
+      "description": "应用了RoPE后的输出张量"
+    }
+  },
+  "reference": "import torch\n\n@torch.no_grad()\ndef run(\n    query_or_key: torch.Tensor,\n    freqs_cos: torch.Tensor,\n    freqs_sin: torch.Tensor,\n) -> torch.Tensor:\n    \"\"\"\n    Apply rotary position embeddings to query or key tensor.\n    \n    The rotation is applied using the formula:\n    - Split features into pairs (x1, x2)\n    - Rotate: (x1 * cos - x2 * sin, x1 * sin + x2 * cos)\n    \n    Args:\n        query_or_key: Input tensor of shape (batch, seq_len, num_heads, head_dim)\n        freqs_cos: Cosine frequencies of shape (seq_len, head_dim)\n        freqs_sin: Sine frequencies of shape (seq_len, head_dim)\n        \n    Returns:\n        Rotated tensor of same shape as input\n    \"\"\"\n    # Input shape: (batch, seq_len, num_heads, head_dim)\n    # freqs shape: (seq_len, head_dim)\n    \n    # Reshape frequencies to broadcast correctly\n    # freqs: (seq_len, head_dim) -> (1, seq_len, 1, head_dim)\n    freqs_cos_expanded = freqs_cos.unsqueeze(0).unsqueeze(2)\n    freqs_sin_expanded = freqs_sin.unsqueeze(0).unsqueeze(2)\n    \n    # Split the head_dim into pairs for rotation\n    # This is the complex number rotation in real space\n    # query_or_key: (batch, seq_len, num_heads, head_dim)\n    # Split into: (batch, seq_len, num_heads, head_dim // 2, 2)\n    x_shape = query_or_key.shape\n    x_reshaped = query_or_key.float().reshape(\n        x_shape[0], x_shape[1], x_shape[2], -1, 2\n    )\n    \n    # Split frequencies similarly\n    freqs_cos_reshaped = freqs_cos_expanded.float().reshape(\n        freqs_cos_expanded.shape[0], freqs_cos_expanded.shape[1], freqs_cos_expanded.shape[2], -1, 2\n    )\n    freqs_sin_reshaped = freqs_sin_expanded.float().reshape(\n        freqs_sin_expanded.shape[0], freqs_sin_expanded.shape[1], freqs_sin_expanded.shape[2], -1, 2\n    )\n    \n    # Extract real and imaginary parts\n    x1 = x_reshaped[..., 0]  # (batch, seq_len, num_heads, head_dim // 2)\n    x2 = x_reshaped[..., 1]  # (batch, seq_len, num_heads, head_dim // 2)\n    \n    cos1 = freqs_cos_reshaped[..., 0]  # (1, seq_len, 1, head_dim // 2)\n    cos2 = freqs_cos_reshaped[..., 1]  # (1, seq_len, 1, head_dim // 2)\n    sin1 = freqs_sin_reshaped[..., 0]  # (1, seq_len, 1, head_dim // 2)\n    sin2 = freqs_sin_reshaped[..., 1]  # (1, seq_len, 1, head_dim // 2)\n    \n    # Apply rotation: (x1, x2) -> (x1*cos - x2*sin, x1*sin + x2*cos)\n    # This is the complex multiplication: (x1 + ix2) * (cos + isin)\n    out1 = x1 * cos1 - x2 * sin1\n    out2 = x1 * sin2 + x2 * cos2\n    \n    # Stack back together\n    output = torch.stack([out1, out2], dim=-1)\n    \n    # Reshape back to original shape\n    output = output.reshape(x_shape)\n    \n    # Convert back to original dtype\n    output = output.to(torch.bfloat16)\n    \n    return output\n",
+  "name": "black-forest-labs_FLUX.1-schnell_flux_rope_apply_rotation"
+}
+
+第一个工作负载：
+{"axes": {"batch_size": 1, "seq_len": 128}, "inputs": {"query_or_key": {"type": "random"}, "freqs_cos": {"type": "random"}, "freqs_sin": {"type": "random"}}, "uuid": "3378dd76-6148-597-ba6f-8b790a13548a"}
+
+请只返回源代码，不要Markdown fences或解释。
+bot
+```python
+import math
+import torch
+
+try:
+    import triton
+    import triton.language as tl
+    TRITON_AVAILABLE = True
+except Exception:
+    TRITON_AVAILABLE = False
+
+
+@triton.jit
+def _rope_apply_kernel(
+    x_ptr,            # *bf16, (B, S, H, D)
+    cos_ptr,          # *bf16, (S, D)
+    sin_ptr,          # *bf16, (S, D)
+    out_ptr,          # *bf16, (B, S, H, D)
+    B: tl.constexpr,
+    S: tl.constexpr,
+    H: tl.constexpr,
+    D: tl.constexpr,
+    stride_b: tl.constexpr,
+    stride_s: tl.constexpr,
+    stride_h: tl.constexpr,
+    stride_d: tl.constexpr,
+    cos_stride_s: tl.constexpr,
+    cos_stride_d: tl.constexpr,
+    sin_stride_s: tl.constexpr,
+    sin_stride_d: tl.constexpr,
+    out_stride_b: tl.constexpr,
+    out_stride_s: tl.constexpr,
+    out_stride_h: tl.constexpr,
+    out_stride_d: tl.constexpr,
+    BLOCK_D: tl.constexpr,
+):
+    pid_b = tl.program_id(0)
+    pid_s = tl.program_id(1)
+    pid_h = tl.program_id(2)
+
+    d = tl.arange(0, BLOCK_D)
+    mask = d < D
+
+    x_base = pid_b * stride_b + pid_s * stride_s + pid_h * stride_h
+    out_base = pid_b * out_stride_b + pid_s * out_stride_s + pid_h * out_stride_h
+
+    # Load x, cos, sin as float32
+    x  = tl.load(x_ptr  + x_base  + d * stride_d, mask=mask, other=0).to(tl.float32)
+    cos= tl.load(cos_ptr+ pid_s * cos_stride_s + d * cos_stride_d, mask=mask, other=0).to(tl.float32)
+    sin= tl.load(sin_ptr+ pid_s * sin_stride_s + d * sin_stride_d, mask=mask, other=0).to(tl.float32)
+
+    # Pair-wise rotation:
+    # even lanes: d = 2*i -> out = x*cos - x_shift*sin
+    # odd  lanes: d = 2*i+1 -> out = x*sin + x_shift*cos
+    is_even = (d % 2) == 0
+    d_plus1 = d + 1
+    d_minus1 = d - 1
+
+    mask_plus1 = mask & is_even & (d_plus1 < D)
+    mask_minus1 = mask & (~is_even) & (d_minus1 >= 0)
+
+    x_plus1 = tl.load(x_ptr + x_base + d_plus1  * stride_d, mask=mask_plus1,  other=0).to(tl.float32)
+    x_minus1= tl.load(x_ptr + x_base + d_minus1 * stride_d, mask=mask_minus1, other=0).to(tl.float32)
+
+    x_shift = tl.where(is_even & (d_plus1 < D), x_plus1,
+                       tl.where((~is_even) & (d_minus1 >= 0), x_minus1, x))
+
+    out_even = x * cos - x_shift * sin
+    out_odd  = x * sin + x_shift * cos
+    out = tl.where(is_even, out_even, out_odd)
+
+    tl.store(out_ptr + out_base + d * out_stride_d, out.to(tl.bfloat16), mask=mask)
+
+
+class ModelNew(torch.nn.Module):
+    def __init__(self):
+        super().__init__()
+        if not TRITON_AVAILABLE:
+            raise RuntimeError("Triton is not available. Please install triton to use this implementation.")
+
+    @torch.no_grad()
+    def run(
+        self,
+        query_or_key: torch.Tensor,
+        freqs_cos: torch.Tensor,
+        freqs_sin: torch.Tensor,
+    ) -> torch.Tensor:
+        assert query_or_key.is_cuda, "Input must be on CUDA device for Triton kernel."
+        assert freqs_cos.is_cuda and freqs_sin.is_cuda, "Freqs must be on CUDA device."
+        assert query_or_key.dtype == torch.bfloat16, "Expected bfloat16 input."
+        assert freqs_cos.dtype == torch.bfloat16 and freqs_sin.dtype == torch.bfloat16, "Expected bfloat16 freqs."
+
+        B, S, H, D = query_or_key.shape
+        assert D % 2 == 0, f"Last dim D={D} must be even."
+        assert freqs_cos.shape == (S, D) and freqs_sin.shape == (S, D), "Freqs shape must be (S, D)."
+
+        x = query_or_key.contiguous()
+        cos = freqs_cos.contiguous()
+        sin = freqs_sin.contiguous()
+        out = torch.empty_like(x)
+
+        stride_b, stride_s, stride_h, stride_d = x.stride()
+        cos_stride_s, cos_stride_d = cos.stride()
+        sin_stride_s, sin_stride_d = sin.stride()
+        out_stride_b, out_stride_s, out_stride_h, out_stride_d = out.stride()
+
+        BLOCK_D = 128
+        grid = (B, S, H)
+        _rope_apply_kernel[grid](
+            x, cos, sin, out,
+            B, S, H, D,
+            stride_b, stride_s, stride_h, stride_d,
+            cos_stride_s, cos_stride_d,
+            sin_stride_s, sin_stride_d,
+            out_stride_b, out_stride_s, out_stride_h, out_stride_d,
+            BLOCK_D=BLOCK_D,
+            num_warps=4,
+            num_stages=2,
+        )
+        return out
+```
+助手
+Triton实现
+
+```python
+import torch
+
+try:
+    import triton
+    import triton.language as tl
+    TRITON_AVAILABLE = True
+except Exception:
+    TRITON_AVAILABLE = False
+
+
+@triton.jit
+def _rope_apply_kernel(
+    x_ptr,            # *bf16, (B, S, H, D)
+    cos_ptr,          # *bf16, (S, D)
+    sin_ptr,          # *bf16, (S, D)
+    out_ptr,          # *bf16, (B, S, H, D)
+    B: tl.constexpr,
+    S: tl.constexpr,
+    H: tl.constexpr,
+    D: tl.constexpr,
+    stride_b: tl.constexpr,
+    stride_s: tl.constexpr,
+    stride_h: tl.constexpr,
+    stride_d: tl.constexpr,
+    cos_stride_s: tl.constexpr,
+    cos_stride_d: tl.constexpr,
+    sin_stride_s: tl.constexpr,
+    sin_stride_d: tl.constexpr,
+    out_stride_b: tl.constexpr,
+    out_stride_s: tl.constexpr,
+    out_stride_h: tl.constexpr,
+    out_stride_d: tl.constexpr,
+    BLOCK_D: tl.constexpr,
+):
+    pid_b = tl.program_id(0)
+    pid_s = tl.program_id(1)
+    pid_h = tl.program_id(2)
+
+    d = tl.arange(0, BLOCK_D)
+    mask = d < D
+
+    x_base  = pid_b * stride_b  + pid_s * stride_s  + pid_h * stride_h
+    out_base= pid_b * out_stride_b + pid_s * out_stride_s + pid_h * out_stride_h
+
+    # Load as float32 for math
+    x  = tl.load(x_ptr  + x_base  + d * stride_d, mask=mask, other=0).to(tl.float32)
+    cos= tl.load(cos_ptr+ pid_s * cos_stride_s + d * cos_stride_d, mask=mask, other=0).to(tl.float32)
+    sin= tl.load(sin_ptr+ pid_s * sin_stride_s + d * sin_stride_d, mask=mask, other=0).to(tl.float32)
+
+    # Pair-wise rotation without reshape:
+    # even d: out = x*cos - x_shift*sin
+    # odd  d: out = x*sin + x_shift*cos
+    is_even = (d % 2) == 0
+    d_plus1 = d + 1
+    d_minus1 = d - 1
+
+    mask_plus1  = mask & is_even & (d_plus1  < D)
+    mask_minus1 = mask & (~is_even) & (d_minus1 >= 0)
+
+    x_plus1  = tl.load(x_ptr + x_base + d_plus1  * stride_d, mask=mask_plus1,  other=0).to(tl.float32)
+    x_minus1 = tl.load(x_ptr + x_base + d_minus1 * stride_d, mask=mask_minus1, other=0).to(tl.float32)
+
+    x_shift = tl.where(is_even & (d_plus1  < D), x_plus1,
+                       tl.where((~is_even) & (d_minus1 >= 0), x_minus1, x))
+
+    out_even = x * cos - x_shift * sin
+    out_odd  = x * sin + x_shift * cos
+    out = tl.where(is_even, out_even, out_odd)
+
+    tl.store(out_ptr + out_base + d * out_stride_d, out.to(tl.bfloat16), mask=mask)
+
+
+class ModelNew(torch.nn.Module):
+    def __init__(self):
+        super().__init__()
+        if not TRITON_AVAILABLE:
+            raise RuntimeError("Triton is not available. Please install triton to use this implementation.")
+
+    @torch.no_grad()
+    def run(
+        self,
+        query_or_key: torch.Tensor,
+        freqs_cos: torch.Tensor,
+        freqs_sin: torch.Tensor,
+    ) -> torch.Tensor:
+        # Validate
+        assert query_or_key.is_cuda, "Input must be on CUDA device for Triton kernel."
+        assert freqs_cos.is_cuda and freqs_sin.is_cuda, "Freqs must be on CUDA device."
+        assert query_or_key.dtype == torch.bfloat16, "Expected bfloat16 input."
+        assert freqs_cos.dtype == torch.bfloat16 and freqs_sin.dtype == torch.bfloat16, "Expected bfloat16 freqs."
+
+        B, S, H, D = query_or_key.shape
+        assert D % 2 == 0, f"Last dim D={D} must be even."
+        assert freqs_cos.shape == (S, D) and freqs_sin.shape == (S, D), "Freqs shape must be (S, D)."
+
+        # Contiguous for simple strides
+        x = query_or_key.contiguous()
+        cos = freqs_cos.contiguous()
+        sin = freqs_sin.contiguous()
+        out = torch.empty_like(x)
+
+        # Strides in elements
+        stride_b, stride_s, stride_h, stride_d = x.stride()
+        cos_stride_s, cos_stride_d = cos.stride()
+        sin_stride_s, sin_stride_d = sin.stride()
+        out_stride_b, out_stride_s, out_stride_h, out_stride_d = out.stride()
+
+        BLOCK_D = 128  # matches D=128
+        grid = (B, S, H)
+        _rope_apply_kernel[grid](
+            x, cos, sin, out,
+            B, S, H, D,
+            stride_b, stride_s, stride_h, stride_d,
+            cos_stride_s, cos_stride_d,
+            sin_stride_s, sin_stride_d,
+            out_stride_b, out_stride_s, out_stride_h, out_stride_d,
+            BLOCK_D=BLOCK_D,
+            num_warps=4,
+            num_stages=2,
+        )
+        return out
+```
+BOT
+Triton实现
+
+```python
+import torch
+
+try:
+    import triton
+    import triton.language as tl
+    TRITON_AVAILABLE = True
+except Exception:
+    TRITON_AVAILABLE = False
+
+
+@triton.jit
+def _rope_apply_kernel(
+    x_ptr,            # *bf16, (B, S, H, D)
+    cos_ptr,          # *bf16, (S, D)
+    sin_ptr,          # *bf16, (S, D)
+    out_ptr,          # *bf16, (B, S, H, D)
+    B: tl.constexpr,
+    S: tl.constexpr,
+    H: tl.constexpr,
+    D: tl.constexpr,
+    stride_b: tl.constexpr,
+    stride_s: tl.constexpr,
+    stride_h: tl.constexpr,
+    stride_d: tl.constexpr,
+    cos_stride_s: tl.constexpr,
+    cos_stride_d: tl.constexpr,
+    sin_stride_s: tl.constexpr,
+    sin_stride_d: tl.constexpr,
+    out_stride_b: tl.constexpr,
+    out_stride_s: tl.constexpr,
+    out_stride_h: tl.constexpr,
+    out_stride_d: tl.constexpr,
+    BLOCK_D: tl.constexpr,
+):
+    pid_b = tl.program_id(0)
+    pid_s = tl.program_id(1)
+    pid_h = tl.program_id(2)
+
+    d = tl.arange(0, BLOCK_D)
+    mask = d < D
+
+    x_base  = pid_b * stride_b  + pid_s * stride_s  + pid_h * stride_h
+    out_base= pid_b * out_stride_b + pid_s * out_stride_s + pid_h * out_stride_h
+
+    # Load as float32 for math
+    x  = tl.load(x_ptr  + x_base  + d * stride_d, mask=mask, other=0).to(tl.float32)
+    cos= tl.load(cos_ptr+ pid_s * cos_stride_s + d * cos_stride_d, mask=mask, other=0).to(tl.float32)
+    sin= tl.load(sin_ptr+ pid_s * sin_stride_s + d * sin_stride_d, mask=mask, other=0).to(tl.float32)
+
+    # Pair-wise rotation without reshape:
+    # even d: out = x*cos - x_shift*sin
+    # odd  d: out = x*sin + x_shift*cos
+    is_even = (d % 2) == 0
+    d_plus1 = d + 1
+    d_minus1 = d - 1
+
+    mask_plus1  = mask & is_even & (d_plus1  < D)
+    mask_minus1 = mask & (~is_even) & (d_minus1 >= 0)
+
+    x_plus1  = tl.load(x_ptr + x_base + d_plus1  * stride_d, mask=mask_plus1,  other=0).to(tl.float32)
+    x_minus1 = tl.load(x_ptr + x_base + d_minus1 * stride_d, mask=mask_minus1, other=0).to(tl.float32)
+
+    x_shift = tl.where(is_even & (d_plus1  < D), x_plus1,
+                       tl.where((~is_even) & (d_minus1 >= 0), x_minus1, x))
+
+    out_even = x * cos - x_shift * sin
+    out_odd  = x * sin + x_shift * cos
+    out = tl.where(is_even, out_even, out_odd)
+
+    tl.store(out_ptr + out_base + d * out_stride_d, out.to(tl.bfloat16), mask=mask)
+
+
+class ModelNew(torch.nn.Module):
+    def __init__(self):
+        super().__init__()
+        if not TRITON_AVAILABLE:
+            raise RuntimeError("Triton is not available. Please install triton to use this implementation.")
+
+    @torch.no_grad()
+    def run(
+        self,
+        query_or_key: torch.Tensor,
+        freqs_cos: torch.Tensor,
+        freqs_sin: torch.Tensor,
+    ) -> torch.Tensor:
+        # Validate
+        assert query_or_key.is_cuda, "Input must be on CUDA device for Triton kernel."
+        assert freqs_cos.is_cuda and freqs_sin.is_cuda, "Freqs must be on CUDA device."
+        assert query_or_key.dtype == torch.bfloat16, "Expected bfloat16 input."
+        assert freqs_cos.dtype == torch.bfloat16 and freqs_sin.dtype == torch.bfloat16, "Expected bfloat16 freqs."
+
+        B, S, H, D = query_or_key.shape
+        assert D % 2 == 0, f"Last dim D={D} must be even."
+        assert freqs_cos.shape == (S, D) and freqs_sin.shape == (S, D), "Freqs shape must be (S, D)."
+
+        # Contiguous for simple strides
+        x = query_or_key.contiguous()
+        cos = freqs_cos.contiguous()
+        sin = freqs_sin.contiguous()
+        out = torch.empty_like(x)
+
+        # Strides in elements
+        stride_b, stride_s, stride_h, stride_d = x.stride()
+        cos_stride_s, cos_stride_d = cos.stride()
+        sin_stride_s, sin_stride_d = sin.stride()
+        out_stride_b, out_stride_s, out_stride_h, out_stride_d = out.stride()
+

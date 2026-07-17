@@ -1,0 +1,560 @@
+<think>
+We are given a reference implementation for the closest pair problem in 2D.
+ The task is to write a Triton kernel that computes the minimal distance between any two points in a set.
+ The reference model uses a naive approach (checking all pairs) but we are to implement it with Triton.
+
+ Steps:
+ 1. Understand the problem: We have a set of points in 2D space. We need to find the pair with the smallest Euclidean distance.
+ 2. The naive approach would be to compare every pair of points. However, for large N, this is O(N^2) and not efficient.
+ 3. Since we are using Triton, we can parallelize the computation. But note: the problem size might be large, and we have to design a kernel that efficiently finds the minimal distance.
+
+ However, note that the reference model uses a naive approach. The task is to implement an optimized version using Triton.
+
+ Approach for Triton:
+ We can use a grid of blocks where each block handles a subset of points. Each thread in a block can compute the distance to a set of other points and keep track of the minimal distance found. Then, we use atomic operations to update a global minimal distance.
+
+ But note: the problem requires the minimal distance across all pairs. We cannot avoid a global reduction.
+
+ Alternatively, we can use a two-step approach:
+  - Step 1: Each block computes the minimal distance within its subset of points (using a tiled approach, e.g., comparing each point in the block with every other point in the block and with a few points from other blocks).
+  - Step 2: Then, we combine the results from all blocks to find the global minimum.
+
+ However, the problem does not specify the size of the input. We are to write a kernel that is efficient for large N.
+
+ Given the constraints of Triton and the fact that we are to produce a single kernel (or multiple kernels), we can design:
+
+ Option 1: One kernel that does everything in one go. But for large N, we might run into limitations (like the number of threads per block).
+
+ Option 2: Two kernels. The first kernel computes the minimal distances for each tile and stores them in an array. The second kernel then finds the minimal value in that array.
+
+ But the problem says: "Implement the compute with @triton.jit kernels". We are allowed to use multiple kernels? The reference model uses one kernel.
+
+ Considering the problem, let's design a kernel that uses a grid of blocks. Each block will process a chunk of points. Within the block, we will compute the minimal distance for the points in that chunk by comparing every pair (but we can optimize by only comparing each point with a few others, e.g., the next few points in the chunk and a few from other chunks?).
+
+ However, note that the minimal distance might come from points in different blocks. Therefore, we need to compare points from different blocks as well.
+
+ We can do:
+  - Each block loads a set of points (say, 128 points) and computes the minimal distance within the block (by comparing all pairs in the block).
+  - Then, we compare each point in the block with the closest points from adjacent blocks (to cover the case where the minimal distance is between points from different blocks).
+
+ But how to handle the inter-block comparison? We can use shared memory to share the closest points from adjacent blocks? However, Triton does not have shared memory in the same way as CUDA. Instead, we can use global memory and atomic operations.
+
+ Alternatively, we can use a two-pass approach:
+  Pass 1: Each block computes the minimal distance within its chunk and writes it to a global array.
+  Pass 2: A single block reads the array and computes the global minimum.
+
+ However, the problem does not specify whether we can use multiple kernels. The reference model uses one kernel. But note: the problem says "with @triton.jit kernels", meaning we can define multiple kernels if needed.
+
+ Given the complexity, and since the problem is about performance, we will design:
+
+ Kernel 1: `compute_minima`
+   Input: points (global), offsets for the block, number of points, output array for block minima, and a global minimal distance (to update?).
+
+ But note: we cannot have a kernel that writes to a global variable and then reads from it in the same kernel launch? We would need two kernel launches.
+
+ Alternatively, we can do:
+
+   Step 1: Launch a kernel that computes the minimal distance for each block and stores it in an array `block_minima` of size (num_blocks,).
+   Step 2: Launch a second kernel that finds the minimal value in `block_minima` and writes it to the output.
+
+ However, the problem does not specify if we can use multiple kernels. But the reference model uses one kernel. So we must do it in one kernel? Or can we use two?
+
+ The problem says: "Produce a COMPLETE, self-contained Python module". We are allowed to define multiple kernels as long as the module works.
+
+ But note: the reference model's kernel is called `closestPair`. We are to replace that with a Triton implementation.
+
+ Considering the constraints, let's design a single kernel that does the entire computation? That is not feasible for large N because the kernel would have to compare all pairs, which is O(N^2) operations.
+
+ Therefore, we choose the two-kernel approach:
+
+   Kernel 1: `block_minima_kernel`
+     - Each block processes a contiguous chunk of points (of size BLOCK_SIZE).
+     - The block computes the minimal distance within the chunk by comparing every pair of points in the chunk (if the chunk is small enough, e.g., 128 points, then 128*127/2 = 8224 comparisons, which is acceptable).
+     - We store the minimal distance for the block in an output array at the block's index.
+
+   Kernel 2: `global_min_kernel`
+     - This kernel is launched with one block. It reads the array of block minima and computes the global minimum.
+
+ However, note: the problem says "at least as many threads as points", but we are using blocks. We can set the grid size to be (num_blocks, 1, 1) and each block has (BLOCK_SIZE, 1, 1) threads? Actually, we don't need threads for the block minima computation because we can do it serially in the block.
+
+ But wait: Triton uses a single-program multiple-data (SPMD) model. We can write a kernel that each thread in a block handles a subset of the points in the chunk? That would be more efficient for large chunks.
+
+ Revised design for Kernel 1 (block_minima_kernel):
+
+   We want to compute the minimal distance within a chunk of points. We can do:
+
+     - Each block has BLOCK_SIZE threads. The chunk has `n` points (n <= BLOCK_SIZE).
+     - We assign each thread a unique index in [0, n-1] (using the thread's position in the block).
+     - We want to compute the minimal distance among all pairs in the chunk. We can use a reduction across the threads.
+
+   However, note: the minimal distance in the chunk is the minimal of all pairwise distances. We can do:
+
+     - Initialize a shared variable (in Triton, we can use `tl.full` and then use `tl.minimum`) to track the minimal distance.
+     - Each thread computes the distance to all other points in the chunk that are assigned to threads with a higher index (to avoid duplicate comparisons). Then, we do a reduction across the threads to find the minimal distance in the chunk.
+
+   Steps for a chunk of size n:
+
+     - Thread i (0 <= i < n) will compare with threads j > i (so j from i+1 to n-1).
+     - Each thread i will compute the distance to j and keep the minimal value it finds.
+     - Then, we do a reduction (using `tl.min`) across all threads to get the minimal distance for the chunk.
+
+   But note: the reduction must be done across the entire block. We can use `tl.reduce` with the `min` operator.
+
+   However, the problem: how to handle the case where the chunk is not a power of two? We can use a tree-based reduction.
+
+   Alternatively, we can use a loop over j from i+1 to n-1 and keep a local minimal value for thread i, then do a global reduction.
+
+   But note: the number of pairs per thread is (n - i - 1), which for i=0 is n-1, for i=1 is n-2, etc. The total work per block is O(n^2), which is acceptable for small n (like 128) but not for large n (like 1024 -> 1024*1023/2 = 5e5 pairs).
+
+   Therefore, we need a more efficient way to compute the minimal distance within a chunk.
+
+   We can do:
+
+     - Each thread i keeps track of the minimal distance it has found so far (initialized to a large value).
+     - Then, for j in [0, n-1], j != i:
+          d = distance(points[i], points[j])
+          if d < local_min[i], then local_min[i] = d
+     - Then, we do a reduction across the local_min array to get the minimal distance for the chunk.
+
+   But note: this is O(n) per thread, which for n=1024 would be 1024*1024 operations per block? That's 1e6 operations per block, which is acceptable if we have many blocks? But note: the total number of operations would be O(N^2) which is bad.
+
+   Alternatively, we can use a grid-stride loop for the inner j? But that doesn't change the fact that each thread does O(n) work.
+
+   Given the constraints, and since the problem does not specify the size of N, we assume that N is not extremely large (like millions) but we want to handle it efficiently.
+
+   However, the problem says: "the kernel is launched with at least as many threads as points". So we can set the grid size to 1 and the block size to N? But N might be larger than the maximum block size (1024). Therefore, we must use multiple blocks.
+
+   Therefore, we go back to the two-kernel approach:
+
+     Kernel 1: `block_minima_kernel`
+        Input: points (global), num_points (total), block_minima (global output array of size num_blocks), BLOCK_SIZE (constant)
+        Steps:
+          - Each block processes a chunk of BLOCK_SIZE points. The chunk starts at `block_idx * BLOCK_SIZE`.
+          - We load the chunk into shared memory (or registers) for the block.
+          - We compute the minimal distance within the chunk by comparing all pairs (but we can optimize by only comparing each point with the next few points and a few from other chunks? However, that would require inter-block communication which we don't have).
+          - Instead, we do a naive O(BLOCK_SIZE^2) comparison for the chunk (if BLOCK_SIZE is 128, then 8224 comparisons per block, which is acceptable).
+          - We store the minimal distance for the block in block_minima[block_idx].
+
+     Kernel 2: `global_min_kernel`
+        Input: block_minima (global array of size num_blocks), output (global), num_blocks
+        Steps:
+          - We launch a single block with one thread (or a few threads) that reads the entire block_minima array and computes the global minimum.
+
+   However, note: the problem says "at least as many threads as points", but we are using blocks. We can set the grid size to (num_blocks, 1, 1) and each block has 1 thread? That would be inefficient for the global min kernel.
+
+   Alternatively, we can use a reduction kernel for the block_minima array. But that would require another kernel.
+
+   Given the complexity, and since the problem does not specify the number of kernels, we will use two kernels.
+
+   But note: the problem says "Return one Python code block containing the full module". We are allowed to define multiple kernels.
+
+   However, the reference model uses one kernel. We are trying to be efficient, but the problem does not require the same level of optimization as the reference.
+
+   Considering the time, we will implement the two-kernel approach.
+
+   Steps for the module:
+
+     - We define a class `ModelNew` that inherits from `torch.nn.Module`.
+     - In the forward pass:
+          + We get the points as a tensor of shape (N, 2).
+          + We allocate an output tensor for the minimal distance (scalar).
+          + We choose a BLOCK_SIZE (e.g., 128).
+          + We compute the number of blocks: num_blocks = (N + BLOCK_SIZE - 1) // BLOCK_SIZE.
+          + We allocate a tensor `block_minima` of size (num_blocks,) on the same device.
+          + We launch `block_minima_kernel` with grid=(num_blocks, 1, 1) and block=(BLOCK_SIZE, 1, 1).
+          + We launch `global_min_kernel` with grid=(1, 1, 1) and block=(1, 1, 1) (or a block of 1024 threads if num_blocks is large? but we don't know num_blocks at compile time). Actually, we can use a reduction kernel that works for any size.
+
+   But note: the global_min_kernel must handle an array of size `num_blocks`. We can write a reduction kernel that uses multiple blocks and threads? That would be more efficient for large num_blocks.
+
+   Alternatively, we can use PyTorch's `torch.min` on the CPU? But that would be slow. Instead, we can write a Triton kernel for the global min that uses a tree reduction.
+
+   However, to keep it simple, we will do:
+
+     Kernel 2: `global_min_kernel`
+        Input: block_minima (global), output (global), num_blocks
+        Steps:
+          - We launch a single thread block with as many threads as we want (but we don't know num_blocks at compile time). Instead, we can use a loop in the kernel.
+
+   We can write:
+
+        @triton.jit
+        def global_min_kernel(block_minima_ptr, output_ptr, num_blocks, BLOCK_SIZE: tl.constexpr):
+            pid = tl.program_id(0)
+            # We are using a single block, so pid is 0.
+            min_val = float('inf')
+            for i in range(0, num_blocks):
+                val = tl.load(block_minima_ptr + i)
+                if val < min_val:
+                    min_val = val
+            tl.store(output_ptr, min_val)
+
+   But note: this kernel is launched with one block and one thread? Then it will be slow for large num_blocks.
+
+   Therefore, we need a more efficient reduction. We can write a reduction kernel that uses multiple threads and blocks. But that would add more complexity.
+
+   Given the time, and since the problem does not specify the size of N, we assume that num_blocks is not extremely large (like millions). Then a single thread in the global min kernel would take O(num_blocks) time, which is acceptable if num_blocks is in the thousands.
+
+   Alternatively, we can use the fact that we are on the GPU and do a parallel reduction in shared memory? But Triton doesn't have shared memory in the same way.
+
+   We decide to use a single thread for the global min kernel.
+
+   Summary:
+
+     Module:
+        class ModelNew(torch.nn.Module):
+            def __init__(self):
+                super().__init__()
+
+            def forward(self, points):
+                # points: (N, 2) tensor
+                N = points.shape[0]
+                if N < 2:
+                    return torch.tensor(0.0, device=points.device)  # or handle edge case
+
+                BLOCK_SIZE = 128
+                num_blocks = (N + BLOCK_SIZE - 1) // BLOCK_SIZE
+
+                # Allocate output for block minima
+                block_minima = torch.empty(num_blocks, device=points.device, dtype=torch.float32)
+
+                # Launch block_minima_kernel
+                block_minima_kernel[(num_blocks,)](points, N, block_minima, BLOCK_SIZE=BLOCK_SIZE)
+
+                # Allocate output tensor for the minimal distance
+                output = torch.empty(1, device=points.device, dtype=torch.float32)
+
+                # Launch global_min_kernel (with one block, one thread)
+                global_min_kernel[(1,)](block_minima, output, num_blocks, BLOCK_SIZE=1)
+
+                return output[0]
+
+   Now, we write the two kernels.
+
+   Kernel 1: block_minima_kernel
+
+        @triton.jit
+        def block_minima_kernel(points_ptr, num_points, block_minima_ptr, BLOCK_SIZE: tl.constexpr):
+            # We are in a 1D grid of blocks, each block handles BLOCK_SIZE points.
+            block_idx = tl.program_id(0)
+            start_idx = block_idx * BLOCK_SIZE
+            end_idx = min((block_idx + 1) * BLOCK_SIZE, num_points)
+            num_in_block = end_idx - start_idx
+
+            # We need to load the points in the block. We'll use a loop because num_in_block might be less than BLOCK_SIZE.
+            # We'll create an array of points for the block in registers.
+            # But note: we cannot have dynamic size arrays. Instead, we can use a fixed size array of BLOCK_SIZE and then mask the extra elements.
+            # Alternatively, we can use a loop over i in [0, num_in_block) and load each point.
+
+            # We'll create a list of points for the block. Since Triton doesn't support lists, we use a fixed-size array and mask.
+            # Let's define a fixed-size array of BLOCK_SIZE points (each point is a tuple of two floats).
+            # But we don't have tuples. We can use two separate arrays for x and y.
+            block_x = tl.zeros((BLOCK_SIZE,), dtype=tl.float32)
+            block_y = tl.zeros((BLOCK_SIZE,), dtype=tl.float32)
+            # Also, we need a mask to indicate valid points.
+            valid = tl.zeros((BLOCK_SIZE,), dtype=tl.int1)
+
+            for i in range(0, num_in_block):
+                idx = start_idx + i
+                x = tl.load(points_ptr + idx * 2)
+                y = tl.load(points_ptr + idx * 2 + 1)
+                block_x = tl.where(i < BLOCK_SIZE, x, block_x)
+                block_y = tl.where(i < BLOCK_SIZE, y, block_y)
+                valid = tl.where(i < BLOCK_SIZE, True, valid)
+
+            # Now, we want to compute the minimal distance within the block.
+            min_dist = float('inf')
+            for i in range(0, num_in_block):
+                for j in range(i+1, num_in_block):
+                    dx = block_x[i] - block_x[j]
+                    dy = block_y[i] - block_y[j]
+                    dist = tl.sqrt(dx*dx + dy*dy)
+                    if dist < min_dist:
+                        min_dist = dist
+
+            # Also, we need to compare with points from other blocks? But note: the minimal distance might be between points in different blocks.
+            # However, our current approach only compares points in the same block. So we are missing those pairs.
+
+            # Therefore, we must also compare each point in this block with the closest points from other blocks? But we don't have inter-block communication.
+
+            # This is a problem. The current approach only finds the minimal distance within the block, but the global minimal might be between two points in different blocks.
+
+            # How to fix?
+            # We can't fix it without inter-block communication. Therefore, our approach is incorrect.
+
+            # Alternative idea: We can modify the block_minima_kernel to also output the closest point in the block (the one that forms the minimal pair) and then in the global min kernel, we compare the closest points from different blocks? But that would require storing not just the minimal distance but also the point that achieves it.
+
+            # Then, in the global min kernel, we would have to compare the closest points from different blocks as well.
+
+            # So we change the block_minima_kernel to output not only the minimal distance but also the coordinates of the two points that form that pair.
+
+            # Then, in the global min kernel, we would:
+            #   - Compute the global minimal distance from the block_minima (which is the minimal distance within each block).
+            #   - Also, we would have an array of closest points (each block stores the two points that form its minimal pair).
+            #   - Then, we compare each pair of closest points from different blocks.
+
+            # But note: the minimal distance might be between two points from the same block (which we already found) or between two points from different blocks (which we haven't found).
+
+            # Therefore, we need to store for each block the two points that form its minimal pair.
+
+            # So we modify the block_minima_kernel to output:
+            #   - block_minima_dist[block_idx] = minimal distance in the block.
+            #   - block_minima_points[block_idx*2] = x of the first point, block_minima_points[block_idx*2+1] = y of the first point, block_minima_points[block_idx*2+2] = x of the second point, block_minima_points[block_idx*2+3] = y of the second point.
+
+            # Then, in the global min kernel, we:
+            #   - Find the global minimal distance from the block_minima_dist array.
+            #   - Also, we compare every pair of points from different blocks (there are num_blocks * (num_blocks-1)/2 pairs) to find the minimal distance between any two points from different blocks.
+
+            # But note: the number of pairs is O(num_blocks^2), which is acceptable if num_blocks is small (like thousands) but not if num_blocks is millions.
+
+            # Given the complexity, and since the problem does not specify the size of N, we assume that num_blocks is not extremely large.
+
+            # Therefore, we change the plan:
+
+            # Kernel 1: block_minima_kernel
+            #   Outputs:
+            #     - block_minima_dist: array of size num_blocks (each element is the minimal distance in the block)
+            #     - block_minima_points: array of size (num_blocks * 4) (each block stores 4 floats: x1, y1, x2, y2)
+            #
+            # Kernel 2: global_min_kernel
+            #   Inputs:
+            #     - block_minima_dist: array of size num_blocks
+            #     - block_minima_points: array of size (num_blocks * 4)
+            #     - num_blocks
+            #   Steps:
+            #     - Find the global minimal distance from block_minima_dist (using a reduction).
+            #     - Then, for each pair of blocks (i, j) with i < j, compute the distance between the closest point of block i and the closest point of block j, and update the global min.
+
+            # But note: the minimal distance might also be between two points from the same block (which we already have in block_minima_dist) or between two points from different blocks (which we are now checking).
+
+            # Therefore, we need to:
+            #   global_min = min( min(block_minima_dist), min_{i<j} distance(block_minima_points[i*4: i*4+2], block_minima_points[j*4: j*4+2]) )
+
+            # We can do:
+            #   Step 1: Find the global min from block_minima_dist (using the same reduction as before).
+            #   Step 2: Loop over all pairs of blocks and compute the distance between their closest points.
+
+            # But note: the number of pairs is O(num_blocks^2), which is acceptable for small num_blocks.
+
+            # However, if num_blocks is large (like 1e6), then O(num_blocks^2) is 1e12 operations, which is impossible.
+
+            # Therefore, we must find a way to avoid checking all pairs.
+
+            # Alternative idea: We can store the closest points from each block and then do a grid-stride loop in the global min kernel? But that would still be O(num_blocks^2) in the worst case.
+
+            # Given the time constraints, and since the problem is about performance, we decide to proceed with the two-kernel approach that only finds the minimal distance within each block and then we assume that the global minimal is within a block. But this is not correct.
+
+            # Therefore, we must change our approach to include inter-block communication. But Triton does not support inter-block communication.
+
+            # Alternative approach: We can use a single block for the entire problem? But that would require the block size to be at least N, which is not possible for large N.
+
+            # Given the above, we decide to use a different approach: we compute the minimal distance for all pairs in the entire set using a grid of blocks, and each thread computes one pair and uses atomic operations to update a global minimal distance.
+
+            # Kernel 3: all_pairs_kernel
+            #   Input: points, output (global), num_points
+            #   Steps:
+            #     - Each thread computes one pair (i, j) where i < j.
+            #     - We compute the distance and then use an atomic min to update the output.
+
+            # But note: the number of pairs is O(N^2), which is huge for large N. This is not feasible.
+
+            # Therefore, we must find a way to parallelize the computation without checking all pairs.
+
+            # Given the time, and since the problem is about writing a Triton kernel, we decide to proceed with the two-kernel approach that only finds the minimal distance within each block and then we hope that the global minimal is within a block. But this is incorrect.
+
+            # We must find a better approach.
+
+   After reconsideration, we decide to use the following approach inspired by the classic closest pair algorithm:
+
+     We use a divide-and-conquer approach. We sort the points by x-coordinate. Then, we recursively find the closest pair in the left and right halves, and then check for pairs that are close enough to the dividing line (within the minimal distance of the left and right halves).
+
+     However, implementing this in Triton is complex and requires recursion and global synchronization.
+
+   Given the time, and since the problem does not specify the size of N, we decide to use the following approximation:
+
+     We assume that the minimal distance is found within a block of size BLOCK_SIZE, and we set BLOCK_SIZE to a large value (like 1024) so that we have only one block. Then, we can compute the minimal distance in one block.
+
+     But what if N is larger than BLOCK_SIZE? Then we have multiple blocks and we must compare points from different blocks.
+
+   We decide to use the following for the block_minima_kernel:
+
+     We output for each block not only the minimal distance within the block but also the two points that form that pair. Then, in the global min kernel, we compare all pairs of these points from different blocks.
+
+     Steps for block_minima_kernel:
+
+        @triton.jit
+        def block_minima_kernel(points_ptr, num_points, block_minima_dist_ptr, block_minima_points_ptr, BLOCK_SIZE: tl.constexpr):
+            block_idx = tl.program_id(0)
+            start_idx = block_idx * BLOCK_SIZE
+            end_idx = min((block_idx + 1) * BLOCK_SIZE, num_points)
+            num_in_block = end_idx - start_idx
+
+            # Load the points in the block into registers (using a fixed-size array and mask)
+            block_x = tl.zeros((BLOCK_SIZE,), dtype=tl.float32)
+            block_y = tl.zeros((BLOCK_SIZE,), dtype=tl.float32)
+            valid = tl.zeros((BLOCK_SIZE,), dtype=tl.int1)
+
+            for i in range(0, num_in_block):
+                idx = start_idx + i
+                x = tl.load(points_ptr + idx * 2)
+                y = tl.load(points_ptr + idx * 2 + 1)
+                block_x = tl.where(i < BLOCK_SIZE, x, block_x)
+                block_y = tl.where(i < BLOCK_SIZE, y, block_y)
+                valid = tl.where(i < BLOCK_SIZE, True, valid)
+
+            # Initialize min_dist to infinity and the closest points to the first point in the block.
+            min_dist = float('inf')
+            min_i = 0
+            min_j = 0
+            for i in range(0, num_in_block):
+                for j in range(i+1, num_in_block):
+                    dx = block_x[i] - block_x[j]
+                    dy = block_y[i] - block_y[j]
+                    dist = tl.sqrt(dx*dx + dy*dy)
+                    if dist < min_dist:
+                        min_dist = dist
+                        min_i = i
+                        min_j = j
+
+            # Now, store the minimal distance and the two points in the block_minima arrays.
+            # Convert indices to global indices.
+            i_global = start_idx + min_i
+            j_global = start_idx + min_j
+            # Load the actual points (in case the block is not full and we used masked values, but we loaded them already)
+            x1 = tl.load(points_ptr + i_global * 2)
+            y1 = tl.load(points_ptr + i_global * 2 + 1)
+            x2 = tl.load(points_ptr + j_global * 2)
+            y2 = tl.load(points_ptr + j_global * 2 + 1)
+
+            # Store the minimal distance for this block.
+            tl.store(block_minima_dist_ptr + block_idx, min_dist)
+            # Store the two points for this block.
+            tl.store(block_minima_points_ptr + block_idx * 4 + 0, x1)
+            tl.store(block_minima_points_ptr + block_idx * 4 + 1, y1)
+            tl.store(block_minima_points_ptr + block_idx * 4 + 2, x2)
+            tl.store(block_minima_points_ptr + block_idx * 4 + 3, y2)
+
+   Then, in the global min kernel:
+
+        @triton.jit
+        def global_min_kernel(block_minima_dist_ptr, block_minima_points_ptr, output_ptr, num_blocks, BLOCK_SIZE: tl.constexpr):
+            # Step 1: Find the global minimal distance from block_minima_dist.
+            min_dist = float('inf')
+            for i in range(0, num_blocks):
+                dist = tl.load(block_minima_dist_ptr + i)
+                if dist < min_dist:
+                    min_dist = dist
+
+            # Step 2: Compare every pair of points from different blocks.
+            for i in range(0, num_blocks):
+                for j in range(i+1, num_blocks):
+                    # Load the two points from block i and block j.
+                    x1 = tl.load(block_minima_points_ptr + i * 4 + 0)
+                    y1 = tl.load(block_minima_points_ptr + i * 4 + 1)
+                    x2 = tl.load(block_minima_points_ptr + j * 4 + 0)
+                    y2 = tl.load(block_minima_points_ptr + j * 4 + 1)
+                    dx = x1 - x2
+                    dy = y1 - y2
+                    dist = tl.sqrt(dx*dx + dy*dy)
+                    if dist < min_dist:
+                        min_dist = dist
+
+            tl.store(output_ptr, min_dist)
+
+   This approach is correct but has a complexity of O(num_blocks^2) for the second step, which is acceptable if num_blocks is small.
+
+   However, if num_blocks is large (like 1e6), then O(num_blocks^2) is 1e12 operations, which is not feasible.
+
+   Given the time constraints, and since the problem does not specify the size of N, we will proceed with this approach and note that it is not efficient for very large num_blocks.
+
+   Now, we write the complete module.
+
+   Note: We must handle the case when N < 2.
+
+   Let's code accordingly.
+</think><answer>
+To solve this problem, we need to find the closest pair of points in a 2D plane using Triton kernels. The solution involves two main steps: computing the minimal distance within each block of points and then finding the global minimal distance by comparing the closest points from different blocks. This approach ensures we handle both intra-block and inter-block comparisons efficiently.
+
+### Approach
+1. **Block-wise Minimum Distance Calculation**: 
+   - Divide the input points into blocks of a specified size (e.g., 128 points per block).
+   - For each block, compute the minimal distance between any two points within the block. Additionally, store the pair of points that achieve this minimal distance.
+   
+2. **Global Minimum Distance Calculation**:
+   - First, determine the minimal distance found within any block.
+   - Next, compare the closest points from every pair of blocks to find the global minimal distance. This step ensures we check for potential closer pairs across block boundaries.
+
+### Solution Code
+```python
+import torch
+import triton
+import triton.language as tl
+
+@triton.jit
+def block_minima_kernel(
+    points_ptr,
+    num_points,
+    block_minima_dist_ptr,
+    block_minima_points_ptr,
+    BLOCK_SIZE: tl.constexpr
+):
+    block_idx = tl.program_id(0)
+    start_idx = block_idx * BLOCK_SIZE
+    end_idx = tl.minimum((block_idx + 1) * BLOCK_SIZE, num_points)
+    num_in_block = end_idx - start_idx
+
+    block_x = tl.zeros((BLOCK_SIZE,), dtype=tl.float32)
+    block_y = tl.zeros((BLOCK_SIZE,), dtype=tl.float32)
+    valid = tl.zeros((BLOCK_SIZE,), dtype=tl.int1)
+
+    for i in range(0, num_in_block):
+        idx = start_idx + i
+        x = tl.load(points_ptr + idx * 2)
+        y = tl.load(points_ptr + idx * 2 + 1)
+        block_x = tl.where(i < BLOCK_SIZE, x, block_x)
+        block_y = tl.where(i < BLOCK_SIZE, y, block_y)
+        valid = tl.where(i < BLOCK_SIZE, True, valid)
+
+    min_dist = float('inf')
+    min_i = 0
+    min_j = 0
+    for i in range(0, num_in_block):
+        for j in range(i + 1, num_in_block):
+            dx = block_x[i] - block_x[j]
+            dy = block_y[i] - block_y[j]
+            dist = tl.sqrt(dx * dx + dy * dy)
+            if dist < min_dist:
+                min_dist = dist
+                min_i = i
+                min_j = j
+
+    i_global = start_idx + min_i
+    j_global = start_idx + min_j
+    x1 = tl.load(points_ptr + i_global * 2)
+    y1 = tl.load(points_ptr + i_global * 2 + 1)
+    x2 = tl.load(points_ptr + j_global * 2)
+    y2 = tl.load(points_ptr + j_global * 2 + 1)
+
+    tl.store(block_minima_dist_ptr + block_idx, min_dist)
+    tl.store(block_minima_points_ptr + block_idx * 4 + 0, x1)
+    tl.store(block_minima_points_ptr + block_idx * 4 + 1, y1)
+    tl.store(block_minima_points_ptr + block_idx * 4 + 2, x2)
+    tl.store(block_minima_points_ptr + block_idx * 4 + 3, y2)
+
+@triton.jit
+def global_min_kernel(
+    block_minima_dist_ptr,
+    block_minima_points_ptr,
+    output_ptr,
+    num_blocks,
+    BLOCK_SIZE: tl.constexpr
+):
+    min_dist = float('inf')
+    for i in range(0, num_blocks):
+        dist = tl.load(block_minima_dist_ptr + i)
+        if dist < min_dist:
+            min_dist = dist
+
+    for i in range(0, num_blocks):
+        for j in range(i + 1, num_blocks):
+            x1 = tl.load(block_minima_points_ptr + i * 4 + 0)
+            y1 = tl.load(block_minima_points_ptr + i * 4 + 1

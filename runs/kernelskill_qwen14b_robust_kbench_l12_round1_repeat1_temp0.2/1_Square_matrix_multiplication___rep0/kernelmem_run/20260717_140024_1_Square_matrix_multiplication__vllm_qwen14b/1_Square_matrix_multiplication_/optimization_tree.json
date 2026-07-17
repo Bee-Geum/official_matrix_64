@@ -1,0 +1,23 @@
+{
+  "task": "/home/bi_geum/official_matrix_64/third_party/KernelBench/KernelBench/level1/1_Square_matrix_multiplication_.py",
+  "base_kernel": null,
+  "base_score": null,
+  "best_kernel": null,
+  "best_score": null,
+  "kernels": {
+    "kernel_20260717_140034": {
+      "parent": null,
+      "kernel_name": "kernel_20260717_140034",
+      "kernel_path": "/home/bi_geum/official_matrix_64/runs/kernelskill_qwen14b_robust_kbench_l12_round1_repeat1_temp0.2/1_Square_matrix_multiplication___rep0/kernelmem_run/20260717_140024_1_Square_matrix_multiplication__vllm_qwen14b/1_Square_matrix_multiplication_/code/kernel_20260717_140034.py",
+      "speedup": null,
+      "runnable": false,
+      "ncu_passed": false,
+      "phase": "seed",
+      "round": 0,
+      "strategy": null,
+      "method_matched": false,
+      "timestamp": "2026-07-17T14:01:20.920895"
+    }
+  },
+  "timestamp": "2026-07-17T14:01:21.103797"
+}

@@ -23,9 +23,8 @@ at any OpenAI-compatible endpoint (`LLM_BASE_URL`), or run the bundled
 | 7 | pareval          | ParEval `drivers/run-all.py` |
 | 8 | sol_execbench    | `python -m sol_execbench.cli.main` |
 
-11 agents (all route through one LLM endpoint via `drivers/generic_llm_kernel_driver.py`):
-cudaforge, autokernel, cuda_l1, autotriton, drkernel, geak, ksearch, cuda_agent,
-kernelllm, incoder32b, kernelskill.
+7 agents (each runs as itself — an upstream live loop or its own released weights):
+cudaforge, autokernel, autotriton, drkernel, kernelllm, incoder32b, kernelskill.
 
 > flashinfer_bench (no upstream oracle wired) and rocm_tritonbench (AMD-only) are
 > excluded — these 8 are the benchmarks with a working official oracle.
@@ -102,7 +101,7 @@ tail -f run_matrix_64.out
 Examples:
 ```bash
 LIMIT=3 ./run_matrix_64.sh
-AGENTS=cudaforge,geak BENCHMARKS=pareval,sol_execbench ./run_matrix_64.sh
+AGENTS=cudaforge,autotriton BENCHMARKS=pareval,sol_execbench ./run_matrix_64.sh
 ```
 
 ### Multi-GPU

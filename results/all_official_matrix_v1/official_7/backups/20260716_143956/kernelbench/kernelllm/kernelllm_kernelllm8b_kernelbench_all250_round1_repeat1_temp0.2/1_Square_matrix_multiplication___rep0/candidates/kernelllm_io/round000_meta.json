@@ -1,0 +1,7 @@
+{
+  "system": "kernelllm",
+  "round": 0,
+  "latency_s": 2.64072585105896,
+  "candidate": "/home/bi_geum/official_matrix_64/runs/kernelllm_kernelllm8b_kernelbench_all250_round1_repeat1_temp0.2/1_Square_matrix_multiplication___rep0/candidates/candidate_0000.py",
+  "first_line": "import torch"
+}

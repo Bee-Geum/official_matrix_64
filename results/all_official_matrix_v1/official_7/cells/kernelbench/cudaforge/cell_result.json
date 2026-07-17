@@ -1,0 +1,33 @@
+{
+  "benchmark": "kernelbench",
+  "agent": "cudaforge",
+  "n_tasks": 1,
+  "candidate_task_count": 1,
+  "official_eval_task_count": 1,
+  "correct_task_count": 1,
+  "valid_official_cell": 1,
+  "all_tasks_official": 1,
+  "wall_s": 64.43332862854004,
+  "top_infrastructure_error": "",
+  "task_results": [
+    {
+      "benchmark": "kernelbench",
+      "task_id": "1_Square_matrix_multiplication_",
+      "agent": "cudaforge",
+      "official_task": 1,
+      "generation_ok": 1,
+      "candidate_count": 1,
+      "official_attempted": 1,
+      "official_eval": 1,
+      "correct": 1,
+      "performance_available": 1,
+      "best_score": 0.10215814172689609,
+      "infrastructure_error": "",
+      "candidate_error": "",
+      "generation_log": "/home/bi_geum/official_matrix_64/results/all_official_matrix_v1/official_7/cells/kernelbench/cudaforge/kb_matrix.log.txt",
+      "cell_dir": "/home/bi_geum/official_matrix_64/results/all_official_matrix_v1/official_7/cells/kernelbench/cudaforge",
+      "task_dir": ""
+    }
+  ],
+  "finished_at": "2026-07-16T14:27:47+0900"
+}

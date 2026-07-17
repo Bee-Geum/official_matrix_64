@@ -1,0 +1,19 @@
+{
+  "benchmark": "tritonbench_t",
+  "task_id": "Adam",
+  "official_task": 1,
+  "generation_ok": 1,
+  "candidate_count": 1,
+  "official_attempted": 1,
+  "official_eval": 1,
+  "correct": 1,
+  "performance_available": 0,
+  "best_score": 0.0,
+  "infrastructure_error": "",
+  "candidate_error": "correctness passed, but official performance score was unavailable",
+  "generation_log": "/home/bi_geum/official_matrix_64/results/all_official_matrix_v1/smoke_verify_20260716/cells/tritonbench_t/autokernel/000_Adam/generation.log.txt",
+  "official_reports": [],
+  "agent": "autokernel",
+  "cell_dir": "/home/bi_geum/official_matrix_64/results/all_official_matrix_v1/smoke_verify_20260716/cells/tritonbench_t/autokernel",
+  "task_dir": "/home/bi_geum/official_matrix_64/results/all_official_matrix_v1/smoke_verify_20260716/cells/tritonbench_t/autokernel/000_Adam"
+}

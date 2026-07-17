@@ -2,7 +2,7 @@
   "agent": "cudaforge",
   "driver": "/home/bi_geum/official_matrix_64/drivers/cudaforge_inline.py",
   "cmd": [
-    "/home/bi_geum/anaconda3/envs/survey/bin/python3",
+    "/home/bi_geum/official_matrix_64/.venv/bin/python3",
     "/home/bi_geum/official_matrix_64/drivers/cudaforge_inline.py",
     "--task",
     "/home/bi_geum/official_matrix_64/results/all_official_matrix_v1/official_matrix_64/cells/tritonbench_g/cudaforge/000_adam_update_triton/official_prompt.txt",
@@ -16,7 +16,7 @@
     "0.2"
   ],
   "returncode": 0,
-  "wall_s": 17.071002960205078,
+  "wall_s": 24.800452709197998,
   "log": "/home/bi_geum/official_matrix_64/results/all_official_matrix_v1/official_matrix_64/cells/tritonbench_g/cudaforge/000_adam_update_triton/generation.log.txt",
   "candidate_count": 1,
   "raw_candidates": [

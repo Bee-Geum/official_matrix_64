@@ -1,0 +1,8 @@
+{
+  "benchmark": "multikernelbench",
+  "task_id": "hinge_loss",
+  "op": "hinge_loss",
+  "official_task": true,
+  "prompt_path": "/home/bi_geum/official_matrix_64/third_party/MultiKernelBench/reference/loss/hinge_loss.py",
+  "prompt": "Benchmark: multikernelbench\nOfficial task: hinge_loss\nReturn only source code, without Markdown fences or explanations.\n\nGenerate a kernel response for the exact MultiKernelBench operator 'hinge_loss'. Use CUDA C++ or Triton and do not replace the computation with eager PyTorch.\n\nimport torch\nimport torch.nn as nn\n\nclass Model(nn.Module):\n    \"\"\"\n    A model that computes Hinge Loss for binary classification tasks.\n\n    Parameters:\n        None\n    \"\"\"\n    def __init__(self):\n        super(Model, self).__init__()\n\n    def forward(self, predictions, targets):\n        return torch.mean(torch.clamp(1 - predictions * targets, min=0))\n\nbatch_size = 32768\ninput_shape = (32768,)\ndim = 1\n\ndef get_inputs():\n    return [torch.rand(batch_size, *input_shape), torch.randint(0, 2, (batch_size,)).float() * 2 - 1]\n\ndef get_init_inputs():\n    return []"
+}

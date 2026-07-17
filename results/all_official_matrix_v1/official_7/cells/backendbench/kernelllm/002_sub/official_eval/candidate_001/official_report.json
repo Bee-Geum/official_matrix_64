@@ -1,0 +1,22 @@
+{
+  "benchmark": "backendbench",
+  "task_id": "sub",
+  "task_manifest": "/home/bi_geum/official_matrix_64/results/all_official_matrix_v1/official_7/prepared/tasks/backendbench/0002_sub.json",
+  "candidate": "/home/bi_geum/official_matrix_64/results/all_official_matrix_v1/official_7/cells/backendbench/kernelllm/002_sub/candidates/official_candidate_001.py",
+  "official_task": 1,
+  "official_attempted": 1,
+  "official_eval": 0,
+  "correct": 0,
+  "performance_available": 0,
+  "score": 0.0,
+  "evaluator_rc": "",
+  "infrastructure_error": "op 'sub' not covered by locally-available BackendBench suites (opinfo/torchbench); no official test case exists for it here",
+  "candidate_error": "",
+  "logs": [
+    "/home/bi_geum/official_matrix_64/results/all_official_matrix_v1/official_7/cells/backendbench/kernelllm/002_sub/official_eval/candidate_001/official_0_opinfo.log.txt",
+    "/home/bi_geum/official_matrix_64/results/all_official_matrix_v1/official_7/cells/backendbench/kernelllm/002_sub/official_eval/candidate_001/official_1_torchbench.log.txt",
+    "/home/bi_geum/official_matrix_64/results/all_official_matrix_v1/official_7/cells/backendbench/kernelllm/002_sub/official_eval/candidate_001/official_2_smoke.log.txt"
+  ],
+  "artifacts": [],
+  "wall_s": 26.652213096618652
+}

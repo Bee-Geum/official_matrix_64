@@ -1,0 +1,20 @@
+$ /home/bi_geum/official_matrix_64/.venv/bin/python3 /home/bi_geum/official_matrix_64/third_party/BackendBench/BackendBench/scripts/main.py --suite smoke --backend directory --ops-directory /home/bi_geum/official_matrix_64/results/all_official_matrix_v1/smoke_verify_20260716/prepared/backend_probe/backend_probe_ops --log-dir /home/bi_geum/official_matrix_64/results/all_official_matrix_v1/smoke_verify_20260716/prepared/backend_probe/backend_probe_results
+cwd=/home/bi_geum/official_matrix_64/third_party/BackendBench
+returncode=1
+wall_s=4.340464
+----- STDOUT -----
+
+----- STDERR -----
+Traceback (most recent call last):
+  File "/home/bi_geum/official_matrix_64/third_party/BackendBench/BackendBench/scripts/main.py", line 15, in <module>
+    import BackendBench.backends as backends
+  File "/home/bi_geum/official_matrix_64/third_party/BackendBench/BackendBench/__init__.py", line 18, in <module>
+    from BackendBench.backends.directory import DirectoryBackend
+  File "/home/bi_geum/official_matrix_64/third_party/BackendBench/BackendBench/backends/__init__.py", line 22, in <module>
+    from .llm import LLMBackend
+  File "/home/bi_geum/official_matrix_64/third_party/BackendBench/BackendBench/backends/llm.py", line 24, in <module>
+    from BackendBench.llm_client import LLMKernelGenerator
+  File "/home/bi_geum/official_matrix_64/third_party/BackendBench/BackendBench/llm_client.py", line 12, in <module>
+    from tenacity import retry
+ModuleNotFoundError: No module named 'tenacity'
+

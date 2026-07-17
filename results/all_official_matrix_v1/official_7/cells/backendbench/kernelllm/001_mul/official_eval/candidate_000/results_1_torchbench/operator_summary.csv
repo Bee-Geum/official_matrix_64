@@ -1,0 +1,4 @@
+operator,total_tests,correctness_tests,performance_tests,passed_correctness_tests,passed_performance_tests,failed_correctness_tests,failed_performance_tests,correctness_rate,avg_speedup,geomean_speedup,max_absolute_error,max_relative_error
+mm.default,3,4,4,4,4,0,0,1.0,0.9996881016982085,0.9996877312660217,0.0,0.0
+relu.default,3,1,1,1,1,0,0,1.0,1.0013179791087734,1.0013179779052734,0.0,0.0
+sigmoid.default,3,1,1,1,1,0,0,1.0,0.9999593434507961,0.9999593496322632,0.0,0.0

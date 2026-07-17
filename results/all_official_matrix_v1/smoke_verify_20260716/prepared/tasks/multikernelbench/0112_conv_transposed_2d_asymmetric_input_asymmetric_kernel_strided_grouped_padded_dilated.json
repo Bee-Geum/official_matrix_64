@@ -1,0 +1,8 @@
+{
+  "benchmark": "multikernelbench",
+  "task_id": "conv_transposed_2d_asymmetric_input_asymmetric_kernel_strided_grouped_padded_dilated",
+  "op": "conv_transposed_2d_asymmetric_input_asymmetric_kernel_strided_grouped_padded_dilated",
+  "official_task": true,
+  "prompt_path": "",
+  "prompt": "Benchmark: multikernelbench\nOfficial task: conv_transposed_2d_asymmetric_input_asymmetric_kernel_strided_grouped_padded_dilated\nReturn only source code, without Markdown fences or explanations.\n\nGenerate a kernel response for the exact MultiKernelBench operator 'conv_transposed_2d_asymmetric_input_asymmetric_kernel_strided_grouped_padded_dilated'. Use CUDA C++ or Triton and do not replace the computation with eager PyTorch.\n\nMultiKernelBench operator: conv_transposed_2d_asymmetric_input_asymmetric_kernel_strided_grouped_padded_dilated\nOfficial dataset entry: {'category': 'convolution'}\n"
+}

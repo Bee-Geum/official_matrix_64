@@ -1,0 +1,29 @@
+__shared__ double minDist[32];
+	__shared__ Point closestPair[2][32];
+
+	int tid = threadIdx.x;
+	int bid = blockIdx.x;
+
+	if (tid == 0) {
+		minDist[bid] = DBL_MAX;
+		closestPair[0][bid] = points[bid];
+		closestPair[1][bid] = points[bid];
+	}
+
+	__syncthreads();
+
+	for (int i = bid + 1; i < numPoints; ++i) {
+		double dist = distanceBetweenPoints(points[bid], points[i]);
+		if (dist < minDist[bid]) {
+			minDist[bid] = dist;
+			closestPair[0][bid] = points[bid];
+			closestPair[1][bid] = points[i];
+		}
+	}
+
+	__syncthreads();
+
+	if (tid == 0) {
+		atomicMin(distance, minDist[bid]);
+	}
+}

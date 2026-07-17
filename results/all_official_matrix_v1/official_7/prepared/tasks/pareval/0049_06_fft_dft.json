@@ -1,0 +1,13 @@
+{
+  "benchmark": "pareval",
+  "task_id": "06_fft_dft",
+  "official_task": true,
+  "prompt_obj": {
+    "problem_type": "fft",
+    "language": "cpp",
+    "name": "06_fft_dft",
+    "parallelism_model": "cuda",
+    "prompt": "/* Compute the discrete fourier transform of x. Store the result in output.\n   Use CUDA to compute in parallel. The kernel is launched with at least N threads.\n   Example:\n\n   input: [1, 4, 9, 16]\n   output: [30+0i, -8-12i, -10-0i, -8+12i]\n*/\n__global__ void dft(const double *x, cuDoubleComplex *output, size_t N) {"
+  },
+  "prompt": "Benchmark: pareval\nOfficial task: 06_fft_dft\nReturn only source code, without Markdown fences or explanations.\n\nThis is a ParEval CUDA COMPLETION task. Below is the BEGINNING of a CUDA C++ file; its last line is a function signature ending with '{' and the body is missing. Your output will be appended VERBATIM right after it and compiled by ParEval's official C++ driver.\n\nOutput ONLY the code that completes that open function body, ending with its closing '}'. Do NOT repeat anything shown below: no #include, no struct/typedef, no 'using', no function signature, and no main(). Emit raw C++ only (no Markdown fences, no prose).\n\n--- code so far (context only; do NOT repeat it) ---\n/* Compute the discrete fourier transform of x. Store the result in output.\n   Use CUDA to compute in parallel. The kernel is launched with at least N threads.\n   Example:\n\n   input: [1, 4, 9, 16]\n   output: [30+0i, -8-12i, -10-0i, -8+12i]\n*/\n__global__ void dft(const double *x, cuDoubleComplex *output, size_t N) {"
+}

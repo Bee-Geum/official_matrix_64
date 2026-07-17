@@ -1,0 +1,8 @@
+{
+  "benchmark": "multikernelbench",
+  "task_id": "7_sparse_flash_attention",
+  "op": "7_sparse_flash_attention",
+  "official_task": true,
+  "prompt_path": "",
+  "prompt": "Benchmark: multikernelbench\nOfficial task: 7_sparse_flash_attention\nReturn only source code, without Markdown fences or explanations.\n\nGenerate a kernel response for the exact MultiKernelBench operator '7_sparse_flash_attention'. Use CUDA C++ or Triton and do not replace the computation with eager PyTorch.\n\nMultiKernelBench operator: 7_sparse_flash_attention\nOfficial dataset entry: {'category': 'npukernelbench_level4', 'source': 'NPUKernelBench'}\n"
+}

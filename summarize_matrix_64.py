@@ -22,8 +22,8 @@ BENCHMARKS = [
     "multikernelbench", "backendbench", "pareval", "sol_execbench",
 ]
 AGENTS = [
-    "cudaforge", "autokernel", "cuda_l1", "autotriton", "drkernel", "geak",
-    "ksearch", "cuda_agent", "kernelllm", "incoder32b", "kernelskill",
+    "cudaforge", "autokernel", "autotriton", "drkernel",
+    "kernelllm", "incoder32b", "kernelskill",
 ]
 OFFICIAL_ORACLE = {
     "kernelbench": "kb_instrumented", "robust_kbench": "kb_instrumented",

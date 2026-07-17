@@ -1,0 +1,13 @@
+{
+  "compiled": true,
+  "correctness": true,
+  "performance": {
+    "mean": 4.29,
+    "std": 0.00316,
+    "min": 4.28,
+    "max": 4.3,
+    "num_trials": 100
+  },
+  "hardware": "NVIDIA H100 80GB HBM3",
+  "cheating": false
+}

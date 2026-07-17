@@ -136,7 +136,7 @@ class Performance_Metrics:
             except Exception as e:
                 print(f"Failed to run benchmark for input tensor. Error: {e}")
             input_tensor = None
-        folder_path = "/home/bi_geum/official_matrix_88/results/all_official_matrix_v1/official_matrix_88/cells/tritonbench_t/cudaforge/000_Adam/official_eval/candidate_000/perf_results"
+        folder_path = "/home/bi_geum/official_matrix_64/results/all_official_matrix_v1/smoke_prove_20260717/cells/tritonbench_t/incoder32b/000_Adam/official_eval/candidate_000/perf_results"
         file_name = self.op_name + ".json"
         file_path = os.path.join(folder_path, file_name)
         with open(file_path, 'w', encoding='utf8') as f:

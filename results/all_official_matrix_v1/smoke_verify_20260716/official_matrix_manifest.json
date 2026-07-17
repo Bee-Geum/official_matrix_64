@@ -1,0 +1,127 @@
+{
+  "run_root": "/home/bi_geum/official_matrix_64/results/all_official_matrix_v1/smoke_verify_20260716",
+  "generated_at": "2026-07-17T13:38:26+0900",
+  "benchmarks": [
+    "kernelbench",
+    "robust_kbench",
+    "tritonbench_t",
+    "tritonbench_g",
+    "multikernelbench",
+    "backendbench",
+    "pareval",
+    "sol_execbench"
+  ],
+  "agents": [
+    "cudaforge",
+    "autokernel",
+    "kernelskill",
+    "drkernel",
+    "autotriton",
+    "kernelllm",
+    "incoder32b"
+  ],
+  "expected_cells": 56,
+  "observed_cells": 56,
+  "valid_official_cells": 25,
+  "all_official_benchmarking_normal": 0,
+  "by_benchmark": {
+    "kernelbench": {
+      "agents": 7,
+      "valid_official_cells": 7,
+      "candidate_cells": 7,
+      "official_eval_tasks": 7,
+      "correct_tasks": 7,
+      "all_agents_official": 1,
+      "top_errors": []
+    },
+    "robust_kbench": {
+      "agents": 7,
+      "valid_official_cells": 7,
+      "candidate_cells": 7,
+      "official_eval_tasks": 7,
+      "correct_tasks": 7,
+      "all_agents_official": 1,
+      "top_errors": []
+    },
+    "tritonbench_t": {
+      "agents": 7,
+      "valid_official_cells": 7,
+      "candidate_cells": 7,
+      "official_eval_tasks": 7,
+      "correct_tasks": 7,
+      "all_agents_official": 1,
+      "top_errors": []
+    },
+    "tritonbench_g": {
+      "agents": 7,
+      "valid_official_cells": 4,
+      "candidate_cells": 4,
+      "official_eval_tasks": 4,
+      "correct_tasks": 4,
+      "all_agents_official": 0,
+      "top_errors": [
+        [
+          "cell_result.json missing",
+          3
+        ]
+      ]
+    },
+    "multikernelbench": {
+      "agents": 7,
+      "valid_official_cells": 0,
+      "candidate_cells": 0,
+      "official_eval_tasks": 0,
+      "correct_tasks": 0,
+      "all_agents_official": 0,
+      "top_errors": [
+        [
+          "cell_result.json missing",
+          7
+        ]
+      ]
+    },
+    "backendbench": {
+      "agents": 7,
+      "valid_official_cells": 0,
+      "candidate_cells": 0,
+      "official_eval_tasks": 0,
+      "correct_tasks": 0,
+      "all_agents_official": 0,
+      "top_errors": [
+        [
+          "cell_result.json missing",
+          7
+        ]
+      ]
+    },
+    "pareval": {
+      "agents": 7,
+      "valid_official_cells": 0,
+      "candidate_cells": 0,
+      "official_eval_tasks": 0,
+      "correct_tasks": 0,
+      "all_agents_official": 0,
+      "top_errors": [
+        [
+          "cell_result.json missing",
+          7
+        ]
+      ]
+    },
+    "sol_execbench": {
+      "agents": 7,
+      "valid_official_cells": 0,
+      "candidate_cells": 0,
+      "official_eval_tasks": 0,
+      "correct_tasks": 0,
+      "all_agents_official": 0,
+      "top_errors": [
+        [
+          "cell_result.json missing",
+          7
+        ]
+      ]
+    }
+  },
+  "strict_definition": "A valid cell has official tasks, a generated candidate for every selected task, and a parsed structured upstream-evaluator result for every task. Correctness may be zero."
+}

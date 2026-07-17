@@ -1,0 +1,13 @@
+$ /home/bi_geum/official_matrix_64/.venv/bin/python3 /home/bi_geum/official_matrix_64/third_party/TritonBench/EVAL/eval_T/1_exe_acc.py --folder /home/bi_geum/official_matrix_64/results/all_official_matrix_v1/official_7/cells/tritonbench_t/cudaforge/000_Adam/official_eval/candidate_001/stage/target --GPUs 0
+cwd=/home/bi_geum/official_matrix_64/third_party/TritonBench/EVAL/eval_T
+returncode=0
+wall_s=2.202655
+----- STDOUT -----
+Deleted Adam.py
+
+Correct execution rate: 0.00% = 0 / 1
+above is the compare execution for /home/bi_geum/official_matrix_64/results/all_official_matrix_v1/official_7/cells/tritonbench_t/cudaforge/000_Adam/official_eval/candidate_001/stage/target
+================================================================================================================================================================================================================================================
+
+----- STDERR -----
+

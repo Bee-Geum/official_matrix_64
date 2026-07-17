@@ -1,0 +1,8 @@
+$ /home/bi_geum/official_matrix_64/.venv/bin/python3 /home/bi_geum/official_matrix_64/third_party/MultiKernelBench/eval_single_runner.py --input /home/bi_geum/official_matrix_64/results/all_official_matrix_v1/official_7/cells/multikernelbench/kernelllm/000_elu/official_eval/candidate_001/generated_response.txt --op elu --language triton --result /home/bi_geum/official_matrix_64/results/all_official_matrix_v1/official_7/cells/multikernelbench/kernelllm/000_elu/official_eval/candidate_001/official_result.json
+cwd=/home/bi_geum/official_matrix_64/third_party/MultiKernelBench
+returncode=0
+wall_s=45.093014
+----- STDOUT -----
+
+----- STDERR -----
+

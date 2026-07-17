@@ -1,0 +1,8 @@
+{
+  "benchmark": "multikernelbench",
+  "task_id": "13_interleave_rope",
+  "op": "13_interleave_rope",
+  "official_task": true,
+  "prompt_path": "",
+  "prompt": "Benchmark: multikernelbench\nOfficial task: 13_interleave_rope\nReturn only source code, without Markdown fences or explanations.\n\nGenerate a kernel response for the exact MultiKernelBench operator '13_interleave_rope'. Use CUDA C++ or Triton and do not replace the computation with eager PyTorch.\n\nMultiKernelBench operator: 13_interleave_rope\nOfficial dataset entry: {'category': 'npukernelbench_level2', 'source': 'NPUKernelBench'}\n"
+}

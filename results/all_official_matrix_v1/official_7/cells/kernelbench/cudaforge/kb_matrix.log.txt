@@ -1,0 +1,25 @@
+$ bash /home/bi_geum/official_matrix_64/run_ext_rtx6000.sh matrix --benchmark kernelbench --agent cudaforge --rounds 1 --repeat 1 --temp 0.2 --timeout 1800 --limit 1
+cwd=/home/bi_geum/official_matrix_64
+returncode=0
+wall_s=64.422869
+----- STDOUT -----
+
+==========================================
+matrix run: 99 runnable cells before filtering
+==========================================
+
+==========================================
+cell 1: cudaforge x kernelbench
+==========================================
+[cell] RUN cudaforge x kernelbench  (eval=kb_instrumented fmt=kb_model)  -> runs/cudaforge_qwen14b_kernelbench_all250_round1_repeat1_temp0.2
+[cell] 1 tasks x 1 repeats
+[cell]   1_Square_matrix_multiplication_ rep0 done (gen 56s)
+[cell] finished cudaforge_qwen14b_kernelbench_all250_round1_repeat1_temp0.2
+
+==========================================
+done: 1 cell(s) ran, 98 filtered out
+==========================================
+next: python3 /home/bi_geum/official_matrix_64/unified_bench_ext/collect_matrix.py   # aggregate runs/ -> results/matrix/
+
+----- STDERR -----
+

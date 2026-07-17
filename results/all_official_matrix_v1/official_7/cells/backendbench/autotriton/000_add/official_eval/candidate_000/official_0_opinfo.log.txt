@@ -1,0 +1,60 @@
+$ /home/bi_geum/official_matrix_64/.venv/bin/python3 /home/bi_geum/official_matrix_64/third_party/BackendBench/BackendBench/scripts/main.py --suite opinfo --backend directory --ops-directory /home/bi_geum/official_matrix_64/results/all_official_matrix_v1/official_7/cells/backendbench/autotriton/000_add/official_eval/candidate_000/ops --log-dir /home/bi_geum/official_matrix_64/results/all_official_matrix_v1/official_7/cells/backendbench/autotriton/000_add/official_eval/candidate_000/results_0_opinfo
+cwd=/home/bi_geum/official_matrix_64/third_party/BackendBench
+returncode=0
+wall_s=13.032044
+----- STDOUT -----
+correctness score (mean pass rate over all operators): 1.00
+performance score (geomean speedup over all operators): nan
+perf@p score (rate of correct samples with a speedup greater than p, p=1.0): 0.00
+Results saved to directory: /home/bi_geum/official_matrix_64/results/all_official_matrix_v1/official_7/cells/backendbench/autotriton/000_add/official_eval/candidate_000/results_0_opinfo
+Overall summary saved to: /home/bi_geum/official_matrix_64/results/all_official_matrix_v1/official_7/cells/backendbench/autotriton/000_add/official_eval/candidate_000/results_0_opinfo/OVERALL_SUMMARY.md
+
+----- STDERR -----
+/home/bi_geum/official_matrix_64/third_party/BackendBench/BackendBench/suite/opinfo.py:87: UserWarning: cov(): degrees of freedom is <= 0. Correction should be strictly less than the number of observations. (Triggered internally at /pytorch/aten/src/ATen/native/Correlation.cpp:116.)
+  ref = op.op(test.input, *test.args, **test.kwargs)
+/home/bi_geum/official_matrix_64/third_party/BackendBench/BackendBench/suite/opinfo.py:87: UserWarning: Using torch.cross without specifying the dim arg is deprecated.
+Please either pass the dim explicitly or simply use torch.linalg.cross.
+The default value of dim will change to agree with that of linalg.cross in a future release. (Triggered internally at /pytorch/aten/src/ATen/native/Cross.cpp:63.)
+  ref = op.op(test.input, *test.args, **test.kwargs)
+/home/bi_geum/official_matrix_64/third_party/BackendBench/BackendBench/suite/opinfo.py:87: UserWarning: Using padding='same' with even kernel lengths and odd dilation may require a zero-padded copy of the input be created (Triggered internally at /pytorch/aten/src/ATen/native/Convolution.cpp:1025.)
+  ref = op.op(test.input, *test.args, **test.kwargs)
+/home/bi_geum/official_matrix_64/third_party/BackendBench/BackendBench/suite/opinfo.py:87: UserWarning: `nn.functional.upsample_bilinear` is deprecated. Use `nn.functional.interpolate` instead.
+  ref = op.op(test.input, *test.args, **test.kwargs)
+/home/bi_geum/official_matrix_64/third_party/BackendBench/BackendBench/suite/opinfo.py:87: UserWarning: `nn.functional.upsample_nearest` is deprecated. Use `nn.functional.interpolate` instead.
+  ref = op.op(test.input, *test.args, **test.kwargs)
+/home/bi_geum/official_matrix_64/third_party/BackendBench/BackendBench/suite/opinfo.py:87: UserWarning: index_reduce() is in beta and the API may change at any time. (Triggered internally at /pytorch/aten/src/ATen/native/cuda/Indexing.cu:1469.)
+  ref = op.op(test.input, *test.args, **test.kwargs)
+/home/bi_geum/official_matrix_64/third_party/BackendBench/BackendBench/suite/opinfo.py:87: UserWarning: The reduce argument of torch.scatter with Tensor src is deprecated and will be removed in a future PyTorch release. Use torch.scatter_reduce instead for more reduction options. (Triggered internally at /pytorch/aten/src/ATen/native/TensorAdvancedIndexing.cpp:226.)
+  ref = op.op(test.input, *test.args, **test.kwargs)
+/home/bi_geum/official_matrix_64/.venv/lib/python3.12/site-packages/torch/testing/_internal/common_methods_invocations.py:19141: UserWarning: ComplexHalf support is experimental and many operators don't support it yet. (Triggered internally at /pytorch/aten/src/ATen/EmptyTensor.cpp:54.)
+  op=lambda x, *args, **kwargs: x.chalf(*args, **kwargs),
+/home/bi_geum/official_matrix_64/third_party/BackendBench/BackendBench/suite/opinfo.py:87: UserWarning: torch.searchsorted(): boundary tensor is non-contiguous, this will lower the performance due to extra data copy when converting non-contiguous tensor to contiguous, please use contiguous boundary tensor if possible. This message will only appear once per program. (Triggered internally at /pytorch/aten/src/ATen/native/BucketizationUtils.h:38.)
+  ref = op.op(test.input, *test.args, **test.kwargs)
+/home/bi_geum/official_matrix_64/third_party/BackendBench/BackendBench/suite/opinfo.py:87: UserWarning: torch.searchsorted(): input value tensor is non-contiguous, this will lower the performance due to extra data copy when converting non-contiguous tensor to contiguous, please use contiguous input value tensor if possible. This message will only appear once per program. (Triggered internally at /pytorch/aten/src/ATen/native/BucketizationUtils.h:32.)
+  ref = op.op(test.input, *test.args, **test.kwargs)
+/home/bi_geum/official_matrix_64/.venv/lib/python3.12/site-packages/torch/testing/_utils.py:18: UserWarning: dropout2d: Received a 3D input to dropout2d and assuming that channel-wise 1D dropout behavior is desired - input is interpreted as shape (N, C, L), where C is the channel dim. This behavior will change in a future release to interpret the input as one without a batch dimension, i.e. shape (C, H, W). To maintain the 1D channel-wise dropout behavior, please switch to using dropout1d instead.
+  output = op(*args, **kwargs)
+/home/bi_geum/official_matrix_64/third_party/BackendBench/BackendBench/suite/opinfo.py:87: UserWarning: reduction: 'mean' divides the total loss by both the batch size and the support size.'batchmean' divides only by the batch size, and aligns with the KL div math definition.'mean' will be changed to behave the same as 'batchmean' in the next major release.
+  ref = op.op(test.input, *test.args, **test.kwargs)
+[2026-07-16 15:33:54][INFO][directory.py] Loaded div from div_implementation_1.py -> div
+[2026-07-16 15:33:54][INFO][directory.py] Loaded relu from relu_implementation_1.py -> relu
+[2026-07-16 15:33:54][INFO][directory.py] Loaded mm from mm_implementation_1.py -> mm
+[2026-07-16 15:33:54][INFO][directory.py] Loaded sigmoid from sigmoid_implementation_1.py -> sigmoid
+[2026-07-16 15:33:54][INFO][directory.py] Loaded add from add_implementation_1.py -> add
+[2026-07-16 15:33:54][INFO][directory.py] Loaded mean from mean_implementation_1.py -> mean
+[2026-07-16 15:33:54][INFO][directory.py] Loaded tanh from tanh_implementation_1.py -> tanh
+[2026-07-16 15:33:54][WARNING][utils.py] Could not find PyTorch operation for softmax
+[2026-07-16 15:33:54][INFO][directory.py] Loaded mul from mul_implementation_1.py -> mul
+[2026-07-16 15:33:54][INFO][directory.py] Loaded bmm from bmm_implementation_1.py -> bmm
+[2026-07-16 15:33:54][INFO][directory.py] Loaded gelu from gelu_implementation_1.py -> gelu
+[2026-07-16 15:33:54][INFO][directory.py] Loaded layer_norm from layer_norm_implementation_1.py -> layer_norm
+[2026-07-16 15:33:54][INFO][directory.py] Loaded sub from sub_implementation_1.py -> sub
+[2026-07-16 15:33:54][INFO][directory.py] Loaded sum from sum_implementation_1.py -> sum
+[2026-07-16 15:33:54][INFO][directory.py] Loaded matmul from matmul_implementation_1.py -> matmul
+[2026-07-16 15:33:54][INFO][directory.py] DirectoryBackend loaded 14 kernels from /home/bi_geum/official_matrix_64/results/all_official_matrix_v1/official_7/cells/backendbench/autotriton/000_add/official_eval/candidate_000/ops/
+[2026-07-16 15:33:54][INFO][output.py] Full results saved to /home/bi_geum/official_matrix_64/results/all_official_matrix_v1/official_7/cells/backendbench/autotriton/000_add/official_eval/candidate_000/results_0_opinfo/full_results.json
+[2026-07-16 15:33:54][INFO][output.py] Operator summary CSV saved to /home/bi_geum/official_matrix_64/results/all_official_matrix_v1/official_7/cells/backendbench/autotriton/000_add/official_eval/candidate_000/results_0_opinfo/operator_summary.csv
+[2026-07-16 15:33:54][INFO][output.py] Failed operations log saved to /home/bi_geum/official_matrix_64/results/all_official_matrix_v1/official_7/cells/backendbench/autotriton/000_add/official_eval/candidate_000/results_0_opinfo/failed_tests.json
+[2026-07-16 15:33:54][INFO][output.py] Overall summary saved to /home/bi_geum/official_matrix_64/results/all_official_matrix_v1/official_7/cells/backendbench/autotriton/000_add/official_eval/candidate_000/results_0_opinfo/OVERALL_SUMMARY.md
+[2026-07-16 15:33:54][INFO][output.py] Results saved to directory: /home/bi_geum/official_matrix_64/results/all_official_matrix_v1/official_7/cells/backendbench/autotriton/000_add/official_eval/candidate_000/results_0_opinfo
+

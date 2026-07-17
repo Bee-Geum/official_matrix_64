@@ -1,0 +1,9 @@
+$ /home/bi_geum/official_matrix_64/.venv/bin/python3 /home/bi_geum/official_matrix_64/drivers/autokernel_kb_program_adapter.py --task /home/bi_geum/official_matrix_64/results/all_official_matrix_v1/smoke_verify_20260716/cells/tritonbench_g/autokernel/000_adam_update_triton/official_prompt.txt --out /home/bi_geum/official_matrix_64/results/all_official_matrix_v1/smoke_verify_20260716/cells/tritonbench_g/autokernel/000_adam_update_triton/candidates --rounds 1 --seed 0 --temperature 0.2
+cwd=/home/bi_geum/official_matrix_64
+returncode=0
+wall_s=22.273520
+----- STDOUT -----
+[autokernel] wrote /home/bi_geum/official_matrix_64/results/all_official_matrix_v1/smoke_verify_20260716/cells/tritonbench_g/autokernel/000_adam_update_triton/candidates/candidate_0000.py
+
+----- STDERR -----
+

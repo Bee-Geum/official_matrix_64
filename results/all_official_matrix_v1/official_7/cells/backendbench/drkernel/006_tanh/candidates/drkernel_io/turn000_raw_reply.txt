@@ -1,0 +1,677 @@
+Analysis, thinking, and plan
+
+- What the reference does
+  - The provided PyTorch model is extremely simple: it computes y = tanh(x) elementwise.
+  - There is no control flow, reductions, or complex memory access. It’s purely a pointwise unary op.
+  - The input is presumably a tensor on CUDA; the model just calls torch.tanh(x).
+
+- What a Triton implementation should do
+  - Implement an elementwise tanh kernel: for each element x[i], compute y[i] = tanh(x[i]).
+  - Use a 1D grid over N = x.numel() elements.
+  - Ensure coalesced loads/stores: contiguous memory access, linear indexing.
+  - Compute in float32 for numeric stability when input is float16/bfloat16, then cast back.
+  - Avoid fallback to torch.tanh in the entry point; the benchmark requires a custom kernel.
+
+- Numerical considerations
+  - Direct formula tanh(x) = (exp(2x) - 1) / (exp(2x) + 1) can overflow for large x (exp overflows around ~88 in float32).
+  - A more stable formulation is tanh(x) = 1 - 2 / (exp(2x) + 1). This avoids subtracting two large numbers.
+  - Alternatively, tanh(x) = 2*sigmoid(2x) - 1. That’s fine too, but using the 1 - 2/(exp+1) form is straightforward.
+  - For float16/bfloat16 inputs, upcast to float32 for the exp and division, then downcast. This matches what most frameworks do internally.
+
+- Performance considerations
+  - This is memory-bandwidth bound: each element requires one load, a few flops, and one store.
+  - A simple 1D kernel with BLOCK size (e.g., 1024 or 2048) is sufficient.
+  - num_warps 4–8 is typical; we can start with 4 or 8. It won’t materially change performance for such a simple op.
+  - Ensure x is contiguous; if not, either make it contiguous or compute with strides. For simplicity and speed, make it contiguous.
+  - Flatten to 1D; after compute, reshape back.
+
+- API and integration
+  - The benchmark asks for a module exposing tanh_kernel_impl. We will provide a Python module with that name.
+  - It will define a class ModelNew that takes x and returns y, using our Triton kernel.
+  - We’ll include a tiny utility to compile the kernel and run it.
+  - We will not import torch in the kernel file to keep it self-contained (the runner will have torch).
+
+- Edge cases and correctness
+  - Dtypes: support float32, float16, bfloat16. Upcast to float32 for compute, downcast.
+  - Device: assume CUDA; if CPU, raise or move to CUDA. The benchmark environment uses CUDA.
+  - Non-contiguous: make contiguous.
+  - Very large tensors: grid = cdiv(N, BLOCK).
+  - Numerical match: The stable formula should match torch.tanh closely. Minor ULP differences are possible but acceptable.
+
+- Plan
+  - Write a Triton kernel tanh_kernel that:
+    - Loads x block
+    - Upcasts to float32
+    - Computes e = exp(2*x32)
+    - Computes y32 = 1 - 2 / (e + 1)
+    - Casts back to input dtype
+    - Stores y
+  - Write a Python wrapper tanh_kernel_impl(x) that:
+    - Ensures CUDA, contiguous
+    - Allocates output
+    - Launches kernel with grid = (ceil_div(N, BLOCK),)
+    - Returns y with original shape
+
+Triton implementation (entry point: tanh_kernel_impl)
+
+```python
+import triton
+import triton.language as tl
+
+# Elementwise tanh kernel.
+# Computes y = tanh(x) using a numerically stable formulation:
+# tanh(x) = 1 - 2 / (exp(2x) + 1)
+@triton.jit
+def tanh_kernel(x_ptr, y_ptr, N, BLOCK: tl.constexpr):
+    pid = tl.program_id(axis=0)
+    offs = pid * BLOCK + tl.arange(0, BLOCK)
+    mask = offs < N
+
+    # Load as input dtype, then upcast to float32 for math
+    x = tl.load(x_ptr + offs, mask=mask, other=0)
+    x32 = x.to(tl.float32)
+
+    # Compute tanh via stable formula
+    two_x = 2.0 * x32
+    e = tl.exp(two_x)              # exp(2x)
+    y32 = 1.0 - 2.0 / (e + 1.0)    # 1 - 2 / (exp + 1)
+
+    # Cast back to input dtype and store
+    y = y32.to(x.dtype)
+    tl.store(y_ptr + offs, y, mask=mask)
+
+
+def tanh_kernel_impl(x):
+    """
+    Triton implementation of tanh.
+    Entry point expected by the benchmark.
+    """
+    if not x.is_cuda:
+        raise RuntimeError("tanh_kernel_impl expects a CUDA tensor")
+
+    # Ensure contiguous for coalesced access
+    was_contig = x.is_contiguous()
+    x_c = x.contiguous()
+
+    N = x_c.numel()
+    y = torch.empty_like(x_c)
+
+    # Choose block and grid
+    BLOCK = 1024
+    grid = (triton.cdiv(N, BLOCK),)
+
+    # Launch kernel
+    tanh_kernel[grid](
+        x_c, y, N,
+        BLOCK=BLOCK,
+        num_warps=4,   # reasonable default for pointwise
+        num_stages=2,
+    )
+
+    # Restore original shape (y is already same shape as x_c)
+    if not was_contig:
+        # If the original was non-contiguous, return with same shape but possibly different strides.
+        # torch.empty_like on non-contig returns contig; we can view as original shape.
+        return y.view(x.shape)
+    return y
+```
+用户提供了一些参考信息和要求，我将根据这些信息生成一个 Triton 实现，并提供一个符合要求的 Python 模块，其中包含 `tanh_kernel_impl` 入口点。以下是详细的分析、思考和计划，以及最终的 Triton 代码。
+
+分析、思考和计划
+
+- 参考模型的行为
+  - 给定的 PyTorch 模型非常简单：它只是对输入张量执行 elementwise tanh 操作，即 y = tanh(x)。
+  - 这是一个纯粹的点wise unary 操作，没有控制流、归约或复杂的内存访问模式。
+  - 输入很可能是 CUDA 张量；模型只是调用 torch.tanh(x)。
+
+- Triton 实现的目标
+  - 实现一个 elementwise tanh 内核：对于每个元素 x[i]，计算 y[i] = tanh(x[i])。
+  - 使用 1D 网格遍历 N = x.numel() 个元素。
+  - 确保内存访问是 coalesced 的：线性索引，连续存储。
+  - 对于 float16/bfloat16 输入，在计算时 upcast 到 float32 以提高数值稳定性，然后 downcast 回原 dtype。
+  - 不要在入口点 fallback 到 torch.tanh；benchmark 要求使用自定义内核。
+
+- 数值方面的考虑
+  - 直接公式 tanh(x) = (exp(2x) - 1) / (exp(2x) + 1) 在 x 较大时可能导致 exp(2x) 溢出（float32 中 exp 约在 88 附近溢出）。
+  - 更稳定的写法是 tanh(x) = 1 - 2 / (exp(2x) + 1)。这避免了两个大数相减的问题。
+  - 另一种写法是 tanh(x) = 2 * sigmoid(2x) - 1。但使用 1 - 2/(exp+1) 已经足够简单且稳定。
+  - 对于 float16/bfloat16，先转 float32 计算，再转回原 dtype，这与大多数框架的内部实现一致。
+
+- 性能方面的考虑
+  - 这种点wise操作通常是 memory-bandwidth bound：每个元素需要一次 load、少量浮点运算和一次 store。
+  - 一个简单的 1D 内核，BLOCK 大小选 1024 或 2048 即可。
+  - num_warps 4–8 是常见选择；对于这种简单操作，4 或 8 都可以。
+  - 确保 x 是 contiguous；如果不是，要么使其 contiguous，要么处理 strides。为了简单和速度，我们使其 contiguous。
+  - 展平为 1D；计算后 reshape 回原 shape。
+
+- API 和集成
+  - benchmark 要求提供一个模块，暴露 tanh_kernel_impl。我们将提供这个名字的 Python 模块。
+  - 定义一个类 ModelNew，它接收 x 并返回 y，使用我们的 Triton 内核。
+  - 不在 kernel 文件中 import torch，保持自包含（runner 会 import torch）。
+
+- 边界情况和正确性
+  - 支持 float32, float16, bfloat16。计算时 upcast 到 float32，然后 downcast。
+  - 设备：假设 CUDA；如果是 CPU，raise 或 move 到 CUDA。benchmark 环境使用 CUDA。
+  - 非连续：使其 contiguous。
+  - 很大的 tensor：grid = cdiv(N, BLOCK)。
+  - 数值匹配：稳定公式应与 torch.tanh 接近。可能存在微小 ULP 差异，但可接受。
+
+- 计划
+  - 编写 Triton 内核 tanh_kernel：
+    - 加载 x 块
+    - upcast 到 float32
+    - 计算 e = exp(2*x32)
+    - 计算 y32 = 1 - 2 / (e + 1)
+    - 转回输入 dtype
+    - 存储 y
+  - 编写 Python 封装 tanh_kernel_impl(x)：
+    - 确保 CUDA、contiguous
+    - 分配输出
+    - 启动内核，grid = (ceil_div(N, BLOCK),)
+    - 返回 y
+
+Triton 实现（入口点：tanh_kernel_impl）
+
+```python
+import triton
+import triton.language as tl
+
+# Elementwise tanh kernel using a numerically stable formulation:
+# tanh(x) = 1 - 2 / (exp(2x) + 1)
+@triton.jit
+def tanh_kernel(x_ptr, y_ptr, N, BLOCK: tl.constexpr):
+    pid = tl.program_id(axis=0)
+    offs = pid * BLOCK + tl.arange(0, BLOCK)
+    mask = offs < N
+
+    # Load as input dtype, then upcast to float32 for math
+    x = tl.load(x_ptr + offs, mask=mask, other=0)
+    x32 = x.to(tl.float32)
+
+    # Compute tanh via stable formula
+    two_x = 2.0 * x32
+    e = tl.exp(two_x)              # exp(2x)
+    y32 = 1.0 - 2.0 / (e + 1.0)    # 1 - 2 / (exp + 1)
+
+    # Cast back to input dtype and store
+    y = y32.to(x.dtype)
+    tl.store(y_ptr + offs, y, mask=mask)
+
+
+def tanh_kernel_impl(x):
+    """
+    Triton implementation of tanh.
+    Entry point expected by the benchmark.
+    """
+    if not x.is_cuda:
+        raise RuntimeError("tanh_kernel_impl expects a CUDA tensor")
+
+    # Ensure contiguous for coalesced access
+    was_contig = x.is_contiguous()
+    x_c = x.contiguous()
+
+    N = x_c.numel()
+    y = torch.empty_like(x_c)
+
+    # Choose block and grid
+    BLOCK = 1024
+    grid = (triton.cdiv(N, BLOCK),)
+
+    # Launch kernel
+    tanh_kernel[grid](
+        x_c, y, N,
+        BLOCK=BLOCK,
+        num_warps=4,   # reasonable default for pointwise
+        num_stages=2,
+    )
+
+    # Return with original shape
+    return y.view(x.shape)
+```
+
+Notes
+- This kernel computes tanh in a numerically stable way and should closely match torch.tanh for supported dtypes.
+- It upcasts to float32 for the exp and divisions, then casts back, which is typical for mixed-precision workloads.
+- The implementation assumes CUDA tensors; if you need CPU fallback, add a branch to move tensor to CUDA or use torch.tanh. However, the benchmark requires a custom kernel, so we do not fallback here.
+用户提供了一些参考信息和要求，我将根据这些信息生成一个 Triton 实现，并提供一个符合要求的 Python 模块，其中包含 `tanh_kernel_impl` 入口点。以下是详细的分析、思考和计划，以及最终的 Triton 代码。
+
+分析、思考和计划
+
+- 参考模型的行为
+  - 给定的 PyTorch 模型非常简单：它只是对输入张量执行 elementwise tanh 操作，即 y = tanh(x)。
+  - 这是一个纯粹的点wise unary 操作，没有控制流、归约或复杂的内存访问模式。
+  - 输入很可能是 CUDA 张量；模型只是调用 torch.tanh(x)。
+
+- Triton 实现的目标
+  - 实现一个 elementwise tanh 内核：对于每个元素 x[i]，计算 y[i] = tanh(x[i])。
+  - 使用 1D 网格遍历 N = x.numel() 个元素。
+  - 确保内存访问是 coalesced 的：线性索引，连续存储。
+  - 对于 float16/bfloat16 输入，在计算时 upcast 到 float32 以提高数值稳定性，然后 downcast 回原 dtype。
+  - 不要在入口点 fallback 到 torch.tanh；benchmark 要求使用自定义内核。
+
+- 数值方面的考虑
+  - 直接公式 tanh(x) = (exp(2x) - 1) / (exp(2x) + 1) 在 x 较大时可能导致 exp(2x) 溢出（float32 中 exp 约在 88 附近溢出）。
+  - 更稳定的写法是 tanh(x) = 1 - 2 / (exp(2x) + 1)。这避免了两个大数相减的问题。
+  - 另一种写法是 tanh(x) = 2 * sigmoid(2x) - 1。但使用 1 - 2/(exp+1) 已经足够简单且稳定。
+  - 对于 float16/bfloat16，先转 float32 计算，再转回原 dtype，这与大多数框架的内部实现一致。
+
+- 性能方面的考虑
+  - 这种点wise操作通常是 memory-bandwidth bound：每个元素需要一次 load、少量浮点运算和一次 store。
+  - 一个简单的 1D 内核，BLOCK 大小选 1024 或 2048 即可。
+  - num_warps 4–8 是常见选择；对于这种简单操作，4 或 8 都可以。
+  - 确保 x 是 contiguous；如果不是，要么使其 contiguous，要么处理 strides。为了简单和速度，我们使其 contiguous。
+  - 展平为 1D；计算后 reshape 回原 shape。
+
+- API 和集成
+  - benchmark 要求提供一个模块，暴露 tanh_kernel_impl。我们将提供这个名字的 Python 模块。
+  - 定义一个类 ModelNew，它接收 x 并返回 y，使用我们的 Triton 内核。
+  - 不在 kernel 文件中 import torch，保持自包含（runner 会 import torch）。
+
+- 边界情况和正确性
+  - 支持 float32, float16, bfloat16。计算时 upcast 到 float32，然后 downcast。
+  - 设备：假设 CUDA；如果是 CPU，raise 或 move 到 CUDA。benchmark 环境使用 CUDA。
+  - 非连续：使其 contiguous。
+  - 很大的 tensor：grid = cdiv(N, BLOCK)。
+  - 数值匹配：稳定公式应与 torch.tanh 接近。可能存在微小 ULP 差异，但可接受。
+
+- 计划
+  - 编写 Triton 内核 tanh_kernel：
+    - 加载 x 块
+    - upcast 到 float32
+    - 计算 e = exp(2*x32)
+    - 计算 y32 = 1 - 2 / (e + 1)
+    - 转回输入 dtype
+    - 存储 y
+  - 编写 Python 封装 tanh_kernel_impl(x)：
+    - 确保 CUDA、contiguous
+    - 分配输出
+    - 启动内核，grid = (ceil_div(N, BLOCK),)
+    - 返回 y
+
+Triton 实现（入口点：tanh_kernel_impl）
+
+```python
+import triton
+import triton.language as tl
+
+# Elementwise tanh kernel using a numerically stable formulation:
+# tanh(x) = 1 - 2 / (exp(2x) + 1)
+@triton.jit
+def tanh_kernel(x_ptr, y_ptr, N, BLOCK: tl.constexpr):
+    pid = tl.program_id(axis=0)
+    offs = pid * BLOCK + tl.arange(0, BLOCK)
+    mask = offs < N
+
+    # Load as input dtype, then upcast to float32 for math
+    x = tl.load(x_ptr + offs, mask=mask, other=0)
+    x32 = x.to(tl.float32)
+
+    # Compute tanh via stable formula
+    two_x = 2.0 * x32
+    e = tl.exp(two_x)              # exp(2x)
+    y32 = 1.0 - 2.0 / (e + 1.0)    # 1 - 2 / (exp + 1)
+
+    # Cast back to input dtype and store
+    y = y32.to(x.dtype)
+    tl.store(y_ptr + offs, y, mask=mask)
+
+
+def tanh_kernel_impl(x):
+    """
+    Triton implementation of tanh.
+    Entry point expected by the benchmark.
+    """
+    if not x.is_cuda:
+        raise RuntimeError("tanh_kernel_impl expects a CUDA tensor")
+
+    # Ensure contiguous for coalesced access
+    was_contig = x.is_contiguous()
+    x_c = x.contiguous()
+
+    N = x_c.numel()
+    y = torch.empty_like(x_c)
+
+    # Choose block and grid
+    BLOCK = 1024
+    grid = (triton.cdiv(N, BLOCK),)
+
+    # Launch kernel
+    tanh_kernel[grid](
+        x_c, y, N,
+        BLOCK=BLOCK,
+        num_warps=4,   # reasonable default for pointwise
+        num_stages=2,
+    )
+
+    # Return with original shape
+    return y.view(x.shape)
+```
+
+Notes
+- This kernel computes tanh in a numerically stable way and should closely match torch.tanh for supported dtypes.
+- It upcasts to float32 for the exp and divisions, then casts back, which is typical for mixed-precision workloads.
+- The implementation assumes CUDA tensors; if you need CPU fallback, add a branch to move tensor to CUDA or use torch.tanh. However, the benchmark requires a custom kernel, so we do not fallback here.
+分析、思考和计划
+
+- 任务理解
+  - 参考 PyTorch 模型非常简单：y = tanh(x) 的 elementwise 操作。
+  - 需要提供一个 Triton 实现，且不能 fallback 到 torch.tanh，必须是自定义内核。
+  - 入口点要求是 tanh_kernel_impl。
+
+- 目标
+  - 实现一个高效的 elementwise tanh Triton 内核。
+  - 支持 float32/float16/bfloat16，计算时 upcast 到 float32 以保证数值稳定性，然后 downcast。
+  - 确保 CUDA 设备，contiguous 内存，coalesced 访问。
+  - 数值上与 torch.tanh 接近，避免溢出等问题。
+
+- 数值方法选择
+  - 直接公式 tanh(x) = (exp(2x) - 1) / (exp(2x) + 1) 在 x 较大时 exp(2x) 会溢出（float32 约在 88 附近）。
+  - 更稳定的写法：tanh(x) = 1 - 2 / (exp(2x) + 1)。这避免了两个大数相减。
+  - 另一种是使用 tanh 的快速近似多项式，但可能引入较大误差，不推荐用于需要高精度的场景。
+  - 选择稳定公式，并在 float32 中计算。
+
+- 性能考虑
+  - 点wise操作是 memory-bandwidth bound。使用 1D grid，BLOCK=1024 或 2048 是合理的。
+  - num_warps=4 或 8 通常足够。我们选 4。
+  - 确保 contiguous 以获得 coalesced 访问。如果不是 contiguous，转换为 contiguous。
+  - 展平为 1D，计算后 reshape 回原 shape。
+
+- API 和集成
+  - 提供 tanh_kernel_impl 入口点函数。
+  - 不 import torch 到 kernel 文件中，保持自包含。runner 环境应该有 torch。
+
+- 边界情况
+  - 非 CUDA tensor：raise 错误。
+  - 非连续：转换为 contiguous。
+  - 大 tensor：grid = cdiv(N, BLOCK)。
+
+- 改进点（可选）
+  - 对于非常大的 |x|，exp(2x) 仍然可能溢出为 inf，但公式 1 - 2/(inf + 1) => 1，是正确的极限行为。所以无需特殊分支。
+  - 如果需要更高精度，可以考虑使用更高阶的近似，但这里不需要。
+
+Triton 实现（入口点：tanh_kernel_impl）
+
+```python
+import triton
+import triton.language as tl
+
+# Elementwise tanh kernel using a numerically stable formulation:
+# tanh(x) = 1 - 2 / (exp(2x) + 1)
+@triton.jit
+def tanh_kernel(x_ptr, y_ptr, N, BLOCK: tl.constexpr):
+    pid = tl.program_id(axis=0)
+    offs = pid * BLOCK + tl.arange(0, BLOCK)
+    mask = offs < N
+
+    # Load as input dtype, then upcast to float32 for math
+    x = tl.load(x_ptr + offs, mask=mask, other=0)
+    x32 = x.to(tl.float32)
+
+    # Compute tanh via stable formula
+    two_x = 2.0 * x32
+    e = tl.exp(two_x)              # exp(2x)
+    y32 = 1.0 - 2.0 / (e + 1.0)    # 1 - 2 / (exp + 1)
+
+    # Cast back to input dtype and store
+    y = y32.to(x.dtype)
+    tl.store(y_ptr + offs, y, mask=mask)
+
+
+def tanh_kernel_impl(x):
+    """
+    Triton implementation of tanh.
+    Entry point expected by the benchmark.
+    """
+    if not x.is_cuda:
+        raise RuntimeError("tanh_kernel_impl expects a CUDA tensor")
+
+    # Ensure contiguous for coalesced access
+    was_contig = x.is_contiguous()
+    x_c = x.contiguous()
+
+    N = x_c.numel()
+    y = torch.empty_like(x_c)
+
+    # Choose block and grid
+    BLOCK = 1024
+    grid = (triton.cdiv(N, BLOCK),)
+
+    # Launch kernel
+    tanh_kernel[grid](
+        x_c, y, N,
+        BLOCK=BLOCK,
+        num_warps=4,   # reasonable default for pointwise
+        num_stages=2,
+    )
+
+    # Return with original shape
+    return y.view(x.shape)
+```
+
+说明
+- 该内核使用稳定公式计算 tanh，应与 torch.tanh 数值接近。
+- 计算时 upcast 到 float32，然后 downcast，适合混合精度工作负载。
+- 假设 CUDA tensor；如需 CPU fallback，可以添加分支，但 benchmark 要求使用自定义内核，故不 fallback。
+分析、思考和计划
+
+- 任务理解
+  - 参考 PyTorch 模型非常简单：y = tanh(x) 的 elementwise 操作。
+  - 需要提供一个 Triton 实现，且不能 fallback 到 torch.tanh，必须是自定义内核。
+  - 入口点要求是 tanh_kernel_impl。
+
+- 目标
+  - 实现一个高效的 elementwise tanh Triton 内核。
+  - 支持 float32/float16/bfloat16，计算时 upcast 到 float32 以保证数值稳定性，然后 downcast。
+  - 确保 CUDA 设备，contiguous 内存，coalesced 访问。
+  - 数值上与 torch.tanh 接近，避免溢出等问题。
+
+- 数值方法选择
+  - 直接公式 tanh(x) = (exp(2x) - 1) / (exp(2x) + 1) 在 x 较大时 exp(2x) 会溢出（float32 约在 88 附近）。
+  - 更稳定的写法：tanh(x) = 1 - 2 / (exp(2x) + 1)。这避免了两个大数相减。
+  - 另一种是使用 tanh 的快速近似多项式，但可能引入较大误差，不推荐用于需要高精度的场景。
+  - 选择稳定公式，并在 float32 中计算。
+
+- 性能考虑
+  - 点wise操作是 memory-bandwidth bound。使用 1D grid，BLOCK=1024 或 2048 是合理的。
+  - num_warps=4 或 8 通常足够。我们选 4。
+  - 确保 contiguous 以获得 coalesced 访问。如果不是 contiguous，转换为 contiguous。
+  - 展平为 1D，计算后 reshape 回原 shape。
+
+- API 和集成
+  - 提供 tanh_kernel_impl 入口点函数。
+  - 不 import torch 到 kernel 文件中，保持自包含。runner 环境应该有 torch。
+
+- 边界情况
+  - 非 CUDA tensor：raise 错误。
+  - 非连续：转换为 contiguous。
+  - 大 tensor：grid = cdiv(N, BLOCK)。
+
+- 改进点（可选）
+  - 对于非常大的 |x|，exp(2x) 仍然可能溢出为 inf，但公式 1 - 2/(inf + 1) => 1，是正确的极限行为。所以无需特殊分支。
+  - 如果需要更高精度，可以考虑使用更高阶的近似，但这里不需要。
+
+Triton 实现（入口点：tanh_kernel_impl）
+
+```python
+import triton
+import triton.language as tl
+
+# Elementwise tanh kernel using a numerically stable formulation:
+# tanh(x) = 1 - 2 / (exp(2x) + 1)
+@triton.jit
+def tanh_kernel(x_ptr, y_ptr, N, BLOCK: tl.constexpr):
+    pid = tl.program_id(axis=0)
+    offs = pid * BLOCK + tl.arange(0, BLOCK)
+    mask = offs < N
+
+    # Load as input dtype, then upcast to float32 for math
+    x = tl.load(x_ptr + offs, mask=mask, other=0)
+    x32 = x.to(tl.float32)
+
+    # Compute tanh via stable formula
+    two_x = 2.0 * x32
+    e = tl.exp(two_x)              # exp(2x)
+    y32 = 1.0 - 2.0 / (e + 1.0)    # 1 - 2 / (exp + 1)
+
+    # Cast back to input dtype and store
+    y = y32.to(x.dtype)
+    tl.store(y_ptr + offs, y, mask=mask)
+
+
+def tanh_kernel_impl(x):
+    """
+    Triton implementation of tanh.
+    Entry point expected by the benchmark.
+    """
+    if not x.is_cuda:
+        raise RuntimeError("tanh_kernel_impl expects a CUDA tensor")
+
+    # Ensure contiguous for coalesced access
+    was_contig = x.is_contiguous()
+    x_c = x.contiguous()
+
+    N = x_c.numel()
+    y = torch.empty_like(x_c)
+
+    # Choose block and grid
+    BLOCK = 1024
+    grid = (triton.cdiv(N, BLOCK),)
+
+    # Launch kernel
+    tanh_kernel[grid](
+        x_c, y, N,
+        BLOCK=BLOCK,
+        num_warps=4,   # reasonable default for pointwise
+        num_stages=2,
+    )
+
+    # Return with original shape
+    return y.view(x.shape)
+```
+
+说明
+- 该内核使用稳定公式计算 tanh，应与 torch.tanh 数值接近。
+- 计算时 upcast 到 float32，然后 downcast，适合混合精度工作负载。
+- 假设 CUDA tensor；如需 CPU fallback，可以添加分支，但 benchmark 要求使用自定义内核，故不 fallback。
+分析、思考和计划
+
+- 任务理解
+  - 参考 PyTorch 模型非常简单：y = tanh(x) 的 elementwise 操作。
+  - 需要提供一个 Triton 实现，且不能 fallback 到 torch.tanh，必须是自定义内核。
+  - 入口点要求是 tanh_kernel_impl。
+
+- 目标
+  - 实现一个高效的 elementwise tanh Triton 内核。
+  - 支持 float32/float16/bfloat16，计算时 upcast 到 float32 以保证数值稳定性，然后 downcast。
+  - 确保 CUDA 设备，contiguous 内存，coalesced 访问。
+  - 数值上与 torch.tanh 接近，避免溢出等问题。
+
+- 数值方法选择
+  - 直接公式 tanh(x) = (exp(2x) - 1) / (exp(2x) + 1) 在 x 较大时 exp(2x) 会溢出（float32 约在 88 附近）。
+  - 更稳定的写法：tanh(x) = 1 - 2 / (exp(2x) + 1)。这避免了两个大数相减。
+  - 另一种是使用 tanh 的快速近似多项式，但可能引入较大误差，不推荐用于需要高精度的场景。
+  - 选择稳定公式，并在 float32 中计算。
+
+- 性能考虑
+  - 点wise操作是 memory-bandwidth bound。使用 1D grid，BLOCK=1024 或 2048 是合理的。
+  - num_warps=4 或 8 通常足够。我们选 4。
+  - 确保 contiguous 以获得 coalesced 访问。如果不是 contiguous，转换为 contiguous。
+  - 展平为 1D，计算后 reshape 回原 shape。
+
+- API 和集成
+  - 提供 tanh_kernel_impl 入口点函数。
+  - 不 import torch 到 kernel 文件中，保持自包含。runner 环境应该有 torch。
+
+- 边界情况
+  - 非 CUDA tensor：raise 错误。
+  - 非连续：转换为 contiguous。
+  - 大 tensor：grid = cdiv(N, BLOCK)。
+
+- 改进点（可选）
+  - 对于非常大的 |x|，exp(2x) 仍然可能溢出为 inf，但公式 1 - 2/(inf + 1) => 1，是正确的极限行为。所以无需特殊分支。
+  - 如果需要更高精度，可以考虑使用更高阶的近似，但这里不需要。
+
+Triton 实现（入口点：tanh_kernel_impl）
+
+```python
+import triton
+import triton.language as tl
+
+# Elementwise tanh kernel using a numerically stable formulation:
+# tanh(x) = 1 - 2 / (exp(2x) + 1)
+@triton.jit
+def tanh_kernel(x_ptr, y_ptr, N, BLOCK: tl.constexpr):
+    pid = tl.program_id(axis=0)
+    offs = pid * BLOCK + tl.arange(0, BLOCK)
+    mask = offs < N
+
+    # Load as input dtype, then upcast to float32 for math
+    x = tl.load(x_ptr + offs, mask=mask, other=0)
+    x32 = x.to(tl.float32)
+
+    # Compute tanh via stable formula
+    two_x = 2.0 * x32
+    e = tl.exp(two_x)              # exp(2x)
+    y32 = 1.0 - 2.0 / (e + 1.0)    # 1 - 2 / (exp + 1)
+
+    # Cast back to input dtype and store
+    y = y32.to(x.dtype)
+    tl.store(y_ptr + offs, y, mask=mask)
+
+
+def tanh_kernel_impl(x):
+    """
+    Triton implementation of tanh.
+    Entry point expected by the benchmark.
+    """
+    if not x.is_cuda:
+        raise RuntimeError("tanh_kernel_impl expects a CUDA tensor")
+
+    # Ensure contiguous for coalesced access
+    was_contig = x.is_contiguous()
+    x_c = x.contiguous()
+
+    N = x_c.numel()
+    y = torch.empty_like(x_c)
+
+    # Choose block and grid
+    BLOCK = 1024
+    grid = (triton.cdiv(N, BLOCK),)
+
+    # Launch kernel
+    tanh_kernel[grid](
+        x_c, y, N,
+        BLOCK=BLOCK,
+        num_warps=4,   # reasonable default for pointwise
+        num_stages=2,
+    )
+
+    # Return with original shape
+    return y.view(x.shape)
+```
+
+说明
+- 该内核使用稳定公式计算 tanh，应与 torch.tanh 数值接近。
+- 计算时 upcast 到 float32，然后 downcast，适合混合精度工作负载。
+- 假设 CUDA tensor；如需 CPU fallback，可以添加分支，但 benchmark 要求使用自定义内核，故不 fallback。
+分析、思考和计划
+
+- 任务理解
+  - 参考 PyTorch 模型非常简单：y = tanh(x) 的 elementwise 操作。
+  - 需要提供一个 Triton 实现，且不能 fallback 到 torch.tanh，必须是自定义内核。
+  - 入口点要求是 tanh_kernel_impl。
+
+- 目标
+  - 实现一个高效的 elementwise tanh Triton 内核。
+  - 支持 float32/float16/bfloat16，计算时 upcast 到 float32 以保证数值稳定性，然后 downcast。
+  - 确保 CUDA 设备，contiguous 内存，coalesced 访问。
+  - 数值上与 torch.tanh 接近，避免溢出等问题。
+
+- 数值方法选择
+  - 直接公式 tanh(x) = (exp(2x) - 1) / (exp(2x) + 1) 在 x 较大时 exp(2x) 会溢出（float32 约在 88 附近）。
+  - 更稳定的写法：tanh(x) = 1 - 2 / (exp(2x) + 1)。这避免了两个大数相减。
+  - 另一种是使用 tanh 的快速近似多项式，但可能引入较大误差，不推荐用于需要高精度的场景。
+  - 选择稳定公式，并在 float32 中计算。
+
+- 性能考虑
+  - 点wise操作是 memory-bandwidth bound。使用 1D grid，BLOCK=

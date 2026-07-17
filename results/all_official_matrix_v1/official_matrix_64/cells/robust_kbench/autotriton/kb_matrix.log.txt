@@ -1,0 +1,25 @@
+$ bash /home/bi_geum/official_matrix_64/run_ext_rtx6000.sh matrix --benchmark robust_kbench --agent autotriton --rounds 1 --repeat 1 --temp 0.2 --timeout 900 --limit 1
+cwd=/home/bi_geum/official_matrix_64
+returncode=0
+wall_s=7.758188
+----- STDOUT -----
+
+==========================================
+matrix run: 99 runnable cells before filtering
+==========================================
+
+==========================================
+cell 1: autotriton x robust_kbench
+==========================================
+[cell] RUN autotriton x robust_kbench  (eval=kb_instrumented fmt=kb_model)  -> runs/autotriton_autotriton8b_robust_kbench_l12_round1_repeat1_temp0.2
+[cell] 1 tasks x 1 repeats
+[cell]   1_Square_matrix_multiplication_ rep0 done (gen 3s)
+[cell] finished autotriton_autotriton8b_robust_kbench_l12_round1_repeat1_temp0.2
+
+==========================================
+done: 1 cell(s) ran, 98 filtered out
+==========================================
+next: python3 /home/bi_geum/official_matrix_64/unified_bench_ext/collect_matrix.py   # aggregate runs/ -> results/matrix/
+
+----- STDERR -----
+

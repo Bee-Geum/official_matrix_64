@@ -1,0 +1,9 @@
+operator,total_tests,correctness_tests,performance_tests,passed_correctness_tests,passed_performance_tests,failed_correctness_tests,failed_performance_tests,correctness_rate,avg_speedup,geomean_speedup,max_absolute_error,max_relative_error
+bmm.default,8,1,0,1,0,0,0,1.0,0.0,0.0,0.0,0.0
+mm.default,8,5,0,5,0,0,0,1.0,0.0,0.0,0.0,0.0
+relu.default,8,4,0,4,0,0,0,1.0,0.0,0.0,0.0,0.0
+gelu.default,8,8,0,8,0,0,0,1.0,0.0,0.0,0.015625,0.09848485141992569
+tanh.default,8,1,0,1,0,0,0,1.0,0.0,0.0,0.0,0.0
+sigmoid.default,8,3,0,3,0,0,0,1.0,0.0,0.0,0.0,0.0
+mean.default,8,4,0,4,0,0,0,1.0,0.0,0.0,0.0,0.0
+sum.default,8,4,0,4,0,0,0,1.0,0.0,0.0,0.0,0.0

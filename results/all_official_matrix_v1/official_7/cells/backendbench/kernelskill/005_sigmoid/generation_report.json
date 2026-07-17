@@ -1,0 +1,24 @@
+{
+  "agent": "kernelskill",
+  "driver": "/home/bi_geum/official_matrix_64/drivers/kernelskill_live_driver.py",
+  "cmd": [
+    "/home/bi_geum/official_matrix_64/.venv/bin/python3",
+    "/home/bi_geum/official_matrix_64/drivers/kernelskill_live_driver.py",
+    "--task",
+    "/home/bi_geum/official_matrix_64/results/all_official_matrix_v1/official_7/cells/backendbench/kernelskill/005_sigmoid/official_prompt.txt",
+    "--out",
+    "/home/bi_geum/official_matrix_64/results/all_official_matrix_v1/official_7/cells/backendbench/kernelskill/005_sigmoid/candidates",
+    "--rounds",
+    "1",
+    "--seed",
+    "0",
+    "--temperature",
+    "0.2"
+  ],
+  "returncode": 1,
+  "wall_s": 13.915342807769775,
+  "log": "/home/bi_geum/official_matrix_64/results/all_official_matrix_v1/official_7/cells/backendbench/kernelskill/005_sigmoid/generation.log.txt",
+  "candidate_count": 0,
+  "raw_candidates": [],
+  "normalized_candidates": []
+}

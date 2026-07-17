@@ -9,3 +9,23 @@ results/repro/_extdir_*/
 **/*.so
 # scratch
 *.tmp
+
+# virtualenvs (machine-local, ~21GB)
+.venv/
+.venv_drkernel/
+# claude code local settings / worktrees
+.claude/
+# timestamped official backups
+*.bak_*
+*.bak_official_*
+# local service env + profiler scratch
+third_party/KernelGYM/.env
+**/ncu_temp_*
+**/nsys_temp_*
+**/*.nsys-rep
+**/_scratch/
+# secrets
+*token*.txt
+
+# embedded training-framework clone (own .git)
+third_party/KernelGYM/drkernel/verl/

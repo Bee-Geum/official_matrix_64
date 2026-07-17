@@ -1,0 +1,11 @@
+$ /home/bi_geum/official_matrix_64/.venv/bin/python3 /home/bi_geum/official_matrix_64/drivers/kernelllm_live_driver.py --task /home/bi_geum/official_matrix_64/results/all_official_matrix_v1/official_7/cells/tritonbench_t/kernelllm/000_Adam/official_prompt.txt --out /home/bi_geum/official_matrix_64/results/all_official_matrix_v1/official_7/cells/tritonbench_t/kernelllm/000_Adam/candidates --rounds 1 --seed 0 --temperature 0.2
+cwd=/home/bi_geum/official_matrix_64
+returncode=0
+wall_s=19.604342
+----- STDOUT -----
+[kernelllm] LIVE model kernelllm8b @ http://127.0.0.1:8002/v1
+[round 0] wrote round0_kernel.py (ModelNew present: False, 5770 chars)
+[kernelllm] wrote 1 kernel(s) to /home/bi_geum/official_matrix_64/results/all_official_matrix_v1/official_7/cells/tritonbench_t/kernelllm/000_Adam/candidates
+
+----- STDERR -----
+

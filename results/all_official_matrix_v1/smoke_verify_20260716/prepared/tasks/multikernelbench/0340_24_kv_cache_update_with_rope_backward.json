@@ -1,0 +1,8 @@
+{
+  "benchmark": "multikernelbench",
+  "task_id": "24_kv_cache_update_with_rope_backward",
+  "op": "24_kv_cache_update_with_rope_backward",
+  "official_task": true,
+  "prompt_path": "",
+  "prompt": "Benchmark: multikernelbench\nOfficial task: 24_kv_cache_update_with_rope_backward\nReturn only source code, without Markdown fences or explanations.\n\nGenerate a kernel response for the exact MultiKernelBench operator '24_kv_cache_update_with_rope_backward'. Use CUDA C++ or Triton and do not replace the computation with eager PyTorch.\n\nMultiKernelBench operator: 24_kv_cache_update_with_rope_backward\nOfficial dataset entry: {'category': 'npukernelbench_level2', 'source': 'NPUKernelBench'}\n"
+}

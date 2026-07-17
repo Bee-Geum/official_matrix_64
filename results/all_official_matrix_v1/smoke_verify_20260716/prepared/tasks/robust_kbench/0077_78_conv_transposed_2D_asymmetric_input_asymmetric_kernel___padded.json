@@ -1,0 +1,6 @@
+{
+  "benchmark": "robust_kbench",
+  "task_id": "78_conv_transposed_2D_asymmetric_input_asymmetric_kernel___padded__",
+  "source_path": "/home/bi_geum/official_matrix_64/third_party/KernelBench/KernelBench/level1/78_conv_transposed_2D_asymmetric_input_asymmetric_kernel___padded__.py",
+  "official_task": true
+}

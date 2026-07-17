@@ -1,0 +1,19 @@
+{
+  "benchmark": "backendbench",
+  "task_id": "sub",
+  "official_task": 1,
+  "generation_ok": 0,
+  "candidate_count": 0,
+  "official_attempted": 0,
+  "official_eval": 0,
+  "correct": 0,
+  "performance_available": 0,
+  "best_score": 0.0,
+  "infrastructure_error": "no candidate was evaluated",
+  "candidate_error": "",
+  "generation_log": "/home/bi_geum/official_matrix_64/results/all_official_matrix_v1/official_7/cells/backendbench/kernelskill/002_sub/generation.log.txt",
+  "official_reports": [],
+  "agent": "kernelskill",
+  "cell_dir": "/home/bi_geum/official_matrix_64/results/all_official_matrix_v1/official_7/cells/backendbench/kernelskill",
+  "task_dir": "/home/bi_geum/official_matrix_64/results/all_official_matrix_v1/official_7/cells/backendbench/kernelskill/002_sub"
+}

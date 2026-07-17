@@ -1,0 +1,6 @@
+{
+  "benchmark": "robust_kbench",
+  "task_id": "56_Matmul_Sigmoid_Sum",
+  "source_path": "/home/bi_geum/official_matrix_64/third_party/KernelBench/KernelBench/level2/56_Matmul_Sigmoid_Sum.py",
+  "official_task": true
+}

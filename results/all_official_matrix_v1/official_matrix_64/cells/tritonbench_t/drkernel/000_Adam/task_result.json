@@ -1,0 +1,19 @@
+{
+  "benchmark": "tritonbench_t",
+  "task_id": "Adam",
+  "official_task": 1,
+  "generation_ok": 1,
+  "candidate_count": 1,
+  "official_attempted": 1,
+  "official_eval": 1,
+  "correct": 1,
+  "performance_available": 1,
+  "best_score": 0.9,
+  "infrastructure_error": "",
+  "candidate_error": "",
+  "generation_log": "/home/bi_geum/official_matrix_64/results/all_official_matrix_v1/official_matrix_64/cells/tritonbench_t/drkernel/000_Adam/generation.log.txt",
+  "official_reports": [],
+  "agent": "drkernel",
+  "cell_dir": "/home/bi_geum/official_matrix_64/results/all_official_matrix_v1/official_matrix_64/cells/tritonbench_t/drkernel",
+  "task_dir": "/home/bi_geum/official_matrix_64/results/all_official_matrix_v1/official_matrix_64/cells/tritonbench_t/drkernel/000_Adam"
+}

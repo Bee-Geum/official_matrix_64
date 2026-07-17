@@ -1,0 +1,10 @@
+$ /home/bi_geum/official_matrix_64/.venv/bin/python3 /home/bi_geum/official_matrix_64/drivers/incoder32b_live_driver.py --task /home/bi_geum/official_matrix_64/results/all_official_matrix_v1/official_7/cells/backendbench/incoder32b/006_tanh/official_prompt.txt --out /home/bi_geum/official_matrix_64/results/all_official_matrix_v1/official_7/cells/backendbench/incoder32b/006_tanh/candidates --rounds 1 --seed 0 --temperature 0.2
+cwd=/home/bi_geum/official_matrix_64
+returncode=0
+wall_s=18.356905
+----- STDOUT -----
+[incoder32b] LIVE model incoder32b @ http://127.0.0.1:8003/v1
+[incoder32b] round 0: wrote candidate_0000.py (ModelNew present: True, 1505 chars)
+
+----- STDERR -----
+

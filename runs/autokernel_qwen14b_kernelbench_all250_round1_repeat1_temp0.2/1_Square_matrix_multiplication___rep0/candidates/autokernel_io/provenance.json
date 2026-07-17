@@ -1,0 +1,18 @@
+{
+  "agent": "autokernel",
+  "mode": "live_upstream_loop",
+  "upstream_repo": "/home/bi_geum/official_matrix_64/third_party/autokernel",
+  "playbook": "/home/bi_geum/official_matrix_64/third_party/autokernel/kernelbench/program_kb.md",
+  "evaluator": "/home/bi_geum/official_matrix_64/third_party/autokernel/kernelbench/bench_kb.py",
+  "loop_driver": "/home/bi_geum/official_matrix_64/drivers/autokernel_qwen_loop.py",
+  "backend": "cuda",
+  "iters": 1,
+  "loop_rc": 0,
+  "history": [
+    {
+      "iter": 0,
+      "correct": true,
+      "speedup": 0.10276463674118284
+    }
+  ]
+}

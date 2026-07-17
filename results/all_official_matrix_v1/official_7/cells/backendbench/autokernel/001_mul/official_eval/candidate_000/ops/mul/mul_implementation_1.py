@@ -1,0 +1,24 @@
+import types
+_CANDIDATE_CODE = '"""\nKernelBench Problem L1_P000: official prompt\nLevel: 1 | Problem ID: 0\nOperations: unknown\nDifficulty: unknown\n\nSource: ScalingIntelligence/KernelBench\nOptimized with AutoKernel (https://github.com/RightNow-AI/autokernel)\n\nThe agent optimizes ModelNew to outperform the PyTorch reference (Model).\nEdit ModelNew.forward() -- use CUDA C++ via compile_cuda() or Triton @jit.\nRun `uv run kernelbench/bench_kb.py` to evaluate correctness + speedup.\n"""\n\nKERNELBENCH_PROBLEM = {\n    "level": 1,\n    "problem_id": 0,\n    "name": \'official prompt\',\n}\n\nimport torch\nimport torch.nn as nn\nimport torch.nn.functional as F\n\n\n# Optional: use AutoKernel\'s CUDA compilation utility for custom CUDA C++ kernels\n# from kernels.cuda._compile import compile_cuda\n#\n# CUDA_SRC = r"""\n# #include <torch/extension.h>\n# #include <cuda_runtime.h>\n# #include <cuda_fp16.h>\n#\n# __global__ void my_kernel(const float* input, float* output, int N) {\n#     int idx = blockIdx.x * blockDim.x + threadIdx.x;\n#     if (idx < N) output[idx] = input[idx];\n# }\n#\n# torch::Tensor my_op_cuda(torch::Tensor input) {\n#     auto output = torch::empty_like(input);\n#     int N = input.numel();\n#     my_kernel<<<(N+255)/256, 256>>>(input.data_ptr<float>(), output.data_ptr<float>(), N);\n#     return output;\n# }\n# """\n# _mod = None\n# def _get_mod():\n#     global _mod\n#     if _mod is None:\n#         _mod = compile_cuda(CUDA_SRC, "my_op_cuda")\n#     return _mod\n\n# ============================================================================\n# Reference implementation (DO NOT MODIFY below this line)\n# ============================================================================\n\nBenchmark: tritonbench_t\nOfficial task: Adam\nReturn only source code, without Markdown fences or explanations.\n\nImplement the official TritonBench task as a Python module and preserve its public interface.\n\n\ndef Adam(params, lr=0.001, betas=(0.9, 0.999), eps=1e-08, weight_decay=0):\n    return torch.optim.Adam(params, lr=lr, betas=betas, eps=eps, weight_decay=weight_decay)\n\n##################################################################################################################################################\n\n\n\n# def Adam(params, lr=0.001, betas=(0.9, 0.999), eps=1e-08, weight_decay=0):\n#     return torch.optim.Adam(params, lr=lr, betas=betas, eps=eps, weight_decay=weight_decay)\n\ndef test_Adam():\n    results = {}\n\n    # Test Case 1: Default parameters\n    params1 = [torch.randn(2, 2, device=\'cuda\', requires_grad=True)]\n    optimizer1 = Adam(params1)\n    results["test_case_1"] = optimizer1.defaults\n\n    # Test Case 2: Custom learning rate\n    params2 = [torch.randn(2, 2, device=\'cuda\', requires_grad=True)]\n    optimizer2 = Adam(params2, lr=0.01)\n    results["test_case_2"] = optimizer2.defaults\n\n    # Test Case 3: Custom betas\n    params3 = [torch.randn(2, 2, device=\'cuda\', requires_grad=True)]\n    optimizer3 = Adam(params3, betas=(0.85, 0.95))\n    results["test_case_3"] = optimizer3.defaults\n\n    # Test Case 4: Custom weight decay\n    params4 = [torch.randn(2, 2, device=\'cuda\', requires_grad=True)]\n    optimizer4 = Adam(params4, weight_decay=0.01)\n    results["test_case_4"] = optimizer4.defaults\n\n    return results\n\ntest_results = test_Adam()\n\n# ============================================================================\n# Optimized implementation (EDIT THIS)\n# ============================================================================\n\n# ModelNew must produce outputs matching Model within atol=1e-2, rtol=1e-2.\n# Start by copying Model\'s logic, then optimize with CUDA C++ or Triton.\n\nclass ModelNew(nn.Module):\n    """Optimized version -- replace forward() internals with custom kernels."""\n\n    def __init__(self, *args, **kwargs):\n        super().__init__()\n        self._ref = Model(*args, **kwargs)\n\n    def forward(self, *args, **kwargs):\n        # TODO: Replace with optimized implementation\n        return self._ref(*args, **kwargs)\n'
+_candidate = types.ModuleType('_official_agent_candidate')
+_candidate_error = None
+try:
+    exec(compile(_CANDIDATE_CODE, '<agent_candidate>', 'exec'), _candidate.__dict__)
+except Exception as exc:
+    _candidate_error = exc
+
+def _call_candidate(*args, **kwargs):
+    if _candidate_error is not None:
+        raise RuntimeError('candidate import failed') from _candidate_error
+    for name in ['mul_kernel_impl', 'mul', 'kernel', 'run', 'forward', 'solution', 'call']:
+        fn = getattr(_candidate, name, None)
+        if callable(fn):
+            return fn(*args, **kwargs)
+    cls = getattr(_candidate, 'ModelNew', None)
+    if cls is not None:
+        module = cls()
+        return module(*args, **kwargs)
+    raise RuntimeError('candidate exposes no supported callable')
+
+def mul_kernel_impl(*args, **kwargs):
+    return _call_candidate(*args, **kwargs)

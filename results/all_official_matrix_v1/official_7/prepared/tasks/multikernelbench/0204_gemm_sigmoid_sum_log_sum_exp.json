@@ -1,0 +1,8 @@
+{
+  "benchmark": "multikernelbench",
+  "task_id": "gemm_sigmoid_sum_log_sum_exp",
+  "op": "gemm_sigmoid_sum_log_sum_exp",
+  "official_task": true,
+  "prompt_path": "/home/bi_geum/official_matrix_64/third_party/MultiKernelBench/reference/fuse/gemm_sigmoid_sum_log_sum_exp.py",
+  "prompt": "Benchmark: multikernelbench\nOfficial task: gemm_sigmoid_sum_log_sum_exp\nReturn only source code, without Markdown fences or explanations.\n\nGenerate a kernel response for the exact MultiKernelBench operator 'gemm_sigmoid_sum_log_sum_exp'. Use CUDA C++ or Triton and do not replace the computation with eager PyTorch.\n\nimport torch\nimport torch.nn as nn\n\nclass Model(nn.Module):\n    \"\"\"\n    Model that performs a matrix multiplication (Gemm), applies Sigmoid,\n    another Gemm, and computes LogSumExp over features.\n    \"\"\"\n    def __init__(self, input_size, hidden_size, output_size):\n        super(Model, self).__init__()\n        self.linear1 = nn.Linear(input_size, hidden_size)\n        self.linear2 = nn.Linear(hidden_size, output_size)\n\n    def forward(self, x):\n        x = self.linear1(x)\n        x = torch.sigmoid(x)\n        x = self.linear2(x)\n        x = torch.logsumexp(x, dim=1)  # compute LogSumExp over features per sample\n        return x\n\nbatch_size = 16384\ninput_size = 2048\nhidden_size = 4096\noutput_size = 1024\n\ndef get_inputs():\n    return [torch.rand(batch_size, input_size)]\n\ndef get_init_inputs():\n    return [input_size, hidden_size, output_size]\n"
+}

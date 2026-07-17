@@ -1,0 +1,6 @@
+{
+  "benchmark": "kernelbench",
+  "task_id": "89_ConvTranspose3d_MaxPool_Softmax_Subtract_Swish_Max",
+  "source_path": "/home/bi_geum/official_matrix_64/third_party/KernelBench/KernelBench/level2/89_ConvTranspose3d_MaxPool_Softmax_Subtract_Swish_Max.py",
+  "official_task": true
+}

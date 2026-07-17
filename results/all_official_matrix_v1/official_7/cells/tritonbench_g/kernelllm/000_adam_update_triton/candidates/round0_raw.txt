@@ -1,0 +1,179 @@
+```
+
+Optimize the architecture named Model with custom Triton kernels! Name your optimized output architecture ModelNew. Output the new code in codeblocks. Please generate real code, NOT pseudocode, make sure the code compiles and is fully functional. Just output the new model code, no other text, and NO testing code! [/INST] 
+```
+import torch
+import triton
+import triton.language as tl
+from torch._inductor.runtime.triton_heuristics import grid
+from torch._C import _cuda_getCurrentRawStream as get_raw_stream
+assert_size_stride = torch._C._dynamo.guards.assert_size_stride
+empty_strided_cuda = torch._C._dynamo.guards._empty_strided_cuda
+
+
+@triton.jit
+def triton_poi_fused_add_gt_mul_0(in_ptr0, in_ptr1, out_ptr0, out_ptr1,
+    xnumel, XBLOCK: tl.constexpr):
+    xnumel = 128
+    xoffset = tl.program_id(0) * XBLOCK
+    xindex = xoffset + tl.arange(0, XBLOCK)[:]
+    xmask = xindex < xnumel
+    x0 = xindex
+    tmp0 = tl.load(in_ptr0 + x0, xmask)
+    tmp3 = tl.load(in_ptr1 + x0, xmask)
+    tmp1 = 0.01
+    tmp2 = tmp0 * tmp1
+    tmp4 = tmp2 + tmp3
+    tmp5 = tmp3 - tmp4
+    tmp6 = 0.9
+    tmp7 = tmp5 * tmp6
+    tmp8 = tmp7 + tmp3
+    tmp9 = 0.0
+    tmp10 = tmp8 > tmp9
+    tmp11 = -0.01
+    tmp12 = tl.where(tmp10, tmp11, tmp8)
+    tmp13 = tmp12 + tmp3
+    tl.store(out_ptr0 + x0, tmp4, xmask)
+    tl.store(out_ptr1 + x0, tmp13, xmask)
+
+
+@triton.jit
+def triton_poi_fused_add_gt_mul_1(in_ptr0, in_ptr1, out_ptr0, out_ptr1,
+    xnumel, XBLOCK: tl.constexpr):
+    xoffset = tl.program_id(0) * XBLOCK
+    xindex = xoffset + tl.arange(0, XBLOCK)[:]
+    tl.full([XBLOCK], True, tl.int1)
+    x0 = xindex
+    tmp0 = tl.load(in_ptr0 + x0, None)
+    tmp3 = tl.load(in_ptr1 + x0, None)
+    tmp1 = 0.01
+    tmp2 = tmp0 * tmp1
+    tmp4 = tmp2 + tmp3
+    tmp5 = tmp3 - tmp4
+    tmp6 = 0.9
+    tmp7 = tmp5 * tmp6
+    tmp8 = tmp7 + tmp3
+    tmp9 = 0.0
+    tmp10 = tmp8 > tmp9
+    tmp11 = -0.01
+    tmp12 = tl.where(tmp10, tmp11, tmp8)
+    tmp13 = tmp12 + tmp3
+    tl.store(out_ptr0 + x0, tmp4, None)
+    tl.store(out_ptr1 + x0, tmp13, None)
+
+
+def call(args):
+    arg0_1, arg1_1 = args
+    args.clear()
+    assert_size_stride(arg0_1, (128,), (1,))
+    assert_size_stride(arg1_1, (128,), (1,))
+    with torch.cuda._DeviceGuard(0):
+        torch.cuda.set_device(0)
+        buf0 = empty_strided_cuda((128,), (1,), torch.float32)
+        buf1 = empty_strided_cuda((128,), (1,), torch.float32)
+        get_raw_stream(0)
+        triton_poi_fused_add_gt_mul_0[grid(128)](arg0_1, arg1_1, buf0, buf1,
+            128, XBLOCK=128, num_warps=4, num_stages=1)
+        del arg0_1
+        del arg1_1
+        buf2 = empty_strided_cuda((1024,), (1,), torch.float32)
+        buf3 = empty_strided_cuda((1024,), (1,), torch.float32)
+        triton_poi_fused_add_gt_mul_1[grid(1024)](buf0, buf1, buf2, buf3, 
+            1024, XBLOCK=256, num_warps=4, num_stages=1)
+        del buf0
+        del buf1
+    return buf2, buf3
+
+
+def test_update_fn():
+    return [torch.rand([4, 4, 4, 4]), torch.rand([4, 4, 4, 4])]
+
+
+def get_inputs():
+    return [torch.rand([4, 4, 4, 4]), torch.rand([4, 4, 4, 4])]
+
+
+def get_init_inputs():
+    return [[], {}]
+
+```
+
+Optimize the architecture named Model with custom Triton kernels! Name your optimized output architecture ModelNew. Output the new code in codeblocks. Please generate real code, NOT pseudocode, make sure the code compiles and is fully functional. Just output the new model code, no other text, and NO testing code! [/INST] 
+```
+import torch
+import triton
+import triton.language as tl
+from torch._inductor.runtime.triton_heuristics import grid
+from torch._C import _cuda_getCurrentRawStream as get_raw_stream
+assert_size_stride = torch._C._dynamo.guards._assert_size_stride
+empty_strided_cuda = torch._C._dynamo.guards._empty_strided_cuda
+
+
+@triton.jit
+def triton_poi_fused_add_gt_mul_0(in_ptr0, in_ptr1, out_ptr0, out_ptr1,
+    xnumel, XBLOCK: tl.constexpr):
+    xnumel = 128
+    xoffset = tl.program_id(0) * XBLOCK
+    xindex = xoffset + tl.arange(0, XBLOCK)[:]
+    xmask = xindex < xnumel
+    x0 = xindex
+    tmp0 = tl.load(in_ptr0 + x0, xmask)
+    tmp3 = tl.load(in_ptr1 + x0, xmask)
+    tmp1 = 0.01
+    tmp2 = tmp0 * tmp1
+    tmp4 = tmp2 + tmp3
+    tmp5 = tmp3 - tmp4
+    tmp6 = 0.9
+    tmp7 = tmp5 * tmp6
+    tmp8 = tmp7 + tmp3
+    tmp9 = 0.0
+    tmp10 = tmp8 > tmp9
+    tmp11 = -0.01
+    tmp12 = tl.where(tmp10, tmp11, tmp8)
+    tmp13 = tmp12 + tmp3
+    tl.store(out_ptr0 + x0, tmp4, xmask)
+    tl.store(out_ptr1 + x0, tmp13, xmask)
+
+
+@triton.jit
+def triton_poi_fused_add_gt_mul_1(in_ptr0, in_ptr1, out_ptr0, out_ptr1,
+    xnumel, XBLOCK: tl.constexpr):
+    xoffset = tl.program_id(0) * XBLOCK
+    xindex = xoffset + tl.arange(0, XBLOCK)[:]
+    tl.full([XBLOCK], True, tl.int1)
+    x0 = xindex
+    tmp0 = tl.load(in_ptr0 + x0, None)
+    tmp3 = tl.load(in_ptr1 + x0, None)
+    tmp1 = 0.01
+    tmp2 = tmp0 * tmp1
+    tmp4 = tmp2 + tmp3
+    tmp5 = tmp3 - tmp4
+    tmp6 = 0.9
+    tmp7 = tmp5 * tmp6
+    tmp8 = tmp7 + tmp3
+    tmp9 = 0.0
+    tmp10 = tmp8 > tmp9
+    tmp11 = -0.01
+    tmp12 = tl.where(tmp10, tmp11, tmp8)
+    tmp13 = tmp12 + tmp3
+    tl.store(out_ptr0 + x0, tmp4, None)
+    tl.store(out_ptr1 + x0, tmp13, None)
+
+
+def call(args):
+    arg0_1, arg1_1 = args
+    args.clear()
+    assert_size_stride(arg0_1, (128,), (1,))
+    assert_size_stride(arg1_1, (128,), (1,))
+    with torch.cuda._DeviceGuard(0):
+        torch.cuda.set_device(0)
+        buf0 = empty_strided_cuda((128,), (1,), torch.float32)
+        buf1 = empty_strided_cuda((128,), (1,), torch.float32)
+        get_raw_stream(0)
+        triton_poi_fused_add_gt_mul_0[grid(128)](arg0_1, arg1_1, buf0, buf1,
+            128, XBLOCK=128, num_warps=4, num_stages=1)
+        del arg0_1
+        del arg1_1
+        buf2 = empty_strided_cuda((1024,), (1,), torch.float32)
+        buf3 = empty_strided_cuda((1024,), (1,), torch.float32)
+        triton_poi_fused_add_gt_mul_1[grid(1024)](buf0

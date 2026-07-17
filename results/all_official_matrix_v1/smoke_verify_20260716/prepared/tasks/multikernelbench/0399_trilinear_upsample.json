@@ -1,0 +1,8 @@
+{
+  "benchmark": "multikernelbench",
+  "task_id": "trilinear_upsample",
+  "op": "trilinear_upsample",
+  "official_task": true,
+  "prompt_path": "/home/bi_geum/official_matrix_64/third_party/MultiKernelBench/reference/resize/trilinear_upsample.py",
+  "prompt": "Benchmark: multikernelbench\nOfficial task: trilinear_upsample\nReturn only source code, without Markdown fences or explanations.\n\nGenerate a kernel response for the exact MultiKernelBench operator 'trilinear_upsample'. Use CUDA C++ or Triton and do not replace the computation with eager PyTorch.\n\nimport torch\nimport torch.nn as nn\nimport torch.nn.functional as F\nclass Model(nn.Module):\n    def forward(self, x):\n        return F.interpolate(x, scale_factor=(2, 2, 2), mode='trilinear', align_corners=True)\n\ndef get_inputs():\n    x = torch.rand(2, 16, 32, 32, 32)\n    return [x]\n\ndef get_init_inputs():\n    return []"
+}

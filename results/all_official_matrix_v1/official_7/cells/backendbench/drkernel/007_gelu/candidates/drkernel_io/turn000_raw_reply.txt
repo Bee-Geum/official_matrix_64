@@ -1,0 +1,676 @@
+Analysis and plan
+
+- What the reference does
+  - The provided PyTorch model is extremely simple: it applies nn.GELU to the input tensor x and returns it. There is no other math or structure.
+  - nn.GELU by default uses the “exact” formulation based on the error function: gelu(x) = 0.5 * x * (1 + erf(x / sqrt(2))). Some libraries also offer the tanh approximation: 0.5 * x * (1 + tanh(√(2/π)(x + 0.044715 x^3))).
+  - The benchmark harness likely feeds float32 tensors and measures throughput.
+
+- What to optimize with Triton
+  - GELU is a purely elementwise map; it is memory-bandwidth bound for large tensors. The best we can do is:
+    - Fuse the math into a single pass over memory.
+    - Use vectorized loads/stores and coalesced access.
+    - Keep the kernel simple to maximize occupancy.
+  - The “exact” GELU requires an erf implementation. We can either:
+    - Use a high-quality polynomial approximation of erf (fast and accurate).
+    - Or use the tanh approximation which is faster and usually close enough for ML workloads.
+  - For numerical parity with PyTorch’s default exact GELU, the polynomial-erf route is safer. The tanh approximation is faster but will not bitwise-match.
+
+- Numerical considerations
+  - Dtypes: The input is likely float32. We can support float16/bfloat16 by upcasting to float32 for the math and downcasting on store. This improves accuracy without much cost.
+  - Stability: The exact formula is stable. The tanh approximation can be a bit less stable in extreme tails but generally fine.
+  - Precision: A well-known Abramowitz–Stegun 7.1.26 approximation for erf has max error ~1.5e-7 in float32, which should match PyTorch’s exact very closely.
+
+- Kernel structure
+  - 1D grid over N elements.
+  - Each program processes BLOCK elements (e.g., 1024 or 2048), loading, computing, storing.
+  - Compute in float32; store in input dtype.
+  - Use a simple loop if N is not a multiple of BLOCK.
+
+- API and integration
+  - The benchmark asks for a module exposing gelu_kernel_impl. We’ll define a Triton kernel and a Python wrapper function gelu_kernel_impl(x) that:
+    - Allocates output.
+    - Launches the kernel with appropriate grid and strides.
+    - Returns the output tensor.
+  - We’ll implement the exact GELU via erf approximation to match nn.GELU default.
+
+- Fallback
+  - The spec says do not use eager PyTorch as fallback. We’ll assume CUDA + Triton are available.
+
+- Expected performance
+  - For large tensors, this should be close to memory bandwidth limit. The compute is minimal.
+  - The tanh version would be a tiny bit faster, but we opt for exact parity.
+
+Triton implementation (exact GELU via erf approximation)
+
+```python
+import math
+import torch
+
+import triton
+import triton.language as tl
+
+
+# Fast, numerically accurate approximation of erf(x) (Abramowitz and Stegun 7.1.26).
+# Single-precision accurate; max error ~1.5e-7 in float32.
+@triton.jit
+def _erf_approx(x):
+    # constants in float32
+    a1 = 0.254829592
+    a2 = -0.284496736
+    a3 = 1.421413741
+    a4 = -1.453152027
+    a5 = 1.061405429
+    p = 0.3275911
+
+    sign = tl.where(x >= 0, 1.0, -1.0)
+    ax = tl.abs(x)
+    t = 1.0 / (1.0 + p * ax)
+    # polynomial evaluation
+    y = (((((a5 * t + a4) * t) + a3) * t + a2) * t + a1) * t
+    # TODO: exp might not be in tl; if not, replace with tl.math.exp
+    e = tl.exp(-(ax * ax))
+    r = 1.0 - y * e
+    return sign * r
+
+
+@triton.jit
+def _gelu_exact_kernel(x_ptr, y_ptr, N, BLOCK: tl.constexpr):
+    pid = tl.program_id(axis=0)
+    offs = pid * BLOCK + tl.arange(0, BLOCK)
+    mask = offs < N
+
+    x = tl.load(x_ptr + offs, mask=mask, other=0.0)
+    # upcast to fp32 for math
+    x32 = x.to(tl.float32)
+
+    z = x32 * 0.7071067811865476  # 1/sqrt(2)
+    erf_z = _erf_approx(z)
+
+    y32 = 0.5 * x32 * (1.0 + erf_z)
+    y = y32.to(x.dtype)
+
+    tl.store(y_ptr + offs, y, mask=mask)
+
+
+def gelu_kernel_impl(x: torch.Tensor) -> torch.Tensor:
+    """
+    Triton implementation of GELU (exact, via high-accuracy erf approximation).
+    Matches torch.nn.GELU default behavior closely for float32.
+    Supports float16/bfloat16 by upcasting to float32 for math.
+    """
+    assert x.is_cuda, "gelu_kernel_impl requires a CUDA tensor"
+    assert x.dtype in (torch.float16, torch.bfloat16, torch.float32), \
+        f"Unsupported dtype {x.dtype}; use float16/bfloat16/float32"
+
+    y = torch.empty_like(x)
+    N = x.numel()
+
+    # Choose a block size; 1024 is a good default. You can tune to 2048/4096.
+    BLOCK = 1024
+    grid = (triton.cdiv(N, BLOCK),)
+
+    _gelu_exact_kernel[grid](
+        x, y,
+        N,
+        BLOCK=BLOCK,
+        num_warps=4,   # good default for 1024
+        num_stages=2,
+    )
+    return y
+```
+BOT回答
+
+Analysis and plan
+
+- The reference model is just nn.GELU, which computes GELU elementwise. There’s no other structure, so the main work is a pointwise map.
+- GELU has two common implementations:
+  - “Exact”: 0.5 * x * (1 + erf(x / sqrt(2))). This is what nn.GELU defaults to.
+  - “Approx”: 0.5 * x * (1 + tanh(√(2/π)(x + 0.044715 x^3))). Faster, close numerically.
+- For numerical parity with the reference, we should implement the exact version (erf-based). The tanh approximation is faster but will not match bit-for-bit.
+- Triton is well-suited for elementwise kernels: single pass, coalesced loads/stores, minimal branching. This will be memory-bandwidth bound for large tensors.
+- Dtype handling:
+  - Input is likely float32. We can support float16/bfloat16 by upcasting to float32 for math, then downcasting on store. This improves accuracy with negligible overhead.
+- Math details:
+  - We need erf. CUDA may or may not expose an erf intrinsic in Triton; to be safe and portable, use a high-quality approximation (Abramowitz–Stegun 7.1.26). Max error ~1e-7 in float32, which should match PyTorch’s exact very closely.
+  - Compute z = x / sqrt(2) = x * 0.7071067811865476, then erf(z).
+- Kernel structure:
+  - 1D grid over N elements.
+  - Each program processes BLOCK elements (e.g., 1024).
+  - Mask the tail.
+  - Upcast, compute, downcast, store.
+- Launch config:
+  - BLOCK=1024, num_warps=4, num_stages=2 are good defaults. You can tune BLOCK to 2048/4096 and warps accordingly.
+- Fallback:
+  - The spec forbids eager PyTorch fallback; we assume CUDA + Triton are available.
+
+Triton implementation (exact GELU via erf approximation)
+
+```python
+import torch
+import triton
+import triton.language as tl
+
+
+# High-accuracy approximation of erf(x) (Abramowitz & Stegun 7.1.26).
+# Single-precision accurate; max error ~1e-7 in float32.
+@triton.jit
+def _erf_approx(x):
+    # Constants as float32 literals
+    a1 = 0.254829592
+    a2 = -0.284496736
+    a3 = 1.421413741
+    a4 = -1.453152027
+    a5 = 1.061405429
+    p = 0.3275911
+
+    sign = tl.where(x >= 0, 1.0, -1.0)
+    ax = tl.abs(x)
+    t = 1.0 / (1.0 + p * ax)
+    # Polynomial evaluation (Horner's method)
+    y = (((((a5 * t + a4) * t) + a3) * t + a2) * t + a1) * t
+    e = tl.exp(-(ax * ax))
+    r = 1.0 - y * e
+    return sign * r
+
+
+@triton.jit
+def _gelu_exact_kernel(x_ptr, y_ptr, N, BLOCK: tl.constexpr):
+    pid = tl.program_id(axis=0)
+    offs = pid * BLOCK + tl.arange(0, BLOCK)
+    mask = offs < N
+
+    x = tl.load(x_ptr + offs, mask=mask, other=0.0)
+    x32 = x.to(tl.float32)
+
+    # z = x / sqrt(2)
+    z = x32 * 0.7071067811865476
+    erf_z = _erf_approx(z)
+
+    y32 = 0.5 * x32 * (1.0 + erf_z)
+    y = y32.to(x.dtype)
+
+    tl.store(y_ptr + offs, y, mask=mask)
+
+
+def gelu_kernel_impl(x: torch.Tensor) -> torch.Tensor:
+    """
+    Triton implementation of GELU (exact, via high-accuracy erf approximation).
+    Matches torch.nn.GELU default behavior closely for float32.
+    Supports float16/bfloat16 by upcasting to float32 for math.
+    """
+    if not x.is_cuda:
+        raise RuntimeError("gelu_kernel_impl requires a CUDA tensor")
+    if x.dtype not in (torch.float16, torch.bfloat16, torch.float32):
+        raise TypeError(f"Unsupported dtype {x.dtype}; use float16/bfloat16/float32")
+
+    y = torch.empty_like(x)
+    N = x.numel()
+
+    BLOCK = 1024
+    grid = (triton.cdiv(N, BLOCK),)
+
+    _gelu_exact_kernel[grid](
+        x, y,
+        N,
+        BLOCK=BLOCK,
+        num_warps=4,
+        num_stages=2,
+    )
+    return y
+```
+BOT回答
+
+Analysis and plan
+
+- The reference model is simply nn.GELU, i.e., an elementwise GELU transform. There are no other ops, so the workload is a pure pointwise map over the tensor.
+- GELU has two common implementations:
+  - “Exact”: 0.5 * x * (1 + erf(x / sqrt(2))). This is what nn.GELU defaults to in PyTorch.
+  - “Approx”: 0.5 * x * (1 + tanh(√(2/π)(x + 0.044715 x^3))). Slightly faster and usually close enough numerically.
+- For numerical parity with the reference, we should implement the exact version (erf-based). The tanh approximation is faster but will not match bit-for-bit.
+- Triton is a good fit for elementwise kernels: single pass, coalesced loads/stores, minimal branching. This will be memory-bandwidth bound for large tensors.
+- Dtype handling:
+  - Input is likely float32. We can support float16/bfloat16 by upcasting to float32 for math, then downcasting on store. This improves accuracy with negligible overhead.
+- Math details:
+  - We need erf. To be portable and fast, use a high-quality approximation (Abramowitz–Stegun 7.1.26). Max error ~1e-7 in float32, which should match PyTorch’s exact very closely.
+  - Compute z = x / sqrt(2) = x * 0.7071067811865476, then erf(z).
+- Kernel structure:
+  - 1D grid over N elements.
+  - Each program processes BLOCK elements (e.g., 1024).
+  - Mask the tail.
+  - Upcast, compute, downcast, store.
+- Launch config:
+  - BLOCK=1024, num_warps=4, num_stages=2 are good defaults. You can tune BLOCK to 2048/4096 and warps accordingly.
+- Fallback:
+  - The spec forbids eager PyTorch fallback; we assume CUDA + Triton are available.
+
+Triton implementation (exact GELU via erf approximation)
+
+```python
+import torch
+import triton
+import triton.language as tl
+
+
+# High-accuracy approximation of erf(x) (Abramowitz & Stegun 7.1.26).
+# Single-precision accurate; max error ~1e-7 in float32.
+@triton.jit
+def _erf_approx(x):
+    # Constants as float32 literals
+    a1 = 0.254829592
+    a2 = -0.284496736
+    a3 = 1.421413741
+    a4 = -1.453152027
+    a5 = 1.061405429
+    p = 0.3275911
+
+    sign = tl.where(x >= 0, 1.0, -1.0)
+    ax = tl.abs(x)
+    t = 1.0 / (1.0 + p * ax)
+    # Polynomial evaluation (Horner's method)
+    y = (((((a5 * t + a4) * t) + a3) * t + a2) * t + a1) * t
+    e = tl.exp(-(ax * ax))
+    r = 1.0 - y * e
+    return sign * r
+
+
+@triton.jit
+def _gelu_exact_kernel(x_ptr, y_ptr, N, BLOCK: tl.constexpr):
+    pid = tl.program_id(axis=0)
+    offs = pid * BLOCK + tl.arange(0, BLOCK)
+    mask = offs < N
+
+    x = tl.load(x_ptr + offs, mask=mask, other=0.0)
+    x32 = x.to(tl.float32)
+
+    # z = x / sqrt(2)
+    z = x32 * 0.7071067811865476
+    erf_z = _erf_approx(z)
+
+    y32 = 0.5 * x32 * (1.0 + erf_z)
+    y = y32.to(x.dtype)
+
+    tl.store(y_ptr + offs, y, mask=mask)
+
+
+def gelu_kernel_impl(x: torch.Tensor) -> torch.Tensor:
+    """
+    Triton implementation of GELU (exact, via high-accuracy erf approximation).
+    Matches torch.nn.GELU default behavior closely for float32.
+    Supports float16/bfloat16 by upcasting to float32 for math.
+    """
+    if not x.is_cuda:
+        raise RuntimeError("gelu_kernel_impl requires a CUDA tensor")
+    if x.dtype not in (torch.float16, torch.bfloat16, torch.float32):
+        raise TypeError(f"Unsupported dtype {x.dtype}; use float16/bfloat16/float32")
+
+    y = torch.empty_like(x)
+    N = x.numel()
+
+    BLOCK = 1024
+    grid = (triton.cdiv(N, BLOCK),)
+
+    _gelu_exact_kernel[grid](
+        x, y,
+        N,
+        BLOCK=BLOCK,
+        num_warps=4,
+        num_stages=2,
+    )
+    return y
+```
+BOT回答
+
+Analysis and plan
+
+- The reference model is simply nn.GELU, i.e., an elementwise GELU transform. There are no other ops, so the workload is a pure pointwise map over the tensor.
+- GELU has two common implementations:
+  - “Exact”: 0.5 * x * (1 + erf(x / sqrt(2))). This is what nn.GELU defaults to in PyTorch.
+  - “Approx”: 0.5 * x * (1 + tanh(√(2/π)(x + 0.044715 x^3))). Slightly faster and usually close enough numerically.
+- For numerical parity with the reference, we should implement the exact version (erf-based). The tanh approximation is faster but will not match bit-for-bit.
+- Triton is a good fit for elementwise kernels: single pass, coalesced loads/stores, minimal branching. This will be memory-bandwidth bound for large tensors.
+- Dtype handling:
+  - Input is likely float32. We can support float16/bfloat16 by upcasting to float32 for math, then downcasting on store. This improves accuracy with negligible overhead.
+- Math details:
+  - We need erf. To be portable and fast, use a high-quality approximation (Abramowitz–Stegun 7.1.26). Max error ~1e-7 in float32, which should match PyTorch’s exact very closely.
+  - Compute z = x / sqrt(2) = x * 0.7071067811865476, then erf(z).
+- Kernel structure:
+  - 1D grid over N elements.
+  - Each program processes BLOCK elements (e.g., 1024).
+  - Mask the tail.
+  - Upcast, compute, downcast, store.
+- Launch config:
+  - BLOCK=1024, num_warps=4, num_stages=2 are good defaults. You can tune BLOCK to 2048/4096 and warps accordingly.
+- Fallback:
+  - The spec forbids eager PyTorch fallback; we assume CUDA + Triton are available.
+
+Triton implementation (exact GELU via erf approximation)
+
+```python
+import torch
+import triton
+import triton.language as tl
+
+
+# High-accuracy approximation of erf(x) (Abramowitz & Stegun 7.1.26).
+# Single-precision accurate; max error ~1e-7 in float32.
+@triton.jit
+def _erf_approx(x):
+    # Constants as float32 literals
+    a1 = 0.254829592
+    a2 = -0.284496736
+    a3 = 1.421413741
+    a4 = -1.453152027
+    a5 = 1.061405429
+    p = 0.3275911
+
+    sign = tl.where(x >= 0, 1.0, -1.0)
+    ax = tl.abs(x)
+    t = 1.0 / (1.0 + p * ax)
+    # Polynomial evaluation (Horner's method)
+    y = (((((a5 * t + a4) * t) + a3) * t + a2) * t + a1) * t
+    e = tl.exp(-(ax * ax))
+    r = 1.0 - y * e
+    return sign * r
+
+
+@triton.jit
+def _gelu_exact_kernel(x_ptr, y_ptr, N, BLOCK: tl.constexpr):
+    pid = tl.program_id(axis=0)
+    offs = pid * BLOCK + tl.arange(0, BLOCK)
+    mask = offs < N
+
+    x = tl.load(x_ptr + offs, mask=mask, other=0.0)
+    x32 = x.to(tl.float32)
+
+    # z = x / sqrt(2)
+    z = x32 * 0.7071067811865476
+    erf_z = _erf_approx(z)
+
+    y32 = 0.5 * x32 * (1.0 + erf_z)
+    y = y32.to(x.dtype)
+
+    tl.store(y_ptr + offs, y, mask=mask)
+
+
+def gelu_kernel_impl(x: torch.Tensor) -> torch.Tensor:
+    """
+    Triton implementation of GELU (exact, via high-accuracy erf approximation).
+    Matches torch.nn.GELU default behavior closely for float32.
+    Supports float16/bfloat16 by upcasting to float32 for math.
+    """
+    if not x.is_cuda:
+        raise RuntimeError("gelu_kernel_impl requires a CUDA tensor")
+    if x.dtype not in (torch.float16, torch.bfloat16, torch.float32):
+        raise TypeError(f"Unsupported dtype {x.dtype}; use float16/bfloat16/float32")
+
+    y = torch.empty_like(x)
+    N = x.numel()
+
+    BLOCK = 1024
+    grid = (triton.cdiv(N, BLOCK),)
+
+    _gelu_exact_kernel[grid](
+        x, y,
+        N,
+        BLOCK=BLOCK,
+        num_warps=4,
+        num_stages=2,
+    )
+    return y
+```
+BOT回答
+
+Analysis and plan
+
+- The reference model is simply nn.GELU, i.e., an elementwise GELU transform. There are no other ops, so the workload is a pure pointwise map over the tensor.
+- GELU has two common implementations:
+  - “Exact”: 0.5 * x * (1 + erf(x / sqrt(2))). This is what nn.GELU defaults to in PyTorch.
+  - “Approx”: 0.5 * x * (1 + tanh(√(2/π)(x + 0.044715 x^3))). Slightly faster and usually close enough numerically.
+- For numerical parity with the reference, we should implement the exact version (erf-based). The tanh approximation is faster but will not match bit-for-bit.
+- Triton is a good fit for elementwise kernels: single pass, coalesced loads/stores, minimal branching. This will be memory-bandwidth bound for large tensors.
+- Dtype handling:
+  - Input is likely float32. We can support float16/bfloat16 by upcasting to float32 for math, then downcasting on store. This improves accuracy with negligible overhead.
+- Math details:
+  - We need erf. To be portable and fast, use a high-quality approximation (Abramowitz–Stegun 7.1.26). Max error ~1e-7 in float32, which should match PyTorch’s exact very closely.
+  - Compute z = x / sqrt(2) = x * 0.7071067811865476, then erf(z).
+- Kernel structure:
+  - 1D grid over N elements.
+  - Each program processes BLOCK elements (e.g., 1024).
+  - Mask the tail.
+  - Upcast, compute, downcast, store.
+- Launch config:
+  - BLOCK=1024, num_warps=4, num_stages=2 are good defaults. You can tune BLOCK to 2048/4096 and warps accordingly.
+- Fallback:
+  - The spec forbids eager PyTorch fallback; we assume CUDA + Triton are available.
+
+Triton implementation (exact GELU via erf approximation)
+
+```python
+import torch
+import triton
+import triton.language as tl
+
+
+# High-accuracy approximation of erf(x) (Abramowitz & Stegun 7.1.26).
+# Single-precision accurate; max error ~1e-7 in float32.
+@triton.jit
+def _erf_approx(x):
+    # Constants as float32 literals
+    a1 = 0.254829592
+    a2 = -0.284496736
+    a3 = 1.421413741
+    a4 = -1.453152027
+    a5 = 1.061405429
+    p = 0.3275911
+
+    sign = tl.where(x >= 0, 1.0, -1.0)
+    ax = tl.abs(x)
+    t = 1.0 / (1.0 + p * ax)
+    # Polynomial evaluation (Horner's method)
+    y = (((((a5 * t + a4) * t) + a3) * t + a2) * t + a1) * t
+    e = tl.exp(-(ax * ax))
+    r = 1.0 - y * e
+    return sign * r
+
+
+@triton.jit
+def _gelu_exact_kernel(x_ptr, y_ptr, N, BLOCK: tl.constexpr):
+    pid = tl.program_id(axis=0)
+    offs = pid * BLOCK + tl.arange(0, BLOCK)
+    mask = offs < N
+
+    x = tl.load(x_ptr + offs, mask=mask, other=0.0)
+    x32 = x.to(tl.float32)
+
+    # z = x / sqrt(2)
+    z = x32 * 0.7071067811865476
+    erf_z = _erf_approx(z)
+
+    y32 = 0.5 * x32 * (1.0 + erf_z)
+    y = y32.to(x.dtype)
+
+    tl.store(y_ptr + offs, y, mask=mask)
+
+
+def gelu_kernel_impl(x: torch.Tensor) -> torch.Tensor:
+    """
+    Triton implementation of GELU (exact, via high-accuracy erf approximation).
+    Matches torch.nn.GELU default behavior closely for float32.
+    Supports float16/bfloat16 by upcasting to float32 for math.
+    """
+    if not x.is_cuda:
+        raise RuntimeError("gelu_kernel_impl requires a CUDA tensor")
+    if x.dtype not in (torch.float16, torch.bfloat16, torch.float32):
+        raise TypeError(f"Unsupported dtype {x.dtype}; use float16/bfloat16/float32")
+
+    y = torch.empty_like(x)
+    N = x.numel()
+
+    BLOCK = 1024
+    grid = (triton.cdiv(N, BLOCK),)
+
+    _gelu_exact_kernel[grid](
+        x, y,
+        N,
+        BLOCK=BLOCK,
+        num_warps=4,
+        num_stages=2,
+    )
+    return y
+```
+BOT回答
+
+Analysis and plan
+
+- The reference model is simply nn.GELU, i.e., an elementwise GELU transform. There are no other ops, so the workload is a pure pointwise map over the tensor.
+- GELU has two common implementations:
+  - “Exact”: 0.5 * x * (1 + erf(x / sqrt(2))). This is what nn.GELU defaults to in PyTorch.
+  - “Approx”: 0.5 * x * (1 + tanh(√(2/π)(x + 0.044715 x^3))). Slightly faster and usually close enough numerically.
+- For numerical parity with the reference, we should implement the exact version (erf-based). The tanh approximation is faster but will not match bit-for-bit.
+- Triton is a good fit for elementwise kernels: single pass, coalesced loads/stores, minimal branching. This will be memory-bandwidth bound for large tensors.
+- Dtype handling:
+  - Input is likely float32. We can support float16/bfloat16 by upcasting to float32 for math, then downcasting on store. This improves accuracy with negligible overhead.
+- Math details:
+  - We need erf. To be portable and fast, use a high-quality approximation (Abramowitz–Stegun 7.1.26). Max error ~1e-7 in float32, which should match PyTorch’s exact very closely.
+  - Compute z = x / sqrt(2) = x * 0.7071067811865476, then erf(z).
+- Kernel structure:
+  - 1D grid over N elements.
+  - Each program processes BLOCK elements (e.g., 1024).
+  - Mask the tail.
+  - Upcast, compute, downcast, store.
+- Launch config:
+  - BLOCK=1024, num_warps=4, num_stages=2 are good defaults. You can tune BLOCK to 2048/4096 and warps accordingly.
+- Fallback:
+  - The spec forbids eager PyTorch fallback; we assume CUDA + Triton are available.
+
+Triton implementation (exact GELU via erf approximation)
+
+```python
+import torch
+import triton
+import triton.language as tl
+
+
+# High-accuracy approximation of erf(x) (Abramowitz & Stegun 7.1.26).
+# Single-precision accurate; max error ~1e-7 in float32.
+@triton.jit
+def _erf_approx(x):
+    # Constants as float32 literals
+    a1 = 0.254829592
+    a2 = -0.284496736
+    a3 = 1.421413741
+    a4 = -1.453152027
+    a5 = 1.061405429
+    p = 0.3275911
+
+    sign = tl.where(x >= 0, 1.0, -1.0)
+    ax = tl.abs(x)
+    t = 1.0 / (1.0 + p * ax)
+    # Polynomial evaluation (Horner's method)
+    y = (((((a5 * t + a4) * t) + a3) * t + a2) * t + a1) * t
+    e = tl.exp(-(ax * ax))
+    r = 1.0 - y * e
+    return sign * r
+
+
+@triton.jit
+def _gelu_exact_kernel(x_ptr, y_ptr, N, BLOCK: tl.constexpr):
+    pid = tl.program_id(axis=0)
+    offs = pid * BLOCK + tl.arange(0, BLOCK)
+    mask = offs < N
+
+    x = tl.load(x_ptr + offs, mask=mask, other=0.0)
+    x32 = x.to(tl.float32)
+
+    # z = x / sqrt(2)
+    z = x32 * 0.7071067811865476
+    erf_z = _erf_approx(z)
+
+    y32 = 0.5 * x32 * (1.0 + erf_z)
+    y = y32.to(x.dtype)
+
+    tl.store(y_ptr + offs, y, mask=mask)
+
+
+def gelu_kernel_impl(x: torch.Tensor) -> torch.Tensor:
+    """
+    Triton implementation of GELU (exact, via high-accuracy erf approximation).
+    Matches torch.nn.GELU default behavior closely for float32.
+    Supports float16/bfloat16 by upcasting to float32 for math.
+    """
+    if not x.is_cuda:
+        raise RuntimeError("gelu_kernel_impl requires a CUDA tensor")
+    if x.dtype not in (torch.float16, torch.bfloat16, torch.float32):
+        raise TypeError(f"Unsupported dtype {x.dtype}; use float16/bfloat16/float32")
+
+    y = torch.empty_like(x)
+    N = x.numel()
+
+    BLOCK = 1024
+    grid = (triton.cdiv(N, BLOCK),)
+
+    _gelu_exact_kernel[grid](
+        x, y,
+        N,
+        BLOCK=BLOCK,
+        num_warps=4,
+        num_stages=2,
+    )
+    return y
+```
+BOT回答
+
+Analysis and plan
+
+- The reference model is simply nn.GELU, i.e., an elementwise GELU transform. There are no other ops, so the workload is a pure pointwise map over the tensor.
+- GELU has two common implementations:
+  - “Exact”: 0.5 * x * (1 + erf(x / sqrt(2))). This is what nn.GELU defaults to in PyTorch.
+  - “Approx”: 0.5 * x * (1 + tanh(√(2/π)(x + 0.044715 x^3))). Slightly faster and usually close enough numerically.
+- For numerical parity with the reference, we should implement the exact version (erf-based). The tanh approximation is faster but will not match bit-for-bit.
+- Triton is a good fit for elementwise kernels: single pass, coalesced loads/stores, minimal branching. This will be memory-bandwidth bound for large tensors.
+- Dtype handling:
+  - Input is likely float32. We can support float16/bfloat16 by upcasting to float32 for math, then downcasting on store. This improves accuracy with negligible overhead.
+- Math details:
+  - We need erf. To be portable and fast, use a high-quality approximation (Abramowitz–Stegun 7.1.26). Max error ~1e-7 in float32, which should match PyTorch’s exact very closely.
+  - Compute z = x / sqrt(2) = x * 0.7071067811865476, then erf(z).
+- Kernel structure:
+  - 1D grid over N elements.
+  - Each program processes BLOCK elements (e.g., 1024).
+  - Mask the tail.
+  - Upcast, compute, downcast, store.
+- Launch config:
+  - BLOCK=1024, num_warps=4, num_stages=2 are good defaults. You can tune BLOCK to 2048/4096 and warps accordingly.
+- Fallback:
+  - The spec forbids eager PyTorch fallback; we assume CUDA + Triton are available.
+
+Triton implementation (exact GELU via erf approximation)
+
+```python
+import torch
+import triton
+import triton.language as tl
+
+
+# High-accuracy approximation of erf(x) (Abramowitz & Stegun 7.1.26).
+# Single-precision accurate; max error ~1e-7 in float32.
+@triton.jit
+def _erf_approx(x):
+    # Constants as float32 literals
+    a1 = 0.254829592
+    a2 = -0.284496736
+    a3 = 1.421413741
+    a4 = -1.453152027
+    a5 = 1.061405429
+    p = 0.3275911
+
+    sign = tl.where(x >= 0, 1.0, -1.0)
+    ax = tl.abs(x)
+    t = 1.0 / (1.0 + p * ax)
+    # Polynomial evaluation (Horner's method)
+    y = (((((a5 * t + a4) * t) + a3) * t + a2) * t + a1) * t
+    e = tl.exp(-(ax * ax))
+    r = 1.0 - y * e
+    return sign * r
+
+
+@triton.j

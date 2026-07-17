@@ -1,0 +1,6 @@
+{
+  "benchmark": "robust_kbench",
+  "task_id": "20_ConvTranspose3d_Sum_ResidualAdd_Multiply_ResidualAdd",
+  "source_path": "/home/bi_geum/official_matrix_64/third_party/KernelBench/KernelBench/level2/20_ConvTranspose3d_Sum_ResidualAdd_Multiply_ResidualAdd.py",
+  "official_task": true
+}

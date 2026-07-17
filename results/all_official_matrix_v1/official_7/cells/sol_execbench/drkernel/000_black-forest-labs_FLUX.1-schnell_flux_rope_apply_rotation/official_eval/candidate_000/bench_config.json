@@ -1,0 +1,7 @@
+{
+  "warmup_runs": 1,
+  "iterations": 3,
+  "lock_clocks": false,
+  "benchmark_reference": false,
+  "seed": 0
+}

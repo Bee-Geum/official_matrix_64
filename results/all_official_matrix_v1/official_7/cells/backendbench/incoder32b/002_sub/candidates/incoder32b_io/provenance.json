@@ -1,0 +1,13 @@
+{
+  "agent": "incoder32b",
+  "mode": "model_only",
+  "model_repo": "Multilingual-Multimodal-NLP/IndustrialCoder",
+  "served_as": "incoder32b",
+  "base_url": "http://127.0.0.1:8003/v1",
+  "note": "upstream repo ships SFT training code only; the artifact is the 32B model",
+  "temperature": 0.2,
+  "max_tokens": 4096,
+  "candidates": [
+    "/home/bi_geum/official_matrix_64/results/all_official_matrix_v1/official_7/cells/backendbench/incoder32b/002_sub/candidates/candidate_0000.py"
+  ]
+}

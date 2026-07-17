@@ -1,0 +1,30 @@
+{
+  "agent": "kernelllm",
+  "driver": "/home/bi_geum/official_matrix_64/drivers/kernelllm_live_driver.py",
+  "cmd": [
+    "/home/bi_geum/official_matrix_64/.venv/bin/python3",
+    "/home/bi_geum/official_matrix_64/drivers/kernelllm_live_driver.py",
+    "--task",
+    "/home/bi_geum/official_matrix_64/results/all_official_matrix_v1/official_7/cells/backendbench/kernelllm/002_sub/official_prompt.txt",
+    "--out",
+    "/home/bi_geum/official_matrix_64/results/all_official_matrix_v1/official_7/cells/backendbench/kernelllm/002_sub/candidates",
+    "--rounds",
+    "1",
+    "--seed",
+    "0",
+    "--temperature",
+    "0.2"
+  ],
+  "returncode": 0,
+  "wall_s": 9.117527961730957,
+  "log": "/home/bi_geum/official_matrix_64/results/all_official_matrix_v1/official_7/cells/backendbench/kernelllm/002_sub/generation.log.txt",
+  "candidate_count": 2,
+  "raw_candidates": [
+    "/home/bi_geum/official_matrix_64/results/all_official_matrix_v1/official_7/cells/backendbench/kernelllm/002_sub/candidates/round0_kernel.py",
+    "/home/bi_geum/official_matrix_64/results/all_official_matrix_v1/official_7/cells/backendbench/kernelllm/002_sub/candidates/candidate_0000.py"
+  ],
+  "normalized_candidates": [
+    "/home/bi_geum/official_matrix_64/results/all_official_matrix_v1/official_7/cells/backendbench/kernelllm/002_sub/candidates/official_candidate_000.py",
+    "/home/bi_geum/official_matrix_64/results/all_official_matrix_v1/official_7/cells/backendbench/kernelllm/002_sub/candidates/official_candidate_001.py"
+  ]
+}

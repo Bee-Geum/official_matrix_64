@@ -7,11 +7,11 @@
   "official_attempted": 1,
   "official_eval": 1,
   "correct": 1,
-  "performance_available": 1,
-  "score": 1.06,
+  "performance_available": 0,
+  "score": 0.0,
   "evaluator_rc": 0,
   "infrastructure_error": "",
-  "candidate_error": "",
+  "candidate_error": "correctness passed, but official performance score was unavailable",
   "logs": [
     "/home/bi_geum/official_matrix_64/results/all_official_matrix_v1/official_matrix_64/cells/tritonbench_t/cudaforge/000_Adam/official_eval/candidate_000/0_call_acc.log.txt",
     "/home/bi_geum/official_matrix_64/results/all_official_matrix_v1/official_matrix_64/cells/tritonbench_t/cudaforge/000_Adam/official_eval/candidate_000/1_exe_acc.log.txt",
@@ -23,5 +23,5 @@
     "/home/bi_geum/official_matrix_64/results/all_official_matrix_v1/official_matrix_64/cells/tritonbench_t/cudaforge/000_Adam/official_eval/candidate_000/stage/source/Adam.py",
     "/home/bi_geum/official_matrix_64/results/all_official_matrix_v1/official_matrix_64/cells/tritonbench_t/cudaforge/000_Adam/official_eval/candidate_000/stage/target/Adam.py"
   ],
-  "wall_s": 22.498974561691284
+  "wall_s": 32.35586071014404
 }

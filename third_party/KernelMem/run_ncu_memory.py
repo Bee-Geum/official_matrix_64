@@ -136,13 +136,17 @@ def profile_bench(
     bench_py: str = "bench_ref_inputs.py",
     kernel_names: Optional[List[str]] = None,
     kernel_file: Optional[Union[str, Path]] = None,  # New: explicitly specify which kernel file to profile
-    conda_bin: str = "/root/miniconda3/envs/CudaForge/bin",
+    conda_bin: str = os.environ.get("KERNELMEM_CONDA_BIN", str(Path(sys.executable).parent)),
     out_csv: Union[str, Path] = "ncu_temp.csv",
     repeat: int = 10,
     device_idx: Optional[int] = None,
     timeout_override: Optional[int] = None,  # New: override timeout for specific tasks (in seconds)
 ) -> Path:
-    ncu_bin = "/root/miniconda3/envs/robust_kbench/bin/ncu"
+    # Upstream hardcoded the author's machine ("/root/miniconda3/envs/robust_kbench/bin/ncu").
+    # Resolve ncu from the environment instead; a miss here is swallowed by
+    # main_memory_latest.py's except-handler, which silently turns the whole NCU
+    # optimization phase into a no-op that still reports success.
+    ncu_bin = os.environ.get("KERNELMEM_NCU_BIN") or shutil.which("ncu") or "/usr/local/cuda/bin/ncu"
     csv_path = Path(out_csv).resolve()
 
     env = os.environ.copy()
@@ -160,8 +164,10 @@ def profile_bench(
     # env["TORCH_EXTENSIONS_DIR"] = tmp_ext
 
     # 配置文件路径
-    config_metrics = '/root/KernelMem/config_metrics.ncu-cfg'
-    config_section = '/root/KernelMem/config_section.ncu-cfg'
+    # Upstream hardcoded /root/KernelMem/; the .ncu-cfg files ship at this repo's root.
+    _repo_root = Path(__file__).resolve().parent
+    config_metrics = str(_repo_root / 'config_metrics.ncu-cfg')
+    config_section = str(_repo_root / 'config_section.ncu-cfg')
     
     # 解析 kernel_file 参数
     kernel_file_path = None
@@ -745,7 +751,11 @@ def load_ncu_metrics(
     if len(sub) > 0:
         first_row_str = sub.iloc[0].astype(str).str.lower()
         unit_tokens = ("%", "inst", "cycle", "block", "register", "register/thread")
-        if first_row_str.apply(lambda x: any(tok in x for tok in unit_tokens)).any():
+        # str(x): on modern pandas astype(str) yields the `str` dtype, whose .str.lower()
+        # keeps NA as float NaN instead of the literal "nan" this code assumed, so a bare
+        # `tok in x` raises TypeError("argument of type 'float' is not iterable") -- which
+        # main_memory_latest.py swallows, silently skipping every optimization round.
+        if first_row_str.apply(lambda x: any(tok in str(x) for tok in unit_tokens)).any():
             sub = sub.iloc[1:].reset_index(drop=True)
     
     # Filter out section data rows: they have fewer columns than metrics rows

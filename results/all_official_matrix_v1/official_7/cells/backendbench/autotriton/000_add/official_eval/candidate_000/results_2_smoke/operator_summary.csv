@@ -1,0 +1,2 @@
+operator,total_tests,correctness_tests,performance_tests,passed_correctness_tests,passed_performance_tests,failed_correctness_tests,failed_performance_tests,correctness_rate,avg_speedup,geomean_speedup,max_absolute_error,max_relative_error
+relu.default,1,1,1,1,1,0,0,1.0,1.0569825701244213,1.0569825172424316,0.0,0.0

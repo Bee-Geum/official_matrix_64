@@ -1,0 +1,31 @@
+{
+  "run_root": "/home/bi_geum/official_matrix_64/results/all_official_matrix_v1/official_7",
+  "generated_at": "2026-07-16T16:35:24+0900",
+  "benchmarks": [
+    "backendbench"
+  ],
+  "agents": [
+    "drkernel"
+  ],
+  "expected_cells": 1,
+  "observed_cells": 1,
+  "valid_official_cells": 0,
+  "all_official_benchmarking_normal": 0,
+  "by_benchmark": {
+    "backendbench": {
+      "agents": 1,
+      "valid_official_cells": 0,
+      "candidate_cells": 1,
+      "official_eval_tasks": 4,
+      "correct_tasks": 0,
+      "all_agents_official": 0,
+      "top_errors": [
+        [
+          "op 'add' not covered by locally-available BackendBench suites (opinfo/torchbench); no official test case exists for it here",
+          1
+        ]
+      ]
+    }
+  },
+  "strict_definition": "A valid cell has official tasks, a generated candidate for every selected task, and a parsed structured upstream-evaluator result for every task. Correctness may be zero."
+}

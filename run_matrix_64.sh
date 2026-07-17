@@ -14,7 +14,7 @@
 # Usage:
 #   ./run_matrix_64.sh                          # full 64-cell run, 1 task/cell
 #   LLM_BASE_URL=http://HOST:8000/v1 ./run_matrix_64.sh
-#   AGENTS=cudaforge,geak BENCHMARKS=pareval LIMIT=3 ./run_matrix_64.sh
+#   AGENTS=cudaforge,autotriton BENCHMARKS=pareval LIMIT=3 ./run_matrix_64.sh
 #   nohup ./run_matrix_64.sh > run_matrix_64.out 2>&1 &
 #
 # Multi-GPU (default: every visible GPU, one cell per GPU):

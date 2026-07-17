@@ -1,0 +1,8 @@
+{
+  "benchmark": "multikernelbench",
+  "task_id": "four_dim_tensor_matrix_multiplication",
+  "op": "four_dim_tensor_matrix_multiplication",
+  "official_task": true,
+  "prompt_path": "/home/bi_geum/official_matrix_64/third_party/MultiKernelBench/reference/matmul/four_dim_tensor_matrix_multiplication.py",
+  "prompt": "Benchmark: multikernelbench\nOfficial task: four_dim_tensor_matrix_multiplication\nReturn only source code, without Markdown fences or explanations.\n\nGenerate a kernel response for the exact MultiKernelBench operator 'four_dim_tensor_matrix_multiplication'. Use CUDA C++ or Triton and do not replace the computation with eager PyTorch.\n\nimport torch\nimport torch.nn as nn\n\nclass Model(nn.Module):\n    \"\"\"\n    Performs 4D tensor-matrix multiplication: \n        C[b, i, j, k] = sum_l A[b, i, j, l] * B[l, k]\n\n    Args:\n        A (torch.Tensor): Input 4D tensor of shape (b, i, j, l)\n        B (torch.Tensor): Input matrix of shape (l, k)\n\n    Returns:\n        torch.Tensor: Output 4D tensor of shape (b, i, j, k)\n    \"\"\"\n    def __init__(self):\n        super(Model, self).__init__()\n\n    def forward(self, A, B):\n        \"\"\"\n        Performs the 4D tensor-matrix multiplication.\n\n        Args:\n            A (torch.Tensor): Input 4D tensor of shape (b, i, j, l)\n            B (torch.Tensor): Input matrix of shape (l, k)\n\n        Returns:\n            torch.Tensor: Output 4D tensor of shape (b, i, j, k)\n        \"\"\"\n        return torch.einsum(\"bijl,lk->bijk\", A, B)\n\n# Test code\nb = 8\ni = 256\nj = 512\nl = 256\nk = 768\n\ndef get_inputs():\n    A = torch.rand(b, i, j, l)\n    B = torch.rand(l, k)\n    return [A, B]\n\ndef get_init_inputs():\n    return []  # No special initialization inputs needed"
+}

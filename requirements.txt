@@ -35,3 +35,15 @@ tabulate>=0.9
 # NOTE: cupti python bindings are NOT required -- SOL-ExecBench is patched at
 # eval time to use CUDA-events timing instead (see official_all_matrix_v1.py:
 # patch_sol_repo).
+
+# BackendBench declares these in its own pyproject.toml, but nothing here installs
+# that project's dependencies, so the official CLI dies at import and every
+# backendbench cell reports official_eval=0 for a reason unrelated to the agent.
+# The import chain fails one at a time: tenacity (llm_client.py) -> expecttest
+# (torch.testing._internal) -> pyarrow (suite/opinfo.py).
+tenacity
+expecttest
+pyarrow
+click
+datasets
+huggingface_hub

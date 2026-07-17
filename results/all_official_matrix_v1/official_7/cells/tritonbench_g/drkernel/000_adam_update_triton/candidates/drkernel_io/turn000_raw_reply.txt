@@ -1,0 +1,847 @@
+Analysis and plan
+
+- What the original PyTorch code computes:
+  - It updates a parameter vector p in-place using a custom “sign-step” rule:
+    - First apply weight decay: p <- p * (1 - lr * wd)
+    - Compute diff = exp_avg - grad
+    - Compute update = diff * beta1 + grad
+    - Then p <- p + sign(update) * lr, but only where update != 0 (i.e., no-op when update == 0)
+    - Finally, update the running “momentum” buffer exp_avg <- diff * beta2 + grad
+  - This is not standard Adam; it’s a custom update that uses two exponential moving averages (EMA) of the gradient with different coefficients (beta1, beta2), but does not use squared gradients or a step-dependent denominator. The sign-step rule is the unusual part.
+
+- Numerical and semantic details:
+  - The sign is implemented as sign(x) = -1 if x > 0 else 1 if x < 0 else 0, and multiplied by lr. That matches torch.sign behavior for floats (0 maps to 0).
+  - The mask can_update = update != 0 ensures no change when update is exactly 0.
+  - All operations are elementwise and memory-bound; there’s no reduction.
+
+- Potential issues in the original Triton kernel:
+  - The kernel is correct elementwise, but the autotune decorator uses restore_value=['p_ptr', 'exp_avg_ptr'], which is not a valid Triton autotune argument. restore_value is not a supported key; that will error or be ignored. We should remove it.
+  - The kernel uses BLOCK_SIZE in the grid; that’s fine.
+  - There’s no synchronization needed; it’s a simple elementwise kernel.
+
+- Optimization considerations:
+  - This is a pure elementwise, memory-bound kernel. The main levers are:
+    - Choosing a good BLOCK_SIZE and num_warps for the GPU.
+    - Ensuring contiguous memory and coalesced loads/stores.
+    - Avoiding unnecessary temporaries; keep operations minimal.
+  - Autotune can help pick between a few configs; we’ll keep two configs (128/4 and 1024/8) as in the original, but remove the invalid restore_value.
+  - We’ll keep the math as-is to preserve numerical equivalence.
+
+- Edge cases and correctness:
+  - Dtypes: The provided test uses float32. We’ll implement for float32. Extending to float16/bfloat16 is possible but requires careful casting of scalars (lr, wd, beta1, beta2) to the tensor dtype inside the kernel.
+  - Shapes: We flatten to 1D and process n_elements; that matches the test.
+  - Device: We assert CUDA tensors.
+
+- Plan:
+  - Implement a Triton kernel that mirrors the PyTorch math exactly.
+  - Remove invalid autotune key.
+  - Provide a Python wrapper update_fn that launches the kernel.
+  - Keep the same public interface and behavior.
+
+Triton implementation (entry point: ModelNew)
+
+```python
+import torch
+import triton
+import triton.language as tl
+
+@triton.autotune(
+    configs=[
+        triton.Config({'BLOCK_SIZE': 128}, num_warps=4),
+        triton.Config({'BLOCK_SIZE': 1024}, num_warps=8),
+    ],
+    key=['n_elements'],
+)
+@triton.jit
+def update_fn_kernel(
+    p_ptr,
+    grad_ptr,
+    exp_avg_ptr,
+    lr,
+    wd,
+    beta1,
+    beta2,
+    n_elements,
+    BLOCK_SIZE: tl.constexpr,
+):
+    pid = tl.program_id(axis=0)
+    block_start = pid * BLOCK_SIZE
+    offsets = block_start + tl.arange(0, BLOCK_SIZE)
+    mask = offsets < n_elements
+
+    # Pointers
+    p = tl.load(p_ptr + offsets, mask=mask)
+    g = tl.load(grad_ptr + offsets, mask=mask)
+    e = tl.load(exp_avg_ptr + offsets, mask=mask)
+
+    # Weight decay
+    p = p * (1.0 - lr * wd)
+
+    # diff and update
+    diff = e - g
+    upd = diff * beta1 + g
+
+    # sign-step with mask
+    pos = upd > 0
+    neg = upd < 0
+    nonzero = upd != 0
+    sign = tl.where(pos, -1.0, tl.where(neg, 1.0, 0.0))  # -1, +1, or 0
+    p = p + sign * lr * nonzero  # broadcast over vector; zero when upd==0
+
+    # update exp_avg
+    e = diff * beta2 + g
+
+    # store
+    tl.store(p_ptr + offsets, p, mask=mask)
+    tl.store(exp_avg_ptr + offsets, e, mask=mask)
+
+
+def update_fn(
+    p: torch.Tensor,
+    grad: torch.Tensor,
+    exp_avg: torch.Tensor,
+    lr: float,
+    wd: float,
+    beta1: float,
+    beta2: float,
+):
+    # Basic checks
+    assert p.is_cuda and grad.is_cuda and exp_avg.is_cuda, "All tensors must be CUDA"
+    assert p.dtype == torch.float32 and grad.dtype == torch.float32 and exp_avg.dtype == torch.float32, \
+        "This implementation currently supports float32 tensors"
+    assert p.shape == grad.shape == exp_avg.shape, "Shapes must match"
+    assert p.is_contiguous() and grad.is_contiguous() and exp_avg.is_contiguous(), "Tensors must be contiguous"
+
+    n_elements = p.numel()
+    grid = lambda meta: (triton.cdiv(n_elements, meta['BLOCK_SIZE']),)
+
+    update_fn_kernel[grid](
+        p, grad, exp_avg,
+        lr, wd, beta1, beta2,
+        n_elements,
+    )
+
+
+# Optional: keep the same test helper for local validation
+def test_update_fn():
+    n_elements = 128
+    p1 = torch.randn(n_elements, device='cuda', dtype=torch.float32)
+    grad1 = torch.randn(n_elements, device='cuda', dtype=torch.float32)
+    exp_avg1 = torch.zeros(n_elements, device='cuda', dtype=torch.float32)
+
+    n_elements = 1024
+    p2 = torch.randn(n_elements, device='cuda', dtype=torch.float32)
+    grad2 = torch.randn(n_elements, device='cuda', dtype=torch.float32)
+    exp_avg2 = torch.zeros(n_elements, device='cuda', dtype=torch.float32)
+
+    lr = 0.01
+    wd = 0.01
+    beta1 = 0.9
+    beta2 = 0.999
+
+    update_fn(p1, grad1, exp_avg1, lr, wd, beta1, beta2)
+    update_fn(p2, grad2, exp_avg2, lr, wd, beta1, beta2)
+
+    return {
+        "test_case_1": (p1.clone(), exp_avg1.clone()),
+        "test_case_2": (p2.clone(), exp_avg2.clone())
+    }
+```
+对话终止了
+ ω
+Triton专家
+- 任务：实现一个Triton版本的更新函数，其输出与给定的PyTorch参考实现数值一致。提供一个名为ModelNew的入口点。
+
+- 分析：
+  - 参考更新规则（元素级，无归约）：
+    - p <- p * (1 - lr * wd)  # 权重衰减
+    - diff = exp_avg - grad
+    - upd = diff * beta1 + grad
+    - p <- p + sign(upd) * lr, 但仅当 upd != 0 时生效（即 upd == 0 时不更新）
+    - exp_avg <- diff * beta2 + grad
+  - 这不是标准Adam，而是一个自定义更新，使用了两个不同的EMA系数（beta1, beta2）来混合grad和diff。
+  - sign规则：sign(x) = -1 if x>0, +1 if x<0, 0 if x==0；然后乘以lr。mask upd != 0确保零时不更新。
+
+- 优化与实现细节：
+  - 内存带宽受限的纯元素级操作。主要优化是选择合适的BLOCK_SIZE和num_warps，保证连续访问。
+  - 使用Triton autotune在128/4和1024/8之间选择。
+  - 移除无效的restore_value autotune参数。
+  - 假设float32；扩展到fp16/bf16需要小心标量常量的dtype。
+  - 确保CUDA、contiguous。
+
+- 正确性：
+  - 严格按照参考公式实现，保持数值一致性。
+  - 测试用例与参考一致。
+
+- 入口点ModelNew：
+  - 提供update_fn作为公开接口。
+  - 可选test_update_fn用于本地验证。
+
+源码
+
+```python
+import torch
+import triton
+import triton.language as tl
+
+@triton.autotune(
+    configs=[
+        triton.Config({'BLOCK_SIZE': 128}, num_warps=4),
+        triton.Config({'BLOCK_SIZE': 1024}, num_warps=8),
+    ],
+    key=['n_elements'],
+)
+@triton.jit
+def update_fn_kernel(
+    p_ptr,
+    grad_ptr,
+    exp_avg_ptr,
+    lr,
+    wd,
+    beta1,
+    beta2,
+    n_elements,
+    BLOCK_SIZE: tl.constexpr,
+):
+    pid = tl.program_id(axis=0)
+    block_start = pid * BLOCK_SIZE
+    offsets = block_start + tl.arange(0, BLOCK_SIZE)
+    mask = offsets < n_elements
+
+    # Load
+    p = tl.load(p_ptr + offsets, mask=mask)
+    g = tl.load(grad_ptr + offsets, mask=mask)
+    e = tl.load(exp_avg_ptr + offsets, mask=mask)
+
+    # Weight decay
+    p = p * (1.0 - lr * wd)
+
+    # diff and update
+    diff = e - g
+    upd = diff * beta1 + g
+
+    # sign-step with mask
+    pos = upd > 0
+    neg = upd < 0
+    nonzero = upd != 0
+    sign = tl.where(pos, -1.0, tl.where(neg, 1.0, 0.0))  # -1, +1, or 0
+    p = p + sign * lr * nonzero  # zero contribution when upd==0
+
+    # update exp_avg
+    e = diff * beta2 + g
+
+    # Store
+    tl.store(p_ptr + offsets, p, mask=mask)
+    tl.store(exp_avg_ptr + offsets, e, mask=mask)
+
+
+def update_fn(
+    p: torch.Tensor,
+    grad: torch.Tensor,
+    exp_avg: torch.Tensor,
+    lr: float,
+    wd: float,
+    beta1: float,
+    beta2: float,
+):
+    # Checks
+    assert p.is_cuda and grad.is_cuda and exp_avg.is_cuda, "All tensors must be CUDA"
+    assert p.dtype == torch.float32 and grad.dtype == torch.float32 and exp_avg.dtype == torch.float32, \
+        "This implementation currently supports float32 tensors"
+    assert p.shape == grad.shape == exp_avg.shape, "Shapes must match"
+    assert p.is_contiguous() and grad.is_contiguous() and exp_avg.is_contiguous(), "Tensors must be contiguous"
+
+    n_elements = p.numel()
+    grid = lambda meta: (triton.cdiv(n_elements, meta['BLOCK_SIZE']),)
+
+    update_fn_kernel[grid](
+        p, grad, exp_avg,
+        lr, wd, beta1, beta2,
+        n_elements,
+    )
+
+
+# Optional: helper for local validation
+def test_update_fn():
+    n_elements = 128
+    p1 = torch.randn(n_elements, device='cuda', dtype=torch.float32)
+    grad1 = torch.randn(n_elements, device='cuda', dtype=torch.float32)
+    exp_avg1 = torch.zeros(n_elements, device='cuda', dtype=torch.float32)
+
+    n_elements = 1024
+    p2 = torch.randn(n_elements, device='cuda', dtype=torch.float32)
+    grad2 = torch.randn(n_elements, device='cuda', dtype=torch.float32)
+    exp_avg2 = torch.zeros(n_elements, device='cuda', dtype=torch.float32)
+
+    lr = 0.01
+    wd = 0.01
+    beta1 = 0.9
+    beta2 = 0.999
+
+    update_fn(p1, grad1, exp_avg1, lr, wd, beta1, beta2)
+    update_fn(p2, grad2, exp_avg2, lr, wd, beta1, beta2)
+
+    return {
+        "test_case_1": (p1.clone(), exp_avg1.clone()),
+        "test_case_2": (p2.clone(), exp_avg2.clone())
+    }
+
+
+# Entry point as requested
+class ModelNew:
+    @staticmethod
+    def update(p, grad, exp_avg, lr, wd, beta1, beta2):
+        return update_fn(p, grad, exp_avg, lr, wd, beta1, beta2)
+```
+ ω
+Triton专家
+- 任务：实现一个Triton版本的更新函数，其输出与给定的PyTorch参考实现数值一致。提供一个名为ModelNew的入口点。
+
+- 分析：
+  - 参考更新规则（元素级，无归约）：
+    - p <- p * (1 - lr * wd)  # 权重衰减
+    - diff = exp_avg - grad
+    - upd = diff * beta1 + grad
+    - p <- p + sign(upd) * lr, 但仅当 upd != 0 时生效（即 upd == 0 时不更新）
+    - exp_avg <- diff * beta2 + grad
+  - 这不是标准Adam，而是一个自定义更新，使用了两个不同的EMA系数（beta1, beta2）来混合grad和diff。
+  - sign规则：sign(x) = -1 if x>0, +1 if x<0, 0 if x==0；然后乘以lr。mask upd != 0确保零时不更新。
+
+- 优化与实现细节：
+  - 内存带宽受限的纯元素级操作。主要优化是选择合适的BLOCK_SIZE和num_warps，保证连续访问。
+  - 使用Triton autotune在128/4和1024/8之间选择。
+  - 移除无效的restore_value autotune参数。
+  - 假设float32；扩展到fp16/bf16需要小心标量常量的dtype。
+  - 确保CUDA、contiguous。
+
+- 正确性：
+  - 严格按照参考公式实现，保持数值一致性。
+  - 测试用例与参考一致。
+
+- 入口点ModelNew：
+  - 提供update_fn作为公开接口。
+  - 可选test_update_fn用于本地验证。
+
+源码
+
+```python
+import torch
+import triton
+import triton.language as tl
+
+@triton.autotune(
+    configs=[
+        triton.Config({'BLOCK_SIZE': 128}, num_warps=4),
+        triton.Config({'BLOCK_SIZE': 1024}, num_warps=8),
+    ],
+    key=['n_elements'],
+)
+@triton.jit
+def update_fn_kernel(
+    p_ptr,
+    grad_ptr,
+    exp_avg_ptr,
+    lr,
+    wd,
+    beta1,
+    beta2,
+    n_elements,
+    BLOCK_SIZE: tl.constexpr,
+):
+    pid = tl.program_id(axis=0)
+    block_start = pid * BLOCK_SIZE
+    offsets = block_start + tl.arange(0, BLOCK_SIZE)
+    mask = offsets < n_elements
+
+    # Load
+    p = tl.load(p_ptr + offsets, mask=mask)
+    g = tl.load(grad_ptr + offsets, mask=mask)
+    e = tl.load(exp_avg_ptr + offsets, mask=mask)
+
+    # Weight decay
+    p = p * (1.0 - lr * wd)
+
+    # diff and update
+    diff = e - g
+    upd = diff * beta1 + g
+
+    # sign-step with mask
+    pos = upd > 0
+    neg = upd < 0
+    nonzero = upd != 0
+    sign = tl.where(pos, -1.0, tl.where(neg, 1.0, 0.0))  # -1, +1, or 0
+    p = p + sign * lr * nonzero  # zero contribution when upd==0
+
+    # update exp_avg
+    e = diff * beta2 + g
+
+    # Store
+    tl.store(p_ptr + offsets, p, mask=mask)
+    tl.store(exp_avg_ptr + offsets, e, mask=mask)
+
+
+def update_fn(
+    p: torch.Tensor,
+    grad: torch.Tensor,
+    exp_avg: torch.Tensor,
+    lr: float,
+    wd: float,
+    beta1: float,
+    beta2: float,
+):
+    # Checks
+    assert p.is_cuda and grad.is_cuda and exp_avg.is_cuda, "All tensors must be CUDA"
+    assert p.dtype == torch.float32 and grad.dtype == torch.float32 and exp_avg.dtype == torch.float32, \
+        "This implementation currently supports float32 tensors"
+    assert p.shape == grad.shape == exp_avg.shape, "Shapes must match"
+    assert p.is_contiguous() and grad.is_contiguous() and exp_avg.is_contiguous(), "Tensors must be contiguous"
+
+    n_elements = p.numel()
+    grid = lambda meta: (triton.cdiv(n_elements, meta['BLOCK_SIZE']),)
+
+    update_fn_kernel[grid](
+        p, grad, exp_avg,
+        lr, wd, beta1, beta2,
+        n_elements,
+    )
+
+
+# Optional: helper for local validation
+def test_update_fn():
+    n_elements = 128
+    p1 = torch.randn(n_elements, device='cuda', dtype=torch.float32)
+    grad1 = torch.randn(n_elements, device='cuda', dtype=torch.float32)
+    exp_avg1 = torch.zeros(n_elements, device='cuda', dtype=torch.float32)
+
+    n_elements = 1024
+    p2 = torch.randn(n_elements, device='cuda', dtype=torch.float32)
+    grad2 = torch.randn(n_elements, device='cuda', dtype=torch.float32)
+    exp_avg2 = torch.zeros(n_elements, device='cuda', dtype=torch.float32)
+
+    lr = 0.01
+    wd = 0.01
+    beta1 = 0.9
+    beta2 = 0.999
+
+    update_fn(p1, grad1, exp_avg1, lr, wd, beta1, beta2)
+    update_fn(p2, grad2, exp_avg2, lr, wd, beta1, beta2)
+
+    return {
+        "test_case_1": (p1.clone(), exp_avg1.clone()),
+        "test_case_2": (p2.clone(), exp_avg2.clone())
+    }
+
+
+# Entry point as requested
+class ModelNew:
+    @staticmethod
+    def update(p, grad, exp_avg, lr, wd, beta1, beta2):
+        return update_fn(p, grad, exp_avg, lr, wd, beta1, beta2)
+```
+ ω
+Triton专家
+- 任务：实现一个Triton版本的更新函数，其输出与给定的PyTorch参考实现数值一致。提供一个名为ModelNew的入口点。
+
+- 分析：
+  - 参考更新规则（元素级，无归约）：
+    - p <- p * (1 - lr * wd)  # 权重衰减
+    - diff = exp_avg - grad
+    - upd = diff * beta1 + grad
+    - p <- p + sign(upd) * lr, 但仅当 upd != 0 时生效（即 upd == 0 时不更新）
+    - exp_avg <- diff * beta2 + grad
+  - 这不是标准Adam，而是一个自定义更新，使用了两个不同的EMA系数（beta1, beta2）来混合grad和diff。
+  - sign规则：sign(x) = -1 if x>0, +1 if x<0, 0 if x==0；然后乘以lr。mask upd != 0确保零时不更新。
+
+- 优化与实现细节：
+  - 内存带宽受限的纯元素级操作。主要优化是选择合适的BLOCK_SIZE和num_warps，保证连续访问。
+  - 使用Triton autotune在128/4和1024/8之间选择。
+  - 移除无效的restore_value autotune参数。
+  - 假设float32；扩展到fp16/bf16需要小心标量常量的dtype。
+  - 确保CUDA、contiguous。
+
+- 正确性：
+  - 严格按照参考公式实现，保持数值一致性。
+  - 测试用例与参考一致。
+
+- 入口点ModelNew：
+  - 提供update_fn作为公开接口。
+  - 可选test_update_fn用于本地验证。
+
+源码
+
+```python
+import torch
+import triton
+import triton.language as tl
+
+@triton.autotune(
+    configs=[
+        triton.Config({'BLOCK_SIZE': 128}, num_warps=4),
+        triton.Config({'BLOCK_SIZE': 1024}, num_warps=8),
+    ],
+    key=['n_elements'],
+)
+@triton.jit
+def update_fn_kernel(
+    p_ptr,
+    grad_ptr,
+    exp_avg_ptr,
+    lr,
+    wd,
+    beta1,
+    beta2,
+    n_elements,
+    BLOCK_SIZE: tl.constexpr,
+):
+    pid = tl.program_id(axis=0)
+    block_start = pid * BLOCK_SIZE
+    offsets = block_start + tl.arange(0, BLOCK_SIZE)
+    mask = offsets < n_elements
+
+    # Load
+    p = tl.load(p_ptr + offsets, mask=mask)
+    g = tl.load(grad_ptr + offsets, mask=mask)
+    e = tl.load(exp_avg_ptr + offsets, mask=mask)
+
+    # Weight decay
+    p = p * (1.0 - lr * wd)
+
+    # diff and update
+    diff = e - g
+    upd = diff * beta1 + g
+
+    # sign-step with mask
+    pos = upd > 0
+    neg = upd < 0
+    nonzero = upd != 0
+    sign = tl.where(pos, -1.0, tl.where(neg, 1.0, 0.0))  # -1, +1, or 0
+    p = p + sign * lr * nonzero  # zero contribution when upd==0
+
+    # update exp_avg
+    e = diff * beta2 + g
+
+    # Store
+    tl.store(p_ptr + offsets, p, mask=mask)
+    tl.store(exp_avg_ptr + offsets, e, mask=mask)
+
+
+def update_fn(
+    p: torch.Tensor,
+    grad: torch.Tensor,
+    exp_avg: torch.Tensor,
+    lr: float,
+    wd: float,
+    beta1: float,
+    beta2: float,
+):
+    # Checks
+    assert p.is_cuda and grad.is_cuda and exp_avg.is_cuda, "All tensors must be CUDA"
+    assert p.dtype == torch.float32 and grad.dtype == torch.float32 and exp_avg.dtype == torch.float32, \
+        "This implementation currently supports float32 tensors"
+    assert p.shape == grad.shape == exp_avg.shape, "Shapes must match"
+    assert p.is_contiguous() and grad.is_contiguous() and exp_avg.is_contiguous(), "Tensors must be contiguous"
+
+    n_elements = p.numel()
+    grid = lambda meta: (triton.cdiv(n_elements, meta['BLOCK_SIZE']),)
+
+    update_fn_kernel[grid](
+        p, grad, exp_avg,
+        lr, wd, beta1, beta2,
+        n_elements,
+    )
+
+
+# Optional: helper for local validation
+def test_update_fn():
+    n_elements = 128
+    p1 = torch.randn(n_elements, device='cuda', dtype=torch.float32)
+    grad1 = torch.randn(n_elements, device='cuda', dtype=torch.float32)
+    exp_avg1 = torch.zeros(n_elements, device='cuda', dtype=torch.float32)
+
+    n_elements = 1024
+    p2 = torch.randn(n_elements, device='cuda', dtype=torch.float32)
+    grad2 = torch.randn(n_elements, device='cuda', dtype=torch.float32)
+    exp_avg2 = torch.zeros(n_elements, device='cuda', dtype=torch.float32)
+
+    lr = 0.01
+    wd = 0.01
+    beta1 = 0.9
+    beta2 = 0.999
+
+    update_fn(p1, grad1, exp_avg1, lr, wd, beta1, beta2)
+    update_fn(p2, grad2, exp_avg2, lr, wd, beta1, beta2)
+
+    return {
+        "test_case_1": (p1.clone(), exp_avg1.clone()),
+        "test_case_2": (p2.clone(), exp_avg2.clone())
+    }
+
+
+# Entry point as requested
+class ModelNew:
+    @staticmethod
+    def update(p, grad, exp_avg, lr, wd, beta1, beta2):
+        return update_fn(p, grad, exp_avg, lr, wd, beta1, beta2)
+```
+ ω
+Triton专家
+- 任务：实现一个Triton版本的更新函数，其输出与给定的PyTorch参考实现数值一致。提供一个名为ModelNew的入口点。
+
+- 分析：
+  - 参考更新规则（元素级，无归约）：
+    - p <- p * (1 - lr * wd)  # 权重衰减
+    - diff = exp_avg - grad
+    - upd = diff * beta1 + grad
+    - p <- p + sign(upd) * lr, 但仅当 upd != 0 时生效（即 upd == 0 时不更新）
+    - exp_avg <- diff * beta2 + grad
+  - 这不是标准Adam，而是一个自定义更新，使用了两个不同的EMA系数（beta1, beta2）来混合grad和diff。
+  - sign规则：sign(x) = -1 if x>0, +1 if x<0, 0 if x==0；然后乘以lr。mask upd != 0确保零时不更新。
+
+- 优化与实现细节：
+  - 内存带宽受限的纯元素级操作。主要优化是选择合适的BLOCK_SIZE和num_warps，保证连续访问。
+  - 使用Triton autotune在128/4和1024/8之间选择。
+  - 移除无效的restore_value autotune参数。
+  - 假设float32；扩展到fp16/bf16需要小心标量常量的dtype。
+  - 确保CUDA、contiguous。
+
+- 正确性：
+  - 严格按照参考公式实现，保持数值一致性。
+  - 测试用例与参考一致。
+
+- 入口点ModelNew：
+  - 提供update_fn作为公开接口。
+  - 可选test_update_fn用于本地验证。
+
+源码
+
+```python
+import torch
+import triton
+import triton.language as tl
+
+@triton.autotune(
+    configs=[
+        triton.Config({'BLOCK_SIZE': 128}, num_warps=4),
+        triton.Config({'BLOCK_SIZE': 1024}, num_warps=8),
+    ],
+    key=['n_elements'],
+)
+@triton.jit
+def update_fn_kernel(
+    p_ptr,
+    grad_ptr,
+    exp_avg_ptr,
+    lr,
+    wd,
+    beta1,
+    beta2,
+    n_elements,
+    BLOCK_SIZE: tl.constexpr,
+):
+    pid = tl.program_id(axis=0)
+    block_start = pid * BLOCK_SIZE
+    offsets = block_start + tl.arange(0, BLOCK_SIZE)
+    mask = offsets < n_elements
+
+    # Load
+    p = tl.load(p_ptr + offsets, mask=mask)
+    g = tl.load(grad_ptr + offsets, mask=mask)
+    e = tl.load(exp_avg_ptr + offsets, mask=mask)
+
+    # Weight decay
+    p = p * (1.0 - lr * wd)
+
+    # diff and update
+    diff = e - g
+    upd = diff * beta1 + g
+
+    # sign-step with mask
+    pos = upd > 0
+    neg = upd < 0
+    nonzero = upd != 0
+    sign = tl.where(pos, -1.0, tl.where(neg, 1.0, 0.0))  # -1, +1, or 0
+    p = p + sign * lr * nonzero  # zero contribution when upd==0
+
+    # update exp_avg
+    e = diff * beta2 + g
+
+    # Store
+    tl.store(p_ptr + offsets, p, mask=mask)
+    tl.store(exp_avg_ptr + offsets, e, mask=mask)
+
+
+def update_fn(
+    p: torch.Tensor,
+    grad: torch.Tensor,
+    exp_avg: torch.Tensor,
+    lr: float,
+    wd: float,
+    beta1: float,
+    beta2: float,
+):
+    # Checks
+    assert p.is_cuda and grad.is_cuda and exp_avg.is_cuda, "All tensors must be CUDA"
+    assert p.dtype == torch.float32 and grad.dtype == torch.float32 and exp_avg.dtype == torch.float32, \
+        "This implementation currently supports float32 tensors"
+    assert p.shape == grad.shape == exp_avg.shape, "Shapes must match"
+    assert p.is_contiguous() and grad.is_contiguous() and exp_avg.is_contiguous(), "Tensors must be contiguous"
+
+    n_elements = p.numel()
+    grid = lambda meta: (triton.cdiv(n_elements, meta['BLOCK_SIZE']),)
+
+    update_fn_kernel[grid](
+        p, grad, exp_avg,
+        lr, wd, beta1, beta2,
+        n_elements,
+    )
+
+
+# Optional: helper for local validation
+def test_update_fn():
+    n_elements = 128
+    p1 = torch.randn(n_elements, device='cuda', dtype=torch.float32)
+    grad1 = torch.randn(n_elements, device='cuda', dtype=torch.float32)
+    exp_avg1 = torch.zeros(n_elements, device='cuda', dtype=torch.float32)
+
+    n_elements = 1024
+    p2 = torch.randn(n_elements, device='cuda', dtype=torch.float32)
+    grad2 = torch.randn(n_elements, device='cuda', dtype=torch.float32)
+    exp_avg2 = torch.zeros(n_elements, device='cuda', dtype=torch.float32)
+
+    lr = 0.01
+    wd = 0.01
+    beta1 = 0.9
+    beta2 = 0.999
+
+    update_fn(p1, grad1, exp_avg1, lr, wd, beta1, beta2)
+    update_fn(p2, grad2, exp_avg2, lr, wd, beta1, beta2)
+
+    return {
+        "test_case_1": (p1.clone(), exp_avg1.clone()),
+        "test_case_2": (p2.clone(), exp_avg2.clone())
+    }
+
+
+# Entry point as requested
+class ModelNew:
+    @staticmethod
+    def update(p, grad, exp_avg, lr, wd, beta1, beta2):
+        return update_fn(p, grad, exp_avg, lr, wd, beta1, beta2)
+```
+ ω
+Triton专家
+- 任务：实现一个Triton版本的更新函数，其输出与给定的PyTorch参考实现数值一致。提供一个名为ModelNew的入口点。
+
+- 分析：
+  - 参考更新规则（元素级，无归约）：
+    - p <- p * (1 - lr * wd)  # 权重衰减
+    - diff = exp_avg - grad
+    - upd = diff * beta1 + grad
+    - p <- p + sign(upd) * lr, 但仅当 upd != 0 时生效（即 upd == 0 时不更新）
+    - exp_avg <- diff * beta2 + grad
+  - 这不是标准Adam，而是一个自定义更新，使用了两个不同的EMA系数（beta1, beta2）来混合grad和diff。
+  - sign规则：sign(x) = -1 if x>0, +1 if x<0, 0 if x==0；然后乘以lr。mask upd != 0确保零时不更新。
+
+- 优化与实现细节：
+  - 内存带宽受限的纯元素级操作。主要优化是选择合适的BLOCK_SIZE和num_warps，保证连续访问。
+  - 使用Triton autotune在128/4和1024/8之间选择。
+  - 移除无效的restore_value autotune参数。
+  - 假设float32；扩展到fp16/bf16需要小心标量常量的dtype。
+  - 确保CUDA、contiguous。
+
+- 正确性：
+  - 严格按照参考公式实现，保持数值一致性。
+  - 测试用例与参考一致。
+
+- 入口点ModelNew：
+  - 提供update_fn作为公开接口。
+  - 可选test_update_fn用于本地验证。
+
+源码
+
+```python
+import torch
+import triton
+import triton.language as tl
+
+@triton.autotune(
+    configs=[
+        triton.Config({'BLOCK_SIZE': 128}, num_warps=4),
+        triton.Config({'BLOCK_SIZE': 1024}, num_warps=8),
+    ],
+    key=['n_elements'],
+)
+@triton.jit
+def update_fn_kernel(
+    p_ptr,
+    grad_ptr,
+    exp_avg_ptr,
+    lr,
+    wd,
+    beta1,
+    beta2,
+    n_elements,
+    BLOCK_SIZE: tl.constexpr,
+):
+    pid = tl.program_id(axis=0)
+    block_start = pid * BLOCK_SIZE
+    offsets = block_start + tl.arange(0, BLOCK_SIZE)
+    mask = offsets < n_elements
+
+    # Load
+    p = tl.load(p_ptr + offsets, mask=mask)
+    g = tl.load(grad_ptr + offsets, mask=mask)
+    e = tl.load(exp_avg_ptr + offsets, mask=mask)
+
+    # Weight decay
+    p = p * (1.0 - lr * wd)
+
+    # diff and update
+    diff = e - g
+    upd = diff * beta1 + g
+
+    # sign-step with mask
+    pos = upd > 0
+    neg = upd < 0
+    nonzero = upd != 0
+    sign = tl.where(pos, -1.0, tl.where(neg, 1.0, 0.0))  # -1, +1, or 0
+    p = p + sign * lr * nonzero  # zero contribution when upd==0
+
+    # update exp_avg
+    e = diff * beta2 + g
+
+    # Store
+    tl.store(p_ptr + offsets, p, mask=mask)
+    tl.store(exp_avg_ptr + offsets, e, mask=mask)
+
+
+def update_fn(
+    p: torch.Tensor,
+    grad: torch.Tensor,
+    exp_avg: torch.Tensor,
+    lr: float,
+    wd: float,
+    beta1: float,
+    beta2: float,
+):
+    # Checks
+    assert p.is_cuda and grad.is_cuda and exp_avg.is_cuda, "All tensors must be CUDA"
+    assert p.dtype == torch.float32 and grad.dtype == torch.float32 and exp_avg.dtype == torch.float32, \
+        "This implementation currently supports float32 tensors"
+    assert p.shape == grad.shape == exp_avg.shape, "Shapes must match"
+    assert p.is_contiguous() and grad.is_contiguous() and exp_avg.is_contiguous(), "Tensors must be contiguous"
+
+    n_elements = p.numel()
+    grid = lambda meta: (triton.cdiv(n_elements, meta['BLOCK_SIZE']),)
+
+    update_fn_kernel[grid](
+        p, grad, exp_avg,
+        lr, wd, beta1, beta2,
+        n_elements,
+    )
+
+
+# Optional: helper for local validation
+def test_update_fn():
+    n_elements = 128
+    p1 = torch.randn

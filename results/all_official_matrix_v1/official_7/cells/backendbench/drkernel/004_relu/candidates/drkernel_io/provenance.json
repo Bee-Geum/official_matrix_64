@@ -1,0 +1,39 @@
+{
+  "agent": "drkernel",
+  "mode": "rl_model_only_gym_unusable",
+  "gym_usable": false,
+  "gym_usable_note": "KernelGYM speaks KernelBench (Model/ModelNew) only; this task is in another format, so it returned VALIDATION_ERROR without running the kernel. The multi-turn feedback loop is therefore NOT reproduced for this cell -- what ran is the RL model on its own. The benchmark's official oracle still scored the kernel, so `correct` remains a real result.",
+  "model_repo": "hkust-nlp/drkernel-14b",
+  "served_as": "drkernel14b",
+  "base_url": "http://127.0.0.1:8004/v1",
+  "gym_url": "http://127.0.0.1:10907",
+  "gym": "KernelGYM /evaluate (the RL environment the model was trained against)",
+  "prompt_contract": "/home/bi_geum/official_matrix_64/third_party/KernelGYM/drkernel/kernel/config/prompt_config/multi_turn_kernel.yaml",
+  "not_reproduced": "verl trainer harness (gradient computation); inference does not use it",
+  "rounds": 1,
+  "best_speedup": 0.0,
+  "turns": [
+    {
+      "turn": 0,
+      "candidate": "/home/bi_geum/official_matrix_64/results/all_official_matrix_v1/official_7/cells/backendbench/drkernel/004_relu/candidates/candidate_0000.py",
+      "verdict": {
+        "task_id": "drkernel_official_prompt_t0",
+        "status": "failed",
+        "compiled": false,
+        "correctness": false,
+        "decoy_kernel": false,
+        "reference_runtime": -1.0,
+        "kernel_runtime": -1.0,
+        "speedup": 0.0,
+        "metadata": {
+          "error": "Reference code validation failed: Code must contain a 'Model' class"
+        },
+        "error_message": "Reference code validation failed: Code must contain a 'Model' class",
+        "error_code": "VALIDATION_ERROR",
+        "submitted_at": null,
+        "completed_at": null,
+        "processing_time": null
+      }
+    }
+  ]
+}

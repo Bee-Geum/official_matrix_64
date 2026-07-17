@@ -55,7 +55,7 @@ elementwise_add = load_inline(
         ],
     extra_ldflags=[""],
     extra_cuda_cflags=[
-        "-gencode=arch=compute_80,code=sm_80",  # Correct CUDA target arch
+        "-gencode=arch=compute_90,code=sm_90",  # Correct CUDA target arch
         "--expt-relaxed-constexpr",  # CUDA specific flag
         "-lineinfo",  # Line information for debugging
         ],

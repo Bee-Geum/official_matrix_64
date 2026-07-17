@@ -1,0 +1,28 @@
+[
+  {
+    "compiled": true,
+    "correct": false,
+    "latency_ms": null,
+    "ref_latency_ms": null,
+    "speedup": null,
+    "error": "correctness: trial 0 mismatch max_abs=7.723627e+01 mean_abs=1.218822e+01",
+    "stage_s": {
+      "reference_import": 0.00015780800003994955,
+      "candidate_compile_import": 0.051929009000559745,
+      "model_init": 0.00011300899950583698,
+      "correctness": 1.9003819399995336,
+      "reference_benchmark": 0.0,
+      "candidate_benchmark": 0.0,
+      "total": 3.371434078000675
+    },
+    "correctness_trials_requested": 5,
+    "correctness_trials_executed": 1,
+    "warmup": 10,
+    "timing_iters": 100,
+    "compile_attempts": 1,
+    "profile_runs": 0,
+    "candidate": "/home/bi_geum/official_matrix_64/runs/autotriton_autotriton8b_robust_kbench_l12_round1_repeat1_temp0.2/1_Square_matrix_multiplication___rep0/candidates/round0_kernel.py",
+    "candidate_index": 0,
+    "eval_wall_s": 3.893018646999735
+  }
+]

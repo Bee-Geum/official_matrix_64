@@ -1,0 +1,8 @@
+{
+  "benchmark": "multikernelbench",
+  "task_id": "10_fused_infer_attention_score",
+  "op": "10_fused_infer_attention_score",
+  "official_task": true,
+  "prompt_path": "",
+  "prompt": "Benchmark: multikernelbench\nOfficial task: 10_fused_infer_attention_score\nReturn only source code, without Markdown fences or explanations.\n\nGenerate a kernel response for the exact MultiKernelBench operator '10_fused_infer_attention_score'. Use CUDA C++ or Triton and do not replace the computation with eager PyTorch.\n\nMultiKernelBench operator: 10_fused_infer_attention_score\nOfficial dataset entry: {'category': 'npukernelbench_level4', 'source': 'NPUKernelBench'}\n"
+}

@@ -21,11 +21,35 @@ import argparse
 import importlib.util
 import sys
 from pathlib import Path
+import os
 from string import Template
 from textwrap import dedent
 
 ROOT = Path(__file__).resolve().parents[1]  # project root
 HW_FILE = ROOT / "prompts/hardware/gpu_specs.py"  # GPU spec table
+
+
+def _cuda_gencode() -> str:
+    """gencode flag for the GPU actually being used.
+
+    Upstream pinned "-gencode=arch=compute_80,code=sm_80 (target is fixed:
+    A100 / sm_80)" here and in the few-shot example, so on any other GPU the
+    model emits an sm_80 kernel that builds and then dies at launch with
+    "no kernel image is available for execution on the device". That failure
+    keeps the kernel un-runnable, so the NCU optimization phase never starts.
+    """
+    override = os.environ.get("KERNELMEM_CUDA_ARCH")  # e.g. "90"
+    if not override:
+        try:
+            import torch
+            major, minor = torch.cuda.get_device_capability(0)
+            override = f"{major}{minor}"
+        except Exception:
+            override = "80"
+    return f"-gencode=arch=compute_{override},code=sm_{override}"
+
+
+CUDA_GENCODE = _cuda_gencode()
 
 # --------------------------------------------------
 # Few‑shot pairs  (before / after)
@@ -139,7 +163,7 @@ Always include:
 - "-std=c++17"
 - "--expt-relaxed-constexpr"
 - "-lineinfo"
-- "-gencode=arch=compute_80,code=sm_80" (target is fixed: A100 / sm_80)
+- "$cuda_gencode" (target is fixed: this exact flag -- do not substitute another arch)
 
 Here are examples to show you the syntax of inline embedding custom CUDA operators in torch:
 $few_shot_examples
@@ -239,7 +263,8 @@ def build_seed_prompt(
     return test.substitute(
         few_shot_examples=few_shot_examples_text,
         arch_src=arch_src,
-        kernel_src=kernel_src
+        kernel_src=kernel_src,
+        cuda_gencode=CUDA_GENCODE,
     )
 
 

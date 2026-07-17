@@ -1,0 +1,6 @@
+{
+  "benchmark": "kernelbench",
+  "task_id": "28_BMM_InstanceNorm_Sum_ResidualAdd_Multiply",
+  "source_path": "/home/bi_geum/official_matrix_64/third_party/KernelBench/KernelBench/level2/28_BMM_InstanceNorm_Sum_ResidualAdd_Multiply.py",
+  "official_task": true
+}

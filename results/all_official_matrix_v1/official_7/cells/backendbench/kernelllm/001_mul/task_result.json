@@ -1,0 +1,19 @@
+{
+  "benchmark": "backendbench",
+  "task_id": "mul",
+  "official_task": 1,
+  "generation_ok": 1,
+  "candidate_count": 2,
+  "official_attempted": 1,
+  "official_eval": 0,
+  "correct": 0,
+  "performance_available": 0,
+  "best_score": 0.0,
+  "infrastructure_error": "op 'mul' not covered by locally-available BackendBench suites (opinfo/torchbench); no official test case exists for it here",
+  "candidate_error": "",
+  "generation_log": "/home/bi_geum/official_matrix_64/results/all_official_matrix_v1/official_7/cells/backendbench/kernelllm/001_mul/generation.log.txt",
+  "official_reports": [],
+  "agent": "kernelllm",
+  "cell_dir": "/home/bi_geum/official_matrix_64/results/all_official_matrix_v1/official_7/cells/backendbench/kernelllm",
+  "task_dir": "/home/bi_geum/official_matrix_64/results/all_official_matrix_v1/official_7/cells/backendbench/kernelllm/001_mul"
+}

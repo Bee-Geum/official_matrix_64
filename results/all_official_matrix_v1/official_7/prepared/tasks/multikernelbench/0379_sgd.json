@@ -1,0 +1,8 @@
+{
+  "benchmark": "multikernelbench",
+  "task_id": "sgd",
+  "op": "sgd",
+  "official_task": true,
+  "prompt_path": "/home/bi_geum/official_matrix_64/third_party/MultiKernelBench/reference/optimizer/sgd.py",
+  "prompt": "Benchmark: multikernelbench\nOfficial task: sgd\nReturn only source code, without Markdown fences or explanations.\n\nGenerate a kernel response for the exact MultiKernelBench operator 'sgd'. Use CUDA C++ or Triton and do not replace the computation with eager PyTorch.\n\nimport torch\nimport torch.nn as nn\n\nclass Model(nn.Module):\n    def __init__(self, momentum=0.9, lr=1e-2):\n        super().__init__()\n        self.momentum = momentum\n        self.lr = lr\n\n    def forward(self, param, grad, velocity):\n        velocity = self.momentum * velocity + grad\n        param = param - self.lr * velocity\n        return param\n\ndef get_inputs():\n    param = torch.rand(1024, 4096)\n    grad = torch.rand(1024, 4096)\n    velocity = torch.zeros_like(param)\n    return [param, grad, velocity]\n\ndef get_init_inputs():\n    return []\n"
+}

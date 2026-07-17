@@ -1,0 +1,28 @@
+{
+  "agent": "cudaforge",
+  "driver": "/home/bi_geum/official_matrix_64/drivers/cudaforge_live_driver.py",
+  "cmd": [
+    "/home/bi_geum/official_matrix_64/.venv/bin/python3",
+    "/home/bi_geum/official_matrix_64/drivers/cudaforge_live_driver.py",
+    "--task",
+    "/home/bi_geum/official_matrix_64/results/all_official_matrix_v1/official_7/cells/sol_execbench/cudaforge/000_black-forest-labs_FLUX.1-schnell_flux_rope_apply_rotation/official_prompt.txt",
+    "--cand_dir",
+    "/home/bi_geum/official_matrix_64/results/all_official_matrix_v1/official_7/cells/sol_execbench/cudaforge/000_black-forest-labs_FLUX.1-schnell_flux_rope_apply_rotation/candidates",
+    "--rounds",
+    "1",
+    "--seed",
+    "0",
+    "--temperature",
+    "0.2"
+  ],
+  "returncode": 1,
+  "wall_s": 17.51555347442627,
+  "log": "/home/bi_geum/official_matrix_64/results/all_official_matrix_v1/official_7/cells/sol_execbench/cudaforge/000_black-forest-labs_FLUX.1-schnell_flux_rope_apply_rotation/generation.log.txt",
+  "candidate_count": 1,
+  "raw_candidates": [
+    "/home/bi_geum/official_matrix_64/results/all_official_matrix_v1/official_7/cells/sol_execbench/cudaforge/000_black-forest-labs_FLUX.1-schnell_flux_rope_apply_rotation/candidates/cudaforge_run/20260716_150041_official_prompt_vllm_qwen14b/official_prompt/code/kernel_20260716_150052.py"
+  ],
+  "normalized_candidates": [
+    "/home/bi_geum/official_matrix_64/results/all_official_matrix_v1/official_7/cells/sol_execbench/cudaforge/000_black-forest-labs_FLUX.1-schnell_flux_rope_apply_rotation/candidates/official_candidate_000.py"
+  ]
+}

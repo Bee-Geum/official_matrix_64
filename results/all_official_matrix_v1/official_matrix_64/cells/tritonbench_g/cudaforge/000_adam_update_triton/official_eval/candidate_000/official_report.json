@@ -7,11 +7,11 @@
   "official_attempted": 1,
   "official_eval": 1,
   "correct": 1,
-  "performance_available": 1,
-  "score": 0.88,
+  "performance_available": 0,
+  "score": 0.0,
   "evaluator_rc": 0,
   "infrastructure_error": "",
-  "candidate_error": "",
+  "candidate_error": "correctness passed, but official performance score was unavailable",
   "logs": [
     "/home/bi_geum/official_matrix_64/results/all_official_matrix_v1/official_matrix_64/cells/tritonbench_g/cudaforge/000_adam_update_triton/official_eval/candidate_000/0_call_acc.log.txt",
     "/home/bi_geum/official_matrix_64/results/all_official_matrix_v1/official_matrix_64/cells/tritonbench_g/cudaforge/000_adam_update_triton/official_eval/candidate_000/1_exe_acc.log.txt",
@@ -23,5 +23,5 @@
     "/home/bi_geum/official_matrix_64/results/all_official_matrix_v1/official_matrix_64/cells/tritonbench_g/cudaforge/000_adam_update_triton/official_eval/candidate_000/stage/source/adam_update_triton.py",
     "/home/bi_geum/official_matrix_64/results/all_official_matrix_v1/official_matrix_64/cells/tritonbench_g/cudaforge/000_adam_update_triton/official_eval/candidate_000/stage/target/adam_update_triton.py"
   ],
-  "wall_s": 26.76572299003601
+  "wall_s": 66.2447988986969
 }

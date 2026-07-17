@@ -1,0 +1,5 @@
+Benchmark: backendbench
+Official task: div
+Return only source code, without Markdown fences or explanations.
+
+Write a Python module for BackendBench DirectoryBackend exposing `div_kernel_impl`. Use a custom Triton/CUDA/compiled implementation. Do not use the eager PyTorch operator as a fallback.

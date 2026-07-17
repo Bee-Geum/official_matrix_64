@@ -25,8 +25,7 @@
 # 주의:
 # - 기존 runs/를 rm 하지 않습니다.
 # - SKIP 셀(AMD/NPU/TPU 전용, 언어 불일치)은 이유와 함께 건너뜁니다.
-# - agents.csv의 'inferred' 4종(drkernel/geak/ksearch/cuda_agent)은 driver CLI가
-#   아카이브에 없어 추정값입니다. 한 줄씩 확인 후 매트릭스 전체 실행을 권장합니다.
+# - agents.csv에는 7종의 official 에이전트만 남아 있습니다(geak/ksearch/cuda_agent/cuda_l1 제거).
 source "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/lib/common.sh"
 
 MODE="${1:-help}"; shift || true

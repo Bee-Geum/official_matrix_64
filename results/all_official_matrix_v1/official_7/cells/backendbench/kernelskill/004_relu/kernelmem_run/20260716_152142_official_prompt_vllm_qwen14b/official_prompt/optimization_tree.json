@@ -1,0 +1,23 @@
+{
+  "task": "/home/bi_geum/official_matrix_64/results/all_official_matrix_v1/official_7/cells/backendbench/kernelskill/004_relu/official_prompt.txt",
+  "base_kernel": null,
+  "base_score": null,
+  "best_kernel": null,
+  "best_score": null,
+  "kernels": {
+    "kernel_20260716_152148": {
+      "parent": null,
+      "kernel_name": "kernel_20260716_152148",
+      "kernel_path": "/home/bi_geum/official_matrix_64/results/all_official_matrix_v1/official_7/cells/backendbench/kernelskill/004_relu/kernelmem_run/20260716_152142_official_prompt_vllm_qwen14b/official_prompt/code/kernel_20260716_152148.py",
+      "speedup": null,
+      "runnable": false,
+      "ncu_passed": false,
+      "phase": "seed",
+      "round": 0,
+      "strategy": null,
+      "method_matched": false,
+      "timestamp": "2026-07-16T15:21:51.836550"
+    }
+  },
+  "timestamp": "2026-07-16T15:21:52.009791"
+}

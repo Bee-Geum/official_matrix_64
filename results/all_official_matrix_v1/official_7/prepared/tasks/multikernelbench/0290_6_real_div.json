@@ -1,0 +1,8 @@
+{
+  "benchmark": "multikernelbench",
+  "task_id": "6_real_div",
+  "op": "6_real_div",
+  "official_task": true,
+  "prompt_path": "",
+  "prompt": "Benchmark: multikernelbench\nOfficial task: 6_real_div\nReturn only source code, without Markdown fences or explanations.\n\nGenerate a kernel response for the exact MultiKernelBench operator '6_real_div'. Use CUDA C++ or Triton and do not replace the computation with eager PyTorch.\n\nMultiKernelBench operator: 6_real_div\nOfficial dataset entry: {'category': 'npukernelbench_level0', 'source': 'NPUKernelBench'}\n"
+}

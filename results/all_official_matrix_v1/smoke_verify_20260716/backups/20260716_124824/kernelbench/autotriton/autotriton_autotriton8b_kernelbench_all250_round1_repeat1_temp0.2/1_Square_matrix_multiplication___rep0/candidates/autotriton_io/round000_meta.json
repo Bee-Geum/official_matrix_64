@@ -1,0 +1,7 @@
+{
+  "system": "autotriton",
+  "round": 0,
+  "latency_s": 2.4458436965942383,
+  "candidate": "/home/bi_geum/official_matrix_64/runs/autotriton_autotriton8b_kernelbench_all250_round1_repeat1_temp0.2/1_Square_matrix_multiplication___rep0/candidates/round000_kernel.py",
+  "first_line": "import torch"
+}

@@ -7,7 +7,7 @@
   "correct_task_count": 1,
   "valid_official_cell": 1,
   "all_tasks_official": 1,
-  "wall_s": 43.83959102630615,
+  "wall_s": 91.05313086509705,
   "top_infrastructure_error": "",
   "task_results": [
     {
@@ -19,10 +19,10 @@
       "official_attempted": 1,
       "official_eval": 1,
       "correct": 1,
-      "performance_available": 1,
-      "best_score": 0.88,
+      "performance_available": 0,
+      "best_score": 0.0,
       "infrastructure_error": "",
-      "candidate_error": "",
+      "candidate_error": "correctness passed, but official performance score was unavailable",
       "generation_log": "/home/bi_geum/official_matrix_64/results/all_official_matrix_v1/official_matrix_64/cells/tritonbench_g/cudaforge/000_adam_update_triton/generation.log.txt",
       "official_reports": [],
       "agent": "cudaforge",
@@ -30,5 +30,5 @@
       "task_dir": "/home/bi_geum/official_matrix_64/results/all_official_matrix_v1/official_matrix_64/cells/tritonbench_g/cudaforge/000_adam_update_triton"
     }
   ],
-  "finished_at": "2026-07-13T15:12:28+0900"
+  "finished_at": "2026-07-16T00:09:28+0900"
 }

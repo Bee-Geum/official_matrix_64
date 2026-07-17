@@ -1,0 +1,7 @@
+{
+  "system": "incoder32b",
+  "round": 0,
+  "latency_s": 10.442002296447754,
+  "candidate": "/home/bi_geum/official_matrix_64/results/all_official_matrix_v1/smoke_verify_20260716/cells/tritonbench_t/incoder32b/000_Adam/candidates/candidate_0000.py",
+  "first_line": "import torch"
+}

@@ -1,0 +1,9 @@
+$ /home/bi_geum/official_matrix_64/.venv/bin/python3 /home/bi_geum/official_matrix_64/drivers/cudaforge_inline.py --task /home/bi_geum/official_matrix_64/results/all_official_matrix_v1/smoke_verify_20260716/cells/tritonbench_g/cudaforge/000_adam_update_triton/official_prompt.txt --cand_dir /home/bi_geum/official_matrix_64/results/all_official_matrix_v1/smoke_verify_20260716/cells/tritonbench_g/cudaforge/000_adam_update_triton/candidates --rounds 1 --seed 0 --temperature 0.2
+cwd=/home/bi_geum/official_matrix_64
+returncode=0
+wall_s=26.026155
+----- STDOUT -----
+[cudaforge] wrote /home/bi_geum/official_matrix_64/results/all_official_matrix_v1/smoke_verify_20260716/cells/tritonbench_g/cudaforge/000_adam_update_triton/candidates/round000_kernel.py
+
+----- STDERR -----
+

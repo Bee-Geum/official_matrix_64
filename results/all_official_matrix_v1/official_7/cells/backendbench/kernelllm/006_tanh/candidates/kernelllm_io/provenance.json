@@ -1,0 +1,14 @@
+{
+  "agent": "kernelllm",
+  "mode": "model_only",
+  "model_repo": "facebook/KernelLLM",
+  "served_as": "kernelllm8b",
+  "base_url": "http://127.0.0.1:8002/v1",
+  "api": "/v1/completions (completion model, not chat)",
+  "prompt_template": "model repo kernelllm.py PROMPT_TEMPLATE (verbatim)",
+  "generator": "/home/bi_geum/official_matrix_64/drivers/kernelllm_gen.py",
+  "gen_rc": 0,
+  "kernels": [
+    "/home/bi_geum/official_matrix_64/results/all_official_matrix_v1/official_7/cells/backendbench/kernelllm/006_tanh/candidates/round0_kernel.py"
+  ]
+}

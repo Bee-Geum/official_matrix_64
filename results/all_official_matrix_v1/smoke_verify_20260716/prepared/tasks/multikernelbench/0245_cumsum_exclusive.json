@@ -1,0 +1,8 @@
+{
+  "benchmark": "multikernelbench",
+  "task_id": "cumsum_exclusive",
+  "op": "cumsum_exclusive",
+  "official_task": true,
+  "prompt_path": "/home/bi_geum/official_matrix_64/third_party/MultiKernelBench/reference/math/cumsum_exclusive.py",
+  "prompt": "Benchmark: multikernelbench\nOfficial task: cumsum_exclusive\nReturn only source code, without Markdown fences or explanations.\n\nGenerate a kernel response for the exact MultiKernelBench operator 'cumsum_exclusive'. Use CUDA C++ or Triton and do not replace the computation with eager PyTorch.\n\nimport torch\nimport torch.nn as nn\n\nclass Model(nn.Module):\n    \"\"\"\n    A model that performs an exclusive cumulative sum (does not include the current element).\n\n    Parameters:\n        dim (int): The dimension along which to perform the exclusive cumulative sum.\n    \"\"\"\n\n    def __init__(self, dim):\n        super(Model, self).__init__()\n        self.dim = dim\n\n    def forward(self, x):\n        cumsum = torch.cumsum(x.narrow(dim=self.dim, start=0, length=x.size(self.dim)-1), dim=self.dim)\n        return torch.cat((torch.zeros_like(x.select(self.dim, 0).unsqueeze(self.dim)), cumsum), dim=self.dim)\n\nbatch_size = 32768\ninput_shape = (32768,)\ndim = 1\n\ndef get_inputs():\n    return [torch.rand(batch_size, *input_shape)]\n\ndef get_init_inputs():\n    return [dim]\n"
+}

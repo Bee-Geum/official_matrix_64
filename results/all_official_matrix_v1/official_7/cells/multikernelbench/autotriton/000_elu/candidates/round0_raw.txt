@@ -1,0 +1,78 @@
+<think>
+We are given a reference PyTorch model that applies the ELU activation function.
+ The task is to implement an optimized GPU kernel using Triton for this operation.
+ The ELU function is defined as:
+   ELU(x) = x if x > 0
+            = alpha * (exp(x) - 1) if x <= 0
+
+ We note that the reference model uses `torch.nn.functional.elu` with a given alpha.
+ We are to write a Triton kernel that performs this computation element-wise.
+
+ Steps:
+ 1. We will create a Triton kernel that processes elements in parallel.
+ 2. The kernel will load elements from the input tensor, apply the ELU function, and store the result.
+ 3. We must handle the case when alpha is not 1.0 (though the reference model uses alpha=1.0 by default).
+ 4. We will design the kernel to use appropriate block sizes and grid sizes for efficiency.
+ 5. We will wrap the kernel in a PyTorch module (class `ModelNew`) that matches the interface of the reference model.
+
+ Important: The kernel must be efficient and handle any tensor shape (though we'll flatten it for processing).
+
+ Implementation details for the kernel:
+   - We'll use a 1D grid of blocks. Each block will process a contiguous set of elements.
+   - Each program (thread block) will process a range of elements determined by `pid` (program ID) and `BLOCK_SIZE`.
+   - We'll use `tl.arange` to generate offsets within a block and then compute the global index.
+   - We'll use a mask to avoid out-of-bounds accesses.
+
+ Since the ELU function involves an exponential for negative inputs, we'll use `tl.math.exp` from Triton.
+
+ The module `ModelNew` will:
+   - Store the alpha parameter in its `__init__`.
+   - In the `forward` method, it will:
+        * Check that the input tensor is contiguous and on the GPU (or move it if necessary? The problem doesn't specify, but for performance we assume CUDA).
+        * Allocate an output tensor of the same shape and dtype as the input.
+        * Compute the total number of elements and launch the Triton kernel with appropriate grid size.
+
+ Note: The problem states to return a complete Python module, including the necessary imports.
+
+ Let's write the code accordingly.
+</think><answer>
+**Approach:**
+We started by analyzing the PyTorch ELU activation function to understand the mathematical operations required. We then designed a Triton kernel to perform these operations element-wise, handling both positive and negative inputs differently. The kernel uses efficient memory access patterns and masks to avoid out-of-bounds errors. We incorporated the kernel into a PyTorch module (`ModelNew`) that matches the interface of the reference model, ensuring compatibility and correct functionality.So the triton code should be ```python
+import torch
+import torch.nn as nn
+import triton
+import triton.language as tl
+
+@triton.jit
+def elu_kernel(
+    x_ptr,
+    y_ptr,
+    alpha,
+    n_elements,
+    BLOCK_SIZE: tl.constexpr,
+):
+    pid = tl.program_id(axis=0)
+    block_start = pid * BLOCK_SIZE
+    offsets = block_start + tl.arange(0, BLOCK_SIZE)
+    mask = offsets < n_elements
+    x = tl.load(x_ptr + offsets, mask=mask)
+    zero = tl.zeros_like(x)
+    exp_x = tl.math.exp(x)
+    elu_x = tl.where(x > zero, x, alpha * (exp_x - one))
+    tl.store(y_ptr + offsets, elu_x, mask=mask)
+
+class ModelNew(nn.Module):
+    def __init__(self, alpha: float = 1.0):
+        super(ModelNew, self).__init__()
+        self.alpha = alpha
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        if not x.is_cuda:
+            x = x.to('cuda')
+        output = torch.empty_like(x)
+        n_elements = output.numel()
+        grid = lambda meta: (triton.cdiv(n_elements, meta['BLOCK_SIZE']),)
+        elu_kernel[grid](x, output, self.alpha, n_elements, BLOCK_SIZE=1024)
+        return output
+
+```</answer>

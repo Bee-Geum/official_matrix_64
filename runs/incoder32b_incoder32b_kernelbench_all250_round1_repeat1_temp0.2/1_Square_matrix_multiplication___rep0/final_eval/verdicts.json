@@ -1,0 +1,28 @@
+[
+  {
+    "compiled": true,
+    "correct": false,
+    "latency_ms": null,
+    "ref_latency_ms": null,
+    "speedup": null,
+    "error": "correctness: trial 0 mismatch max_abs=1.100835e+03 mean_abs=9.368019e+02",
+    "stage_s": {
+      "reference_import": 0.00015081999936228385,
+      "candidate_compile_import": 0.052456530000199564,
+      "model_init": 0.00011471699963294668,
+      "correctness": 5.844202452999525,
+      "reference_benchmark": 0.0,
+      "candidate_benchmark": 0.0,
+      "total": 7.284905647999949
+    },
+    "correctness_trials_requested": 5,
+    "correctness_trials_executed": 1,
+    "warmup": 10,
+    "timing_iters": 100,
+    "compile_attempts": 1,
+    "profile_runs": 0,
+    "candidate": "/home/bi_geum/official_matrix_64/runs/incoder32b_incoder32b_kernelbench_all250_round1_repeat1_temp0.2/1_Square_matrix_multiplication___rep0/candidates/candidate_0000.py",
+    "candidate_index": 0,
+    "eval_wall_s": 7.716647306000596
+  }
+]

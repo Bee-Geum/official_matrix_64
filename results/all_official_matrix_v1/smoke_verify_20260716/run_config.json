@@ -1,0 +1,126 @@
+{
+  "root": "/home/bi_geum/official_matrix_64",
+  "run_root": "/home/bi_geum/official_matrix_64/results/all_official_matrix_v1/smoke_verify_20260716",
+  "benchmarks": [
+    "kernelbench",
+    "robust_kbench",
+    "tritonbench_t",
+    "tritonbench_g",
+    "multikernelbench",
+    "backendbench",
+    "pareval",
+    "sol_execbench"
+  ],
+  "agents": [
+    {
+      "name": "cudaforge",
+      "model": "qwen14b",
+      "langs": [
+        "cuda"
+      ],
+      "driver": "/home/bi_geum/official_matrix_64/drivers/cudaforge_live_driver.py",
+      "out_flag": "--cand_dir",
+      "gen_args": "--task {TASK} --cand_dir {CAND} --rounds {ROUNDS} --seed {SEED} --temperature {TEMP}",
+      "glob": "round*_kernel.py"
+    },
+    {
+      "name": "autokernel",
+      "model": "qwen14b",
+      "langs": [
+        "cuda",
+        "triton"
+      ],
+      "driver": "/home/bi_geum/official_matrix_64/drivers/autokernel_live_driver.py",
+      "out_flag": "--out",
+      "gen_args": "--task {TASK} --out {CAND} --rounds {ROUNDS} --seed {SEED} --temperature {TEMP}",
+      "glob": "candidate_*.py"
+    },
+    {
+      "name": "kernelskill",
+      "model": "qwen14b",
+      "langs": [
+        "cuda",
+        "triton"
+      ],
+      "driver": "/home/bi_geum/official_matrix_64/drivers/kernelskill_live_driver.py",
+      "out_flag": "--out",
+      "gen_args": "--task {TASK} --out {CAND} --rounds {ROUNDS} --seed {SEED} --temperature {TEMP}",
+      "glob": "candidate_*.py"
+    },
+    {
+      "name": "drkernel",
+      "model": "drkernel14b",
+      "langs": [
+        "triton"
+      ],
+      "driver": "/home/bi_geum/official_matrix_64/drivers/drkernel_live_driver.py",
+      "out_flag": "--cand_dir",
+      "gen_args": "--task {TASK} --cand_dir {CAND} --rounds {ROUNDS} --seed {SEED} --temperature {TEMP}",
+      "glob": "candidate_*.py"
+    },
+    {
+      "name": "autotriton",
+      "model": "autotriton8b",
+      "langs": [
+        "triton"
+      ],
+      "driver": "/home/bi_geum/official_matrix_64/drivers/autotriton_live_driver.py",
+      "out_flag": "--cand_dir",
+      "gen_args": "--task {TASK} --cand_dir {CAND} --rounds {ROUNDS} --seed {SEED} --temperature {TEMP}",
+      "glob": "round*_kernel.py"
+    },
+    {
+      "name": "kernelllm",
+      "model": "kernelllm8b",
+      "langs": [
+        "triton"
+      ],
+      "driver": "/home/bi_geum/official_matrix_64/drivers/kernelllm_live_driver.py",
+      "out_flag": "--out",
+      "gen_args": "--task {TASK} --out {CAND} --rounds {ROUNDS} --seed {SEED} --temperature {TEMP}",
+      "glob": "candidate_*.py"
+    },
+    {
+      "name": "incoder32b",
+      "model": "incoder32b",
+      "langs": [
+        "cuda",
+        "triton"
+      ],
+      "driver": "/home/bi_geum/official_matrix_64/drivers/incoder32b_live_driver.py",
+      "out_flag": "--out",
+      "gen_args": "--task {TASK} --out {CAND} --rounds {ROUNDS} --seed {SEED} --temperature {TEMP}",
+      "glob": "candidate_*.py"
+    }
+  ],
+  "args": {
+    "mode": "verify",
+    "root": "/home/bi_geum/official_matrix_64",
+    "run_id": "smoke_verify_20260716",
+    "benchmarks": "all",
+    "agents": "all",
+    "limit": 1,
+    "rounds": 1,
+    "repeat": 1,
+    "temp": 0.2,
+    "seed": 0,
+    "gpu": "0",
+    "gpus": "",
+    "cell_workers": 0,
+    "workers_per_gpu": 1,
+    "port": 8000,
+    "generation_timeout": 1200,
+    "eval_timeout": 1800,
+    "cell_timeout": 7200,
+    "cell_attempts": 2,
+    "max_candidates": 2,
+    "pareval_build_timeout": 60,
+    "pareval_run_timeout": 180,
+    "sol_warmup": 1,
+    "sol_iterations": 3,
+    "sol_compile_timeout": 180,
+    "sol_run_timeout": 600,
+    "force": false
+  },
+  "generated_at": "2026-07-17T13:38:26+0900"
+}

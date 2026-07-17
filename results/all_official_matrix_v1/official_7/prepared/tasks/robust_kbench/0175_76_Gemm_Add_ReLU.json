@@ -1,0 +1,6 @@
+{
+  "benchmark": "robust_kbench",
+  "task_id": "76_Gemm_Add_ReLU",
+  "source_path": "/home/bi_geum/official_matrix_64/third_party/KernelBench/KernelBench/level2/76_Gemm_Add_ReLU.py",
+  "official_task": true
+}

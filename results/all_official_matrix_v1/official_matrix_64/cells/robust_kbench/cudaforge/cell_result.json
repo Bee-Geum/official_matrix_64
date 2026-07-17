@@ -7,7 +7,7 @@
   "correct_task_count": 1,
   "valid_official_cell": 1,
   "all_tasks_official": 1,
-  "wall_s": 7.383104085922241,
+  "wall_s": 9.704226732254028,
   "top_infrastructure_error": "",
   "task_results": [
     {
@@ -21,7 +21,7 @@
       "official_eval": 1,
       "correct": 1,
       "performance_available": 1,
-      "best_score": 1.0085051302542405,
+      "best_score": 1.0013785191868605,
       "infrastructure_error": "",
       "candidate_error": "",
       "generation_log": "/home/bi_geum/official_matrix_64/results/all_official_matrix_v1/official_matrix_64/cells/robust_kbench/cudaforge/kb_matrix.log.txt",
@@ -29,5 +29,5 @@
       "task_dir": ""
     }
   ],
-  "finished_at": "2026-07-13T15:13:35+0900"
+  "finished_at": "2026-07-16T00:04:37+0900"
 }

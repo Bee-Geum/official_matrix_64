@@ -1,0 +1,15 @@
+$ /home/bi_geum/official_matrix_64/.venv/bin/python3 /home/bi_geum/official_matrix_64/third_party/TritonBench/EVAL/eval_T/2_efficiency.py --gen_folder /home/bi_geum/official_matrix_64/results/all_official_matrix_v1/smoke_verify_20260716/cells/tritonbench_t/autotriton/000_Adam/official_eval/candidate_000/perf_results
+cwd=/home/bi_geum/official_matrix_64/third_party/TritonBench/EVAL/eval_T
+returncode=0
+wall_s=0.075643
+----- STDOUT -----
+================================================================================================================================================================
+Adam.json: 0.8973
+[0.8973]
+
+perf_results
+speed up: 0.9
+================================================================================================================================================================
+
+----- STDERR -----
+

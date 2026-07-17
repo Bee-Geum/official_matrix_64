@@ -14,14 +14,14 @@ Run-dir naming (produced by run_cell.sh, same scheme the harness already uses):
     runs/{agent}_{model}_{benchmark}_{subset}_round{R}_repeat{P}_temp{T}/
          {task_stem}__rep{k}/final_eval/summary.json
 
-The tricky part is that agent names (cuda_l1, cuda_agent), model names (autotriton8b) and
+The tricky part is that model names (autotriton8b) and
 benchmark names (robust_kbench, tritonbench_t, tritonbench_g, sol_execbench) all contain
 underscores, so the name cannot be split on '_'. We instead:
 
     1. strip the fixed suffix  _round(\\d+)_repeat(\\d+)_temp([0-9.]+)
     2. longest-match the agent against the known agent set (prefix, '_'-delimited)
     3. longest-match the benchmark against the known benchmark set as a '_'-delimited infix
-       (this disambiguates cuda / cuda_l1 / cuda_agent and tritonbench_t / tritonbench_g)
+       (this disambiguates tritonbench_t / tritonbench_g)
     4. whatever sits between the agent and the benchmark is the model; whatever follows the
        benchmark is the subset.
 

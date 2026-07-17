@@ -1290,6 +1290,7 @@ def _run_single_task(task_path: Path, args, batch_dir: Path) -> Dict[str, Any]:
                             continue
                     except Exception as ncu_error:
                         print(f"[ncu] ERROR: Unexpected profiling error: {ncu_error}")
+                        import traceback as _tb; _tb.print_exc()
                         # Try to save partial CSV results if available
                         if parent_kernel and hasattr(parent_kernel, 'code_path') and parent_kernel.code_path:
                             import shutil
