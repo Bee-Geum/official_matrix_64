@@ -1,0 +1,105 @@
+# <complete ModelNew code>
+import torch
+import torch.nn as nn
+from torch.utils.cpp_extension import load_inline
+
+# Chosen granularity: (A) optimize a single hotspot op
+# Replaced ops: torch.matmul
+# Fused ops into which kernel(s) / library calls: custom CUDA kernel using cuBLASLt
+# What remains in PyTorch and why: The model structure remains in PyTorch as a parameter holder for initialization and state_dict parity.
+
+# Define the custom CUDA kernel for matrix multiplication using cuBLASLt
+source = """
+#include <torch/extension.h>
+#include <cuda_runtime.h>
+#include <cublasLt.h>
+#include <ATen/cuda/CUDAContext.h>
+#include <c10/cuda/CUDAException.h>
+
+#define CHECK_CUDA(x) AT_ASSERTM(x.type().is_cuda(), #x " must be a CUDA tensor")
+#define CHECK_CONTIGUOUS(x) AT_ASSERTM(x.is_contiguous(), #x " must be contiguous")
+
+void matmul_cuda(const torch::Tensor& A, const torch::Tensor& B, torch::Tensor& C) {
+    CHECK_CUDA(A);
+    CHECK_CUDA(B);
+    CHECK_CUDA(C);
+    CHECK_CONTIGUOUS(A);
+    CHECK_CONTIGUOUS(B);
+    CHECK_CONTIGUOUS(C);
+
+    int M = A.size(0);
+    int K = A.size(1);
+    int N = B.size(1);
+
+    auto handle = at::cuda::getCurrentCUDABlasHandle();
+    cublasLtHandle_t ltHandle;
+    CUBLAS_CHECK(cublasLtCreate(&ltHandle));
+
+    cublasLtMatmulDesc_t operationDesc;
+    CUBLAS_CHECK(cublasLtMatmulDescCreate(&operationDesc, CUBLAS_COMPUTE_32F, CUDA_R_32F, CUDA_R_32F));
+
+    cublasLtMatrixLayout_t Adesc, Bdesc, Cdesc;
+    CUBLAS_CHECK(cublasLtMatrixLayoutCreate(&Adesc, CUDA_R_32F, M, K, K));
+    CUBLAS_CHECK(cublasLtMatrixLayoutCreate(&Bdesc, CUDA_R_32F, K, N, N));
+    CUBLAS_CHECK(cublasLtMatrixLayoutCreate(&Cdesc, CUDA_R_32F, M, N, N));
+
+    void* workspace = nullptr;
+    size_t workspaceSize = 0;
+
+    cublasLtMatmulHeuristicResult_t heuristicResult[1];
+    int returnedResults = 0;
+    CUBLAS_CHECK(cublasLtMatmulAlgoGetHeuristic(ltHandle, operationDesc, Adesc, Bdesc, Cdesc, Cdesc, 1, heuristicResult, &returnedResults));
+
+    if (returnedResults == 0) {
+        throw std::runtime_error("No suitable algorithm found");
+    }
+
+    CUBLAS_CHECK(cublasLtMatmulWorkspacePreferenceGet(&heuristicResult[0].algo.workspaceSize, &workspaceSize));
+    workspace = torch::empty(workspaceSize, torch::dtype(torch::kByte).device(torch::kCUDA));
+
+    CUBLAS_CHECK(cublasLtMatmul(ltHandle, operationDesc, &heuristicResult[0].algo, nullptr, A.data_ptr<float>(), Adesc, B.data_ptr<float>(), Bdesc, nullptr, C.data_ptr<float>(), Cdesc, C.data_ptr<float>(), Cdesc, workspace, workspaceSize, at::cuda::getDefaultCUDAStream()));
+
+    CUBLAS_CHECK(cublasLtMatmulDescDestroy(operationDesc));
+    CUBLAS_CHECK(cublasLtMatrixLayoutDestroy(Adesc));
+    CUBLAS_CHECK(cublasLtMatrixLayoutDestroy(Bdesc));
+    CUBLAS_CHECK(cublasLtMatrixLayoutDestroy(Cdesc));
+    CUBLAS_CHECK(cublasLtDestroy(ltHandle));
+}
+
+torch::Tensor matmul_custom_cuda(torch::Tensor A, torch::Tensor B) {
+    auto C = torch::zeros({A.size(0), B.size(1)}, A.options());
+    matmul_cuda(A, B, C);
+    return C;
+}
+"""
+
+cpp_src = (
+    "torch::Tensor matmul_custom_cuda(torch::Tensor A, torch::Tensor B);"
+)
+
+# Compile the inline CUDA code for matrix multiplication
+matmul_custom = load_inline(
+    name="matmul_custom",
+    cpp_sources=cpp_src,
+    cuda_sources=source,
+    functions=["matmul_custom_cuda"],
+    verbose=True,
+    extra_cflags=[
+        "-O3",                          # High optimization
+        "-std=c++17",                    # Use C++17 standard
+        "--expt-relaxed-constexpr",      # CUDA specific flag
+        "-lineinfo",                      # Line information for debugging
+    ],
+    extra_ldflags=[""],
+    extra_cuda_cflags=[
+        "-gencode=arch=compute_90,code=sm_90",  # Correct CUDA target arch
+    ],
+)
+
+class ModelNew(nn.Module):
+    def __init__(self):
+        super(ModelNew, self).__init__()
+        self.matmul_custom = matmul_custom
+
+    def forward(self, A: torch.Tensor, B: torch.Tensor) -> torch.Tensor:
+        return self.matmul_custom.matmul_custom_cuda(A, B)

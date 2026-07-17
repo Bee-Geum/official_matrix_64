@@ -1,0 +1,23 @@
+{
+  "compiled": true,
+  "correct": false,
+  "latency_ms": null,
+  "ref_latency_ms": null,
+  "speedup": null,
+  "error": "runtime: Traceback (most recent call last):\n  File \"/home/bi_geum/official_matrix_64/telemetry/instrumented_eval_worker.py\", line 116, in main\n    candidate_output = first_tensor(candidate_model(*inputs)).contiguous()\n                                    ^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/bi_geum/official_matrix_64/.venv/lib/python3.12/site-packages/torch/nn/modules/module.py\", line 1776, in _wrapped_call_impl\n    return self._call_impl(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/bi_geum/official_matrix_64/.venv/lib/python3.12/site-packages/torch/nn/modules/module.py\", line 1787, in _call_impl\n    return forward_call(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/bi_geum/official_matrix_64/runs/autotriton_autotriton8b_kernelbench_all250_round1_repeat1_temp0.2/1_Square_matrix_multiplication___rep0/candidates/round0_kernel.py\", line 63, in forward\n    triton_matmul[grid](A, B, C, N, BLOCK_SIZE=BLOCK_SIZE)\n  File \"/home/bi_geum/official_matrix_64/.venv/lib/python3.12/site-packages/triton/runtime/jit.py\", line 370, in <lambda>\n    return lambda *args, **kwargs: self.run(grid=grid, warmup=False, *args, **kwargs)\n                                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/bi_geum/official_matrix_64/.venv/lib/python3.12/site-packages/triton/runtime/jit.py\", line 720, in run\n    kernel = self._do_compile(key, signature, device, constexprs, options, attrs, warmup)\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/bi_geum/official_matrix_64/.venv/lib/python3.12/site-packages/triton/runtime/jit.py\", line 849, in _do_compile\n    kernel = self.compile(src, target=target, options=options.__dict__)\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/bi_geum/official_matrix_64/.venv/lib/python3.12/site-packages/triton/compiler/compiler.py\", line 304, in compile\n    module = src.make_ir(target, options, codegen_fns, module_map, context)\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\ntriton.compiler.errors.CompilationError: at 15:15:\n    offsets = pid * BLOCK_SIZE + tl.arange(0, BLOCK_SIZE)[:]\n    # Mask for valid elements in each thread block\n    mask = offsets < n\n    # Initialize accumulator\n    acc = tl.zeros((BLOCK_SIZE, BLOCK_SIZE), dtype=tl.float32)\n    # Loop over k\n    for k in range(0, n, BLOCK_SIZE):\n        # Load a and b\n        a = tl.load(a_ptr + offsets[:, None] * n + (k + tl.arange(0, BLOCK_SIZE)[None, :]), mask=mask[:, None] & (k + tl.arange(0, BLOCK_SIZE)[None, :] < n), other=0.0)\n        b = tl.load(b_ptr + (k + tl.arange(0, BLOCK_SIZE)[None, :])[:, None] * n + offsets[None, :], mask=(k + tl.arange(0, BLOCK_SIZE)[None, :] < n)[:, None] & mask[None, :], other=0.0)\n        # Compute product\n        prod = a @ b\n               ^\nAttributeError(\"'MatMult' object has no attribute '__name__'\")\n",
+  "stage_s": {
+    "reference_import": 0.00017375100014760392,
+    "candidate_compile_import": 0.0531919539998853,
+    "model_init": 0.00012031999995087972,
+    "correctness": 0.0,
+    "reference_benchmark": 0.0,
+    "candidate_benchmark": 0.0,
+    "total": 2.790516156999729
+  },
+  "correctness_trials_requested": 5,
+  "correctness_trials_executed": 0,
+  "warmup": 10,
+  "timing_iters": 100,
+  "compile_attempts": 1,
+  "profile_runs": 0
+}

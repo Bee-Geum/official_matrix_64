@@ -1,0 +1,8 @@
+{
+  "benchmark": "multikernelbench",
+  "task_id": "gemm_group_norm_hardtanh",
+  "op": "gemm_group_norm_hardtanh",
+  "official_task": true,
+  "prompt_path": "/home/bi_geum/official_matrix_64/third_party/MultiKernelBench/reference/fuse/gemm_group_norm_hardtanh.py",
+  "prompt": "Benchmark: multikernelbench\nOfficial task: gemm_group_norm_hardtanh\nReturn only source code, without Markdown fences or explanations.\n\nGenerate a kernel response for the exact MultiKernelBench operator 'gemm_group_norm_hardtanh'. Use CUDA C++ or Triton and do not replace the computation with eager PyTorch.\n\nimport torch\nimport torch.nn as nn\n\nclass Model(nn.Module):\n    \"\"\"\n    Simple model that performs a GEMM, applies Group Normalization, and then HardTanh.\n    \"\"\"\n    def __init__(self, in_features, out_features, num_groups, hardtanh_min, hardtanh_max):\n        super(Model, self).__init__()\n        self.gemm = nn.Linear(in_features, out_features)\n        self.group_norm = nn.GroupNorm(num_groups, out_features)\n        self.hardtanh = nn.Hardtanh(min_val=hardtanh_min, max_val=hardtanh_max)\n\n    def forward(self, x):\n        \"\"\"\n        Args:\n            x (torch.Tensor): Input tensor of shape (batch_size, in_features).\n        Returns:\n            torch.Tensor: Output tensor of shape (batch_size, out_features).\n        \"\"\"\n        x = self.gemm(x)\n        x = self.group_norm(x)\n        x = self.hardtanh(x)\n        return x\n\nbatch_size = 1024\nin_features = 8192\nout_features = 8192\nnum_groups = 16\nhardtanh_min = -2.0\nhardtanh_max = 2.0\n\ndef get_inputs():\n    return [torch.rand(batch_size, in_features)]\n\ndef get_init_inputs():\n    return [in_features, out_features, num_groups, hardtanh_min, hardtanh_max]"
+}

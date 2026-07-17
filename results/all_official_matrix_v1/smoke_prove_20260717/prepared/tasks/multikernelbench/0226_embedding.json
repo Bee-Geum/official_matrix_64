@@ -1,0 +1,8 @@
+{
+  "benchmark": "multikernelbench",
+  "task_id": "embedding",
+  "op": "embedding",
+  "official_task": true,
+  "prompt_path": "/home/bi_geum/official_matrix_64/third_party/MultiKernelBench/reference/index/embedding.py",
+  "prompt": "Benchmark: multikernelbench\nOfficial task: embedding\nReturn only source code, without Markdown fences or explanations.\n\nGenerate a kernel response for the exact MultiKernelBench operator 'embedding'. Use CUDA C++ or Triton and do not replace the computation with eager PyTorch.\n\nimport torch\nimport torch.nn as nn\n\nclass Model(nn.Module):\n    def __init__(self):\n        super().__init__()\n        self.embedding = nn.Embedding(100000, 768)\n\n    def forward(self, indices):\n        return self.embedding(indices)\n\ndef get_inputs():\n    indices = torch.randint(0, 100000, (512, 128))\n    return [indices]\n\ndef get_init_inputs():\n    return []\n"
+}

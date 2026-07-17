@@ -1,0 +1,23 @@
+[
+    {
+        "problem_type": "geometry",
+        "language": "cpp",
+        "name": "13_geometry_closest_pair_2d",
+        "parallelism_model": "cuda",
+        "prompt": "struct Point {\n\tdouble x, y;\n};\n\n__device__ double distanceBetweenPoints(Point const& p1, Point const& p2) {\n\treturn sqrt(pow(p2.x-p1.x, 2) + pow(p2.y-p1.y, 2));\n}\n\n/* Compute the distance between the closest two points in the vector points.\n   Store the result in distance.\n   Use CUDA to compute in parallel. The kernel is launched with at least as many threads as points.\n   Example: \n\n   input: [{2, 3}, {12, 30}, {40, 50}, {5, 1}, {12, 10}, {3, 4}]\n   output: 1.41421\n*/\n__global__ void closestPair(const Point *points, size_t numPoints, double *distance) {",
+        "outputs": [
+            {
+                "generated_output": "import torch\nimport triton\nimport triton.language as tl\n\n@triton.jit\ndef local_min_kernel(points, numPoints, local_mins, BLOCK_SIZE: tl.constexpr):\n    pid = tl.program_id(0)\n    if pid >= numPoints:\n        return\n    offs_i = pid * 2\n    x_i = tl.load(points + offs_i)\n    y_i = tl.load(points + offs_i + 1)\n    local_min = 1e20\n    for j in range(pid + 1, numPoints):\n        offs_j = j * 2\n        x_j = tl.load(points + offs_j)\n        y_j = tl.load(points + offs_j + 1)\n        dx = x_j - x_i\n        dy = y_j - y_i\n        dist = tl.sqrt(dx * dx + dy * dy)\n        if dist < local_min:\n            local_min = dist\n    tl.store(local_mins + pid, local_min)\n\n@triton.jit\ndef reduce_min_kernel(local_mins, numPoints, distance_ptr, BLOCK_SIZE: tl.constexpr):\n    pid = tl.program_id(0)\n    start = pid * BLOCK_SIZE\n    offsets = start + tl.arange(0, BLOCK_SIZE)\n    mask = offsets < numPoints\n    data = tl.load(local_mins + offsets, mask=mask, other=float('inf'))\n    block_min = tl.min(data, axis=0)\n    current_value = tl.load(distance_ptr)\n    while current_value > block_min:\n        if tl.atomic_cas(distance_ptr, current_value, block_min):\n            break\n        current_value = tl.load(distance_ptr)\n\nclass ModelNew(torch.nn.Module):\n    def __init__(self):\n        super().__init__()\n\n    def forward(self, points):\n        n = points.shape[0]\n        if n < 2:\n            return torch.tensor(float('inf'), device=points.device)\n        points_f32 = points.to(torch.float32)\n        distance = torch.tensor([float('inf')], device=points.device, dtype=torch.float32)\n        local_mins = torch.empty(n, device=points.device, dtype=torch.float32)\n        grid = lambda meta: (n,)\n        local_min_kernel[grid](points_f32, n, local_mins, BLOCK_SIZE=1024)\n        num_blocks = (n + 1023) // 1024\n        reduce_min_kernel[(num_blocks,)](local_mins, n, distance, BLOCK_SIZE=1024)\n        return distance[0]\n",
+                "source_write_success": true,
+                "did_build": false,
+                "is_source_valid": true,
+                "did_any_run": false,
+                "did_all_run": false,
+                "are_any_valid": false,
+                "are_all_valid": false,
+                "best_sequential_runtime": null,
+                "runs": null
+            }
+        ]
+    }
+]

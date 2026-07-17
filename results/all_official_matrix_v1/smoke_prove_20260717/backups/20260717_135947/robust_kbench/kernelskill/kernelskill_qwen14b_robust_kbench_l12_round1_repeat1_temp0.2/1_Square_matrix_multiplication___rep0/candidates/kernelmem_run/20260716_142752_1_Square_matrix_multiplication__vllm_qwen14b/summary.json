@@ -1,0 +1,24 @@
+{
+  "avg_speedup": 0.0,
+  "accuracy": 0.0,
+  "total_tokens_sum": 0,
+  "num_tasks": 1,
+  "tasks": [
+    {
+      "task": "/home/bi_geum/official_matrix_64/third_party/KernelBench/KernelBench/level1/1_Square_matrix_multiplication_.py",
+      "best_score": 0.0,
+      "best_runnable": false,
+      "task_dir": "/home/bi_geum/official_matrix_64/runs/kernelskill_qwen14b_robust_kbench_l12_round1_repeat1_temp0.2/1_Square_matrix_multiplication___rep0/candidates/kernelmem_run/20260716_142752_1_Square_matrix_multiplication__vllm_qwen14b/1_Square_matrix_multiplication_",
+      "figure": "/home/bi_geum/official_matrix_64/runs/kernelskill_qwen14b_robust_kbench_l12_round1_repeat1_temp0.2/1_Square_matrix_multiplication___rep0/candidates/kernelmem_run/20260716_142752_1_Square_matrix_multiplication__vllm_qwen14b/1_Square_matrix_multiplication_/figures/1_Square_matrix_multiplication__score.png",
+      "input_tokens_sum": 0,
+      "output_tokens_sum": 0,
+      "total_tokens_sum": 0,
+      "method_matched_stats": {
+        "total_opt_rounds": 0,
+        "matched_count": 0,
+        "unmatched_count": 0
+      }
+    }
+  ],
+  "timestamp": "2026-07-16 14:28:44"
+}

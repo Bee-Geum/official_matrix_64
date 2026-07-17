@@ -1,9 +1,9 @@
 benchmark,official_oracle,agents_ran,official_eval_cells,correct_cells
-kernelbench,kb_instrumented,7/11,7/11,3/11
-robust_kbench,kb_instrumented,7/11,7/11,4/11
-tritonbench_t,TritonBench EVAL,7/11,7/11,5/11
-tritonbench_g,TritonBench EVAL,7/11,7/11,5/11
-multikernelbench,eval_single_runner,7/11,5/11,2/11
-backendbench,BackendBench CLI,7/11,5/11,0/11
+kernelbench,kb_instrumented,7/11,6/11,3/11
+robust_kbench,kb_instrumented,7/11,6/11,4/11
+tritonbench_t,TritonBench EVAL,7/11,5/11,5/11
+tritonbench_g,TritonBench EVAL,7/11,5/11,4/11
+multikernelbench,eval_single_runner,7/11,5/11,3/11
+backendbench,BackendBench CLI,7/11,0/11,0/11
 pareval,ParEval run-all,7/11,5/11,0/11
 sol_execbench,sol_execbench.cli,7/11,4/11,0/11

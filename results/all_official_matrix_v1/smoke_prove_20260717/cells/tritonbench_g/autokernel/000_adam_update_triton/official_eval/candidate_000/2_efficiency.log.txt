@@ -1,0 +1,22 @@
+$ /home/bi_geum/official_matrix_64/.venv/bin/python3 /home/bi_geum/official_matrix_64/third_party/TritonBench/EVAL/eval_G/2_efficiency.py --gen_folder /home/bi_geum/official_matrix_64/results/all_official_matrix_v1/smoke_prove_20260717/cells/tritonbench_g/autokernel/000_adam_update_triton/official_eval/candidate_000/perf_results
+cwd=/home/bi_geum/official_matrix_64/third_party/TritonBench/EVAL/eval_G
+returncode=1
+wall_s=0.074902
+----- STDOUT -----
+================================================================================================================================================================
+[]
+
+perf_results
+
+----- STDERR -----
+Traceback (most recent call last):
+  File "/home/bi_geum/official_matrix_64/third_party/TritonBench/EVAL/eval_G/2_efficiency.py", line 65, in <module>
+    statis(gen_folder)
+  File "/home/bi_geum/official_matrix_64/third_party/TritonBench/EVAL/eval_G/2_efficiency.py", line 52, in statis
+    print(f"speed up: {avg(spdups)}")
+                       ^^^^^^^^^^^
+  File "/home/bi_geum/official_matrix_64/third_party/TritonBench/EVAL/eval_G/2_efficiency.py", line 33, in <lambda>
+    avg = lambda listt: round(sum(listt) / len(listt), 2)
+                              ~~~~~~~~~~~^~~~~~~~~~~~
+ZeroDivisionError: division by zero
+

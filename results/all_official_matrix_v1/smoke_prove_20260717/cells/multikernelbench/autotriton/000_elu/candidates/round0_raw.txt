@@ -1,0 +1,115 @@
+<think>
+We are given a reference PyTorch model that applies the ELU activation function.
+ The task is to implement an optimized GPU kernel using Triton for the same functionality.
+ The ELU function is defined as:
+   ELU(x) = x if x > 0
+            = alpha * (exp(x) - 1) if x <= 0
+
+ We note that the reference model uses `torch.nn.functional.elu` with a given `alpha`.
+ We are to write a Triton kernel that performs this computation element-wise.
+
+ Steps:
+ 1. We will create a Triton kernel that processes elements in parallel.
+ 2. The kernel will load elements from the input tensor, apply the ELU function, and store the result.
+ 3. We must handle the `alpha` parameter, which is a scalar. We can pass it as a kernel argument.
+ 4. We need to consider the data type and ensure the kernel is compatible.
+
+ Important: The kernel must be efficient and use appropriate block sizes.
+
+ Implementation details:
+ - The kernel will be launched with a grid of blocks, each block handling a contiguous set of elements.
+ - We will use `tl.arange` to get the indices within a block and then compute the global index.
+ - We will use a mask to avoid out-of-bounds memory accesses.
+
+ Since the ELU function involves an exponential for negative values, we use `tl.math.exp` from Triton.
+
+ We are to wrap the kernel in a PyTorch module called `ModelNew` that has the same interface as the reference.
+
+ Let's design the kernel:
+
+   @triton.jit
+   def elu_kernel(
+       x_ptr,          # pointer to input tensor
+       output_ptr,     # pointer to output tensor
+       alpha,          # scalar alpha parameter
+       n_elements,     # total number of elements in the tensor
+       BLOCK_SIZE: tl.constexpr,  # number of elements each block should process
+   ):
+       pid = tl.program_id(axis=0)  # 1D launch grid
+       block_start = pid * BLOCK_SIZE
+       offsets = block_start + tl.arange(0, BLOCK_SIZE)
+       mask = offsets < n_elements
+
+       x = tl.load(x_ptr + offsets, mask=mask)
+       # Compute ELU: if x > 0 -> x; else -> alpha * (exp(x) - 1)
+       # We can use tl.where(condition, x, y) to select between two expressions.
+       condition = x > 0.0
+       exp_term = tl.math.exp(x) - 1.0
+       result = tl.where(condition, x, alpha * exp_term)
+       tl.store(output_ptr + offsets, result, mask=mask)
+
+ Then, in the ModelNew class:
+   - We store the alpha parameter.
+   - In the forward pass, we flatten the input tensor to 1D for simplicity (since the operation is element-wise) and then reshape the output.
+   - We compute the total number of elements and launch the kernel with an appropriate grid and block size.
+
+ However, note that the input tensor can be of any shape. We'll handle that by flattening and then restoring the shape.
+
+ Important: We must ensure that the kernel is launched with the correct number of blocks. We can use:
+      grid = lambda meta: (triton.cdiv(n_elements, meta['BLOCK_SIZE']),)
+
+ We choose a reasonable BLOCK_SIZE, such as 1024.
+
+ Let's write the code accordingly.
+</think><answer>
+To solve this problem, we need to implement an optimized GPU kernel using Triton for the ELU activation function, which matches the functionality of the given PyTorch reference model. The ELU function is defined as \( \text{ELU}(x) = x \) if \( x > 0 \) and \( \alpha \times (\exp(x) - 1) \) if \( x \leq 0 \). The solution involves creating a Triton kernel that processes elements in parallel, applying the ELU function efficiently, and integrating this kernel into a PyTorch module.
+
+### Approach
+1. **Triton Kernel Design**: The kernel processes elements in blocks for efficiency. Each block handles a contiguous set of elements, and within each block, elements are processed in parallel. The kernel uses a mask to avoid out-of-bounds memory accesses.
+2. **Element-wise Processing**: For each element, the kernel checks if it is greater than zero. If true, the element remains unchanged; otherwise, it computes \( \alpha \times (\exp(x) - 1) \).
+3. **PyTorch Module Integration**: The `ModelNew` class initializes with an alpha parameter and uses the Triton kernel in its forward pass. The input tensor is flattened to a 1D array for processing, and the output is reshaped to match the input dimensions. The kernel is launched with a grid size calculated based on the number of elements and a block size of 1024.
+
+### Solution Code
+```python
+import torch
+import torch.nn as nn
+import triton
+import triton.language as tl
+
+@triton.jit
+def elu_kernel(
+    x_ptr,
+    output_ptr,
+    alpha,
+    n_elements,
+    BLOCK_SIZE: tl.constexpr,
+):
+    pid = tl.program_id(axis=0)
+    block_start = pid * BLOCK_SIZE
+    offsets = block_start + tl.arange(0, BLOCK_SIZE)
+    mask = offsets < n_elements
+    x = tl.load(x_ptr + offsets, mask=mask)
+    condition = x > 0.0
+    exp_term = tl.math.exp(x) - 1.0
+    result = tl.where(condition, x, alpha * exp_term)
+    tl.store(output_ptr + offsets, result, mask=mask)
+
+class ModelNew(nn.Module):
+    def __init__(self, alpha: float = 1.0):
+        super(ModelNew, self).__init__()
+        self.alpha = alpha
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        original_shape = x.shape
+        x_flat = x.view(-1)
+        n_elements = x_flat.numel()
+        output_flat = torch.empty_like(x_flat)
+        grid = lambda meta: (triton.cdiv(n_elements, meta['BLOCK_SIZE']),)
+        elu_kernel[grid](x_flat, output_flat, self.alpha, n_elements, BLOCK_SIZE=1024)
+        return output_flat.view(original_shape)
+```
+
+### Explanation
+1. **Triton Kernel**: The `elu_kernel` function is decorated with `@triton.jit` to compile it for GPU execution. It loads elements from the input tensor, applies the ELU function using conditional logic and exponential operations, and stores the results in the output tensor. The kernel processes elements in blocks of 1024, ensuring efficient parallel execution.
+2. **PyTorch Module**: The `ModelNew` class initializes with an alpha parameter, matching the interface of the reference model. The `forward` method flattens the input tensor to a 1D array, processes it using the Triton kernel, and reshapes the result to the original input dimensions. The kernel launch configuration is dynamically calculated based on the number of elements to ensure all elements are processed.
+3. **Efficiency**: By leveraging Triton's parallel processing capabilities and optimized memory access patterns, the solution efficiently computes the ELU activation function on GPU, providing significant performance benefits over the reference PyTorch implementation for large tensors.</answer>

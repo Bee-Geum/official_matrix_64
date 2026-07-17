@@ -1,0 +1,8 @@
+{
+  "benchmark": "multikernelbench",
+  "task_id": "14_adaptive_instance_normalization2_d_backward",
+  "op": "14_adaptive_instance_normalization2_d_backward",
+  "official_task": true,
+  "prompt_path": "",
+  "prompt": "Benchmark: multikernelbench\nOfficial task: 14_adaptive_instance_normalization2_d_backward\nReturn only source code, without Markdown fences or explanations.\n\nGenerate a kernel response for the exact MultiKernelBench operator '14_adaptive_instance_normalization2_d_backward'. Use CUDA C++ or Triton and do not replace the computation with eager PyTorch.\n\nMultiKernelBench operator: 14_adaptive_instance_normalization2_d_backward\nOfficial dataset entry: {'category': 'npukernelbench_level2', 'source': 'NPUKernelBench'}\n"
+}

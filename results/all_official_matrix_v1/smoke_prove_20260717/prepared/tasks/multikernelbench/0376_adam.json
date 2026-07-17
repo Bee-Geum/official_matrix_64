@@ -1,0 +1,8 @@
+{
+  "benchmark": "multikernelbench",
+  "task_id": "adam",
+  "op": "adam",
+  "official_task": true,
+  "prompt_path": "/home/bi_geum/official_matrix_64/third_party/MultiKernelBench/reference/optimizer/adam.py",
+  "prompt": "Benchmark: multikernelbench\nOfficial task: adam\nReturn only source code, without Markdown fences or explanations.\n\nGenerate a kernel response for the exact MultiKernelBench operator 'adam'. Use CUDA C++ or Triton and do not replace the computation with eager PyTorch.\n\nimport torch\nimport torch.nn as nn\n\nclass Model(nn.Module):\n    def __init__(self, beta1=0.9, beta2=0.999, lr=1e-3, eps=1e-8, step=1):\n        super().__init__()\n        self.beta1 = beta1\n        self.beta2 = beta2\n        self.lr = lr\n        self.eps = eps\n        self.step = step\n\n    def forward(self, param, grad, m, v):\n        m = self.beta1 * m + (1 - self.beta1) * grad\n        v = self.beta2 * v + (1 - self.beta2) * grad.pow(2)\n        m_hat = m / (1 - self.beta1 ** self.step)\n        v_hat = v / (1 - self.beta2 ** self.step)\n        param = param - self.lr * m_hat / (v_hat.sqrt() + self.eps)\n        return param\n\ndef get_inputs():\n    param = torch.rand(512, 2048)\n    grad = torch.rand_like(param)\n    m = torch.zeros_like(param)\n    v = torch.zeros_like(param)\n    return [param, grad, m, v]\n\ndef get_init_inputs():\n    return []\n"
+}

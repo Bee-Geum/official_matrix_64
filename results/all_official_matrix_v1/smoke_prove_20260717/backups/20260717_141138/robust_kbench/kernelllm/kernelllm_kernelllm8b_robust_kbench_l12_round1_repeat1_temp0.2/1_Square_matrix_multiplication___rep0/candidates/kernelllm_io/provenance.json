@@ -1,0 +1,14 @@
+{
+  "agent": "kernelllm",
+  "mode": "model_only",
+  "model_repo": "facebook/KernelLLM",
+  "served_as": "kernelllm8b",
+  "base_url": "http://127.0.0.1:8002/v1",
+  "api": "/v1/completions (completion model, not chat)",
+  "prompt_template": "model repo kernelllm.py PROMPT_TEMPLATE (verbatim)",
+  "generator": "/home/bi_geum/official_matrix_64/drivers/kernelllm_gen.py",
+  "gen_rc": 0,
+  "kernels": [
+    "/home/bi_geum/official_matrix_64/runs/kernelllm_kernelllm8b_robust_kbench_l12_round1_repeat1_temp0.2/1_Square_matrix_multiplication___rep0/candidates/round0_kernel.py"
+  ]
+}

@@ -1,0 +1,24 @@
+{
+  "avg_speedup": 0.0,
+  "accuracy": 0.0,
+  "total_tokens_sum": 0,
+  "num_tasks": 1,
+  "tasks": [
+    {
+      "task": "/home/bi_geum/official_matrix_64/results/all_official_matrix_v1/smoke_prove_20260717/cells/backendbench/kernelskill/000_add/official_prompt.txt",
+      "best_score": 0.0,
+      "best_runnable": false,
+      "task_dir": "/home/bi_geum/official_matrix_64/results/all_official_matrix_v1/smoke_prove_20260717/cells/backendbench/kernelskill/000_add/kernelmem_run/20260717_140223_official_prompt_vllm_qwen14b/official_prompt",
+      "figure": "/home/bi_geum/official_matrix_64/results/all_official_matrix_v1/smoke_prove_20260717/cells/backendbench/kernelskill/000_add/kernelmem_run/20260717_140223_official_prompt_vllm_qwen14b/official_prompt/figures/official_prompt_score.png",
+      "input_tokens_sum": 0,
+      "output_tokens_sum": 0,
+      "total_tokens_sum": 0,
+      "method_matched_stats": {
+        "total_opt_rounds": 0,
+        "matched_count": 0,
+        "unmatched_count": 0
+      }
+    }
+  ],
+  "timestamp": "2026-07-17 14:02:33"
+}

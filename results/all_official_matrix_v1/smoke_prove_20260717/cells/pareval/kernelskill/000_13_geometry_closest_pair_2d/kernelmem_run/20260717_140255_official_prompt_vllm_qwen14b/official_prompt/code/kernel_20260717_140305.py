@@ -1,0 +1,106 @@
+# <complete ModelNew code>
+import torch
+import torch.nn as nn
+import torch.nn.functional as F
+from torch.utils.cpp_extension import load_inline
+
+# Define the custom CUDA kernel for finding the closest pair of points
+source = """
+#include <torch/extension.h>
+#include <cuda_runtime.h>
+#include <ATen/cuda/CUDAContext.h>
+#include <c10/cuda/CUDAException.h>
+#include <cmath>
+
+struct Point {
+	double x, y;
+};
+
+__device__ double distanceBetweenPoints(Point const& p1, Point const& p2) {
+	return sqrt(pow(p2.x-p1.x, 2) + pow(p2.y-p1.y, 2));
+}
+
+__global__ void closestPair(const Point *points, size_t numPoints, double *distance) {
+	__shared__ double minDist[1024];
+	__shared__ Point closestPair[2][1024];
+
+	int tid = threadIdx.x;
+	int bid = blockIdx.x;
+	int idx = bid * blockDim.x + tid;
+
+	if (idx < numPoints) {
+		minDist[tid] = DBL_MAX;
+		closestPair[0][tid] = points[idx];
+		closestPair[1][tid] = points[idx];
+	} else {
+		minDist[tid] = DBL_MAX;
+	}
+
+	__syncthreads();
+
+	for (int i = 0; i < numPoints; ++i) {
+		if (i != idx) {
+			double dist = distanceBetweenPoints(points[idx], points[i]);
+			if (dist < minDist[tid]) {
+				minDist[tid] = dist;
+				closestPair[0][tid] = points[idx];
+				closestPair[1][tid] = points[i];
+			}
+		}
+	}
+
+	__syncthreads();
+
+	if (tid == 0) {
+		double localMinDist = DBL_MAX;
+		Point localClosestPair[2];
+		for (int i = 0; i < blockDim.x; ++i) {
+			if (minDist[i] < localMinDist) {
+				localMinDist = minDist[i];
+				localClosestPair[0] = closestPair[0][i];
+				localClosestPair[1] = closestPair[1][i];
+			}
+		}
+		if (localMinDist < *distance) {
+			*distance = localMinDist;
+		}
+	}
+}
+"""
+
+cpp_src = (
+    "void closestPair(const Point *points, size_t numPoints, double *distance);"
+)
+
+# Compile the inline CUDA code for finding the closest pair of points
+closest_pair = load_inline(
+    name="closest_pair",
+    cpp_sources=cpp_src,
+    cuda_sources=source,
+    functions=["closestPair"],
+    verbose=True,
+    extra_cflags=[
+        "-O3",                          # High optimization
+        "-std=c++17",                    # Use C++17 standard
+        "--expt-relaxed-constexpr",      # CUDA specific flag
+        "-lineinfo",                      # Line information for debugging
+    ],
+    extra_ldflags=[""],
+    extra_cuda_cflags=[
+        "-gencode=arch=compute_90,code=sm_90",  # Correct CUDA target arch
+    ],
+)
+
+class ModelNew(nn.Module):
+    def __init__(self) -> None:
+        super().__init__()
+        self.closest_pair = closest_pair
+
+    def forward(self, points):
+        num_points = points.size(0)
+        distance = torch.tensor(float('inf'), device=points.device)
+        block_size = 256
+        num_blocks = (num_points + block_size - 1) // block_size
+
+        self.closest_pair.closestPair(points.data_ptr(), num_points, distance.data_ptr())
+        return distance

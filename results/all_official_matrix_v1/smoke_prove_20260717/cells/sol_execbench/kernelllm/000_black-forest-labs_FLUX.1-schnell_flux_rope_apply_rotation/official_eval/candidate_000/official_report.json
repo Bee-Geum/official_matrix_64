@@ -1,0 +1,24 @@
+{
+  "benchmark": "sol_execbench",
+  "task_id": "black-forest-labs_FLUX.1-schnell_flux_rope_apply_rotation",
+  "task_manifest": "/home/bi_geum/official_matrix_64/results/all_official_matrix_v1/smoke_prove_20260717/prepared/tasks/sol_execbench/0000_black-forest-labs_FLUX.1-schnell_flux_rope_apply_rotation.json",
+  "candidate": "/home/bi_geum/official_matrix_64/results/all_official_matrix_v1/smoke_prove_20260717/cells/sol_execbench/kernelllm/000_black-forest-labs_FLUX.1-schnell_flux_rope_apply_rotation/candidates/official_candidate_000.py",
+  "official_task": 1,
+  "official_attempted": 1,
+  "official_eval": 1,
+  "correct": 0,
+  "performance_available": 0,
+  "score": 0.0,
+  "evaluator_rc": 1,
+  "infrastructure_error": "",
+  "candidate_error": "            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\\n  File \\\"/home/bi_geum/official_matrix_64/results/all_official_matrix_v1/smoke_prove_20260717/cells/sol_execbench/kernelllm/_scratch/tmp/sol_execbench_fr8bjv8f/kernel.py\\\", line 12, in _call_candidate\\n    raise RuntimeError('candidate import failed') from _candidate_error\\nRuntimeError: candidate import failed\\n\", \"correctness\": null, \"performance\": null}}, {\"definition\": \"black-forest-labs_FLUX.1-schnell_flux_rope_apply_rotation\", \"workload\": {\"axes\": {\"batch_size\": 2, \"seq_len\": 211}, \"inputs\": {\"query_or_key\": {\"type\": \"random\"}, \"freqs_cos\": {\"type\": \"random\"}, \"freqs_sin\": {\"type\": \"random\"}}, \"uuid\": \"5d04d1cd-7de5-56c0-8dec-6b2c20c5e006\", \"tolerance\": {\"max_atol\": 0.01, \"max_rtol\": 0.01, \"required_matched_ratio\": 0.99, \"max_error_cap\": null, \"allow_negative_inf\": false}}, \"solution\": \"kernelllm_black-forest-labs_FLUX.1-schnell_flux_rope_apply_rotation\", \"evaluation\": {\"status\": \"RUNTIME_ERROR\", \"environment\": {\"hardware\": \"NVIDIA H100 80GB HBM3\", \"libs\": {\"torch\": \"2.10.0+cu128\", \"triton\": \"3.6.0\", \"cuda\": \"12.8\"}}, \"timestamp\": \"2026-07-17T14:13:23.447776\", \"log\": \"User function failed: candidate import failed\\nTraceback (most recent call last):\\n  File \\\"/home/bi_geum/official_matrix_64/results/all_official_matrix_v1/smoke_prove_20260717/cells/sol_execbench/kernelllm/_scratch/tmp/sol_execbench_fr8bjv8f/kernel.py\\\", line 6, in <module>\\n    exec(compile(_CANDIDATE_CODE, '<agent_candidate>', 'exec'), _candidate.__dict__)\\n         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\\n  File \\\"<agent_candidate>\\\", line 13\\n    ```\\n    ^\\nSyntaxError: invalid syntax\\n\\nThe above exception was the direct cause of the following exception:\\n\\nTraceback (most recent call last):\\n  File \\\"/home/bi_geum/official_matrix_64/results/all_official_matrix_v1/smoke_prove_20260717/cells/sol_execbench/kernelllm/_scratch/tmp/sol_execbench_fr8bjv8f/eval_driver.py\\\", line 482, in <module>\\n    _user_outputs = _call_and_collect_outputs(\\n                    ^^^^^^^^^^^^^^^^^^^^^^^^^^\\n  File \\\"/home/bi_geum/official_matrix_64/results/all_official_matrix_v1/smoke_prove_20260717/cells/sol_execbench/kernelllm/_scratch/tmp/sol_execbench_fr8bjv8f/eval_driver.py\\\", line 72, in _call_and_collect_outputs\\n    fn(*inputs, *outputs)\\n  File \\\"/home/bi_geum/official_matrix_64/results/all_official_matrix_v1/smoke_prove_20260717/cells/sol_execbench/kernelllm/_scratch/tmp/sol_execbench_fr8bjv8f/kernel.py\\\", line 24, in run\\n    result = _call_candidate(query_or_key, freqs_cos, freqs_sin)\\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\\n  File \\\"/home/bi_geum/official_matrix_64/results/all_official_matrix_v1/smoke_prove_20260717/cells/sol_execbench/kernelllm/_scratch/tmp/sol_execbench_fr8bjv8f/kernel.py\\\", line 12, in _call_candidate\\n    raise RuntimeError('candidate import failed') from _candidate_error\\nRuntimeError: candidate import failed\\n\", \"correctness\": null, \"performance\": null}}]",
+  "logs": [
+    "/home/bi_geum/official_matrix_64/results/all_official_matrix_v1/smoke_prove_20260717/cells/sol_execbench/kernelllm/000_black-forest-labs_FLUX.1-schnell_flux_rope_apply_rotation/official_eval/candidate_000/official_eval.log.txt"
+  ],
+  "artifacts": [
+    "/home/bi_geum/official_matrix_64/results/all_official_matrix_v1/smoke_prove_20260717/cells/sol_execbench/kernelllm/000_black-forest-labs_FLUX.1-schnell_flux_rope_apply_rotation/official_eval/candidate_000/solution.json",
+    "/home/bi_geum/official_matrix_64/results/all_official_matrix_v1/smoke_prove_20260717/cells/sol_execbench/kernelllm/000_black-forest-labs_FLUX.1-schnell_flux_rope_apply_rotation/official_eval/candidate_000/trace.jsonl",
+    "/home/bi_geum/official_matrix_64/results/all_official_matrix_v1/smoke_prove_20260717/cells/sol_execbench/kernelllm/000_black-forest-labs_FLUX.1-schnell_flux_rope_apply_rotation/official_eval/candidate_000/bench_config.json"
+  ],
+  "wall_s": 2.7463533878326416
+}

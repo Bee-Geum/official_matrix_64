@@ -1,0 +1,19 @@
+{
+  "benchmark": "tritonbench_g",
+  "task_id": "adam_update_triton",
+  "official_task": 1,
+  "generation_ok": 0,
+  "candidate_count": 0,
+  "official_attempted": 0,
+  "official_eval": 0,
+  "correct": 0,
+  "performance_available": 0,
+  "best_score": 0.0,
+  "infrastructure_error": "no candidate was evaluated",
+  "candidate_error": "",
+  "generation_log": "/home/bi_geum/official_matrix_64/results/all_official_matrix_v1/smoke_prove_20260717/cells/tritonbench_g/cudaforge/000_adam_update_triton/generation.log.txt",
+  "official_reports": [],
+  "agent": "cudaforge",
+  "cell_dir": "/home/bi_geum/official_matrix_64/results/all_official_matrix_v1/smoke_prove_20260717/cells/tritonbench_g/cudaforge",
+  "task_dir": "/home/bi_geum/official_matrix_64/results/all_official_matrix_v1/smoke_prove_20260717/cells/tritonbench_g/cudaforge/000_adam_update_triton"
+}

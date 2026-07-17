@@ -1,0 +1,945 @@
+Analysis and plan
+
+- What the reference does
+  - The provided PyTorch model is a simple elementwise add: y = x + x, i.e., y = 2 * x.
+  - It’s purely memory-bound: two loads (x, x) and one store (y), minimal arithmetic.
+  - The optimal implementation on GPU is a single-pass, coalesced load/store kernel that touches each element once.
+
+- What to optimize and why
+  - For such a trivial op, the main lever is memory bandwidth and launch overhead.
+  - A well-tuned 1D kernel with:
+    - Coalesced loads/stores,
+    - Reasonable block size (e.g., 1024–4096 elements per program),
+    - Minimal control flow,
+    will saturate memory bandwidth.
+  - Advanced techniques (vectorized loads, shared memory, staging) are unnecessary here.
+  - Ensure dtype preservation: output dtype must match input dtype.
+
+- Design choices
+  - 1D grid over N elements.
+  - Each program processes BLOCK elements; loop over tiles if N > BLOCK.
+  - Use contiguous indexing; assume contiguous input (common in benchmarks).
+  - Fallback to PyTorch add if Triton is unavailable is not allowed per task, so we’ll raise a clear error instead.
+  - Keep it simple and robust: no autotune (small gain vs complexity here), no vectorization.
+
+- Correctness and edge cases
+  - Support common floating types: float16, bfloat16, float32.
+  - Integer types also work; but benchmark likely uses float.
+  - Non-contiguous tensors would require stride-aware indexing; assume contiguous.
+  - CPU tensors: Triton targets GPU; we’ll error on CPU.
+
+- Performance notes
+  - BLOCK=1024 or 2048 is fine; larger (4096) may help for very large N.
+  - num_warps 4–8 is typical; we’ll use 4 for balance.
+  - This will be close to peak memory bandwidth for large N.
+
+Triton implementation (entry point: ModelNew)
+
+```python
+import torch
+
+try:
+    import triton
+    import triton.language as tl
+    _TRITON_AVAILABLE = True
+except Exception:
+    _TRITON_AVAILABLE = False
+
+
+# Simple, bandwidth-optimal elementwise: y = x + x  =>  y = 2 * x
+@triton.jit
+def _double_kernel(x_ptr, y_ptr, N, BLOCK: tl.constexpr):
+    pid = tl.program_id(axis=0)
+    offs = pid * BLOCK + tl.arange(0, BLOCK)
+    mask = offs < N
+    x = tl.load(x_ptr + offs, mask=mask)
+    y = x + x
+    tl.store(y_ptr + offs, y, mask=mask)
+
+
+class ModelNew(torch.nn.Module):
+    def __init__(self, block_size: int = 1024, num_warps: int = 4):
+        super().__init__()
+        self.block_size = block_size
+        self.num_warps = num_warps
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        # Validate device
+        if not _TRITON_AVAILABLE:
+            raise RuntimeError("Triton is not available. Install triton to use this backend.")
+        if not x.is_cuda:
+            raise RuntimeError(f"Expected CUDA tensor, got device={x.device}.")
+        if not x.is_contiguous():
+            # Could make contiguous; for now enforce for simplicity
+            raise RuntimeError("Input must be contiguous for this Triton kernel.")
+
+        # Allocate output
+        y = torch.empty_like(x)
+
+        N = x.numel()
+        if N == 0:
+            return y
+
+        grid = (triton.cdiv(N, self.block_size),)
+
+        # Launch
+        _double_kernel[grid](
+            x, y,
+            N,
+            BLOCK=self.block_size,
+            num_warps=self.num_warps,
+        )
+        return y
+```
+人工智能
+
+Analysis and plan
+
+- What the reference does
+  - The provided PyTorch model computes y = x + x elementwise. This is equivalent to y = 2 * x.
+  - It is a purely memory-bound operation: for each element, we perform two loads (of the same element twice) and one store. The arithmetic is trivial.
+
+- Optimization goals
+  - Maximize memory throughput with coalesced loads/stores and minimal control flow.
+  - Use a 1D grid over the flattened tensor to keep indexing simple and coalesced.
+  - Choose a reasonable block size and number of warps to balance occupancy and launch overhead.
+  - Preserve dtype: output dtype must match input dtype.
+
+- Design choices
+  - Flatten the tensor and process it as a 1D array.
+  - Each program instance processes BLOCK consecutive elements.
+  - Use masking for tail handling when N is not a multiple of BLOCK.
+  - Keep the kernel simple: y = x + x. Avoid more complex vectorization or shared memory, which won’t help here.
+
+- Correctness and edge cases
+  - Support common floating-point types: float16, bfloat16, float32.
+  - Integer types will also work; benchmark likely uses float.
+  - Assume contiguous input for simplicity (common in benchmarks). If not contiguous, make it contiguous before launching.
+  - CPU tensors are not supported by Triton; raise a clear error.
+
+- Performance notes
+  - BLOCK sizes of 1024–4096 are typical; 1024 or 2048 are good starting points.
+  - num_warps 4–8 is typical; 4 is a safe default.
+  - This kernel should be close to peak memory bandwidth for large N.
+
+Triton implementation (entry point: ModelNew)
+
+```python
+import torch
+
+try:
+    import triton
+    import triton.language as tl
+    _TRITON_AVAILABLE = True
+except Exception:
+    _TRITON_AVAILABLE = False
+
+
+@triton.jit
+def _double_kernel(x_ptr, y_ptr, N, BLOCK: tl.constexpr):
+    # program id
+    pid = tl.program_id(axis=0)
+    # offsets for this program
+    offs = pid * BLOCK + tl.arange(0, BLOCK)
+    mask = offs < N
+    # load, compute, store
+    x = tl.load(x_ptr + offs, mask=mask)
+    y = x + x
+    tl.store(y_ptr + offs, y, mask=mask)
+
+
+class ModelNew(torch.nn.Module):
+    def __init__(self, block_size: int = 1024, num_warps: int = 4):
+        super().__init__()
+        self.block_size = block_size
+        self.num_warps = num_warps
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        # Validate Triton and device
+        if not _TRITON_AVAILABLE:
+            raise RuntimeError("Triton is not available. Install triton to use this backend.")
+        if not x.is_cuda:
+            raise RuntimeError(f"Expected CUDA tensor, got device={x.device}.")
+
+        # Ensure contiguous for simple 1D indexing
+        if not x.is_contiguous():
+            x = x.contiguous()
+
+        # Allocate output
+        y = torch.empty_like(x)
+
+        N = x.numel()
+        if N == 0:
+            return y
+
+        # Grid: one program per BLOCK chunk
+        grid = (triton.cdiv(N, self.block_size),)
+
+        _double_kernel[grid](
+            x, y,
+            N,
+            BLOCK=self.block_size,
+            num_warps=self.num_warps,
+        )
+        return y
+```
+人工智能
+
+Analysis and plan
+
+- What the reference does
+  - The PyTorch model computes y = x + x elementwise. This is equivalent to y = 2 * x.
+  - It is a purely memory-bound operation: for each element, we perform two loads (of the same element twice) and one store. The arithmetic is trivial.
+
+- Optimization goals
+  - Maximize memory throughput with coalesced loads/stores and minimal control flow.
+  - Use a 1D grid over the flattened tensor to keep indexing simple and coalesced.
+  - Choose a reasonable block size and number of warps to balance occupancy and launch overhead.
+  - Preserve dtype: output dtype must match input dtype.
+
+- Design choices
+  - Flatten the tensor and process it as a 1D array.
+  - Each program instance processes BLOCK consecutive elements.
+  - Use masking for tail handling when N is not a multiple of BLOCK.
+  - Keep the kernel simple: y = x + x. Avoid more complex vectorization or shared memory, which won’t help here.
+
+- Correctness and edge cases
+  - Support common floating-point types: float16, bfloat16, float32.
+  - Integer types will also work; benchmark likely uses float.
+  - Assume contiguous input for simplicity (common in benchmarks). If not contiguous, make it contiguous before launching.
+  - CPU tensors are not supported by Triton; raise a clear error.
+
+- Performance notes
+  - BLOCK sizes of 1024–4096 are typical; 1024 or 2048 are good starting points.
+  - num_warps 4–8 is typical; 4 is a safe default.
+  - This kernel should be close to peak memory bandwidth for large N.
+
+Triton implementation (entry point: ModelNew)
+
+```python
+import torch
+
+try:
+    import triton
+    import triton.language as tl
+    _TRITON_AVAILABLE = True
+except Exception:
+    _TRITON_AVAILABLE = False
+
+
+@triton.jit
+def _double_kernel(x_ptr, y_ptr, N, BLOCK: tl.constexpr):
+    # program id
+    pid = tl.program_id(axis=0)
+    # offsets for this program
+    offs = pid * BLOCK + tl.arange(0, BLOCK)
+    mask = offs < N
+    # load, compute, store
+    x = tl.load(x_ptr + offs, mask=mask)
+    y = x + x
+    tl.store(y_ptr + offs, y, mask=mask)
+
+
+class ModelNew(torch.nn.Module):
+    def __init__(self, block_size: int = 1024, num_warps: int = 4):
+        super().__init__()
+        self.block_size = block_size
+        self.num_warps = num_warps
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        # Validate Triton and device
+        if not _TRITON_AVAILABLE:
+            raise RuntimeError("Triton is not available. Install triton to use this backend.")
+        if not x.is_cuda:
+            raise RuntimeError(f"Expected CUDA tensor, got device={x.device}.")
+
+        # Ensure contiguous for simple 1D indexing
+        if not x.is_contiguous():
+            x = x.contiguous()
+
+        # Allocate output
+        y = torch.empty_like(x)
+
+        N = x.numel()
+        if N == 0:
+            return y
+
+        # Grid: one program per BLOCK chunk
+        grid = (triton.cdiv(N, self.block_size),)
+
+        _double_kernel[grid](
+            x, y,
+            N,
+            BLOCK=self.block_size,
+            num_warps=self.num_warps,
+        )
+        return y
+```
+人工智能
+
+Analysis and plan
+
+- What the reference does
+  - The PyTorch model computes y = x + x elementwise. This is equivalent to y = 2 * x.
+  - It is a purely memory-bound operation: for each element, we perform two loads (of the same element twice) and one store. The arithmetic is trivial.
+
+- Optimization goals
+  - Maximize memory throughput with coalesced loads/stores and minimal control flow.
+  - Use a 1D grid over the flattened tensor to keep indexing simple and coalesced.
+  - Choose a reasonable block size and number of warps to balance occupancy and launch overhead.
+  - Preserve dtype: output dtype must match input dtype.
+
+- Design choices
+  - Flatten the tensor and process it as a 1D array.
+  - Each program instance processes BLOCK consecutive elements.
+  - Use masking for tail handling when N is not a multiple of BLOCK.
+  - Keep the kernel simple: y = x + x. Avoid more complex vectorization or shared memory, which won’t help here.
+
+- Correctness and edge cases
+  - Support common floating-point types: float16, bfloat16, float32.
+  - Integer types will also work; benchmark likely uses float.
+  - Assume contiguous input for simplicity (common in benchmarks). If not contiguous, make it contiguous before launching.
+  - CPU tensors are not supported by Triton; raise a clear error.
+
+- Performance notes
+  - BLOCK sizes of 1024–4096 are typical; 1024 or 2048 are good starting points.
+  - num_warps 4–8 is typical; 4 is a safe default.
+  - This kernel should be close to peak memory bandwidth for large N.
+
+Triton implementation (entry point: ModelNew)
+
+```python
+import torch
+
+try:
+    import triton
+    import triton.language as tl
+    _TRITON_AVAILABLE = True
+except Exception:
+    _TRITON_AVAILABLE = False
+
+
+@triton.jit
+def _double_kernel(x_ptr, y_ptr, N, BLOCK: tl.constexpr):
+    # program id
+    pid = tl.program_id(axis=0)
+    # offsets for this program
+    offs = pid * BLOCK + tl.arange(0, BLOCK)
+    mask = offs < N
+    # load, compute, store
+    x = tl.load(x_ptr + offs, mask=mask)
+    y = x + x
+    tl.store(y_ptr + offs, y, mask=mask)
+
+
+class ModelNew(torch.nn.Module):
+    def __init__(self, block_size: int = 1024, num_warps: int = 4):
+        super().__init__()
+        self.block_size = block_size
+        self.num_warps = num_warps
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        # Validate Triton and device
+        if not _TRITON_AVAILABLE:
+            raise RuntimeError("Triton is not available. Install triton to use this backend.")
+        if not x.is_cuda:
+            raise RuntimeError(f"Expected CUDA tensor, got device={x.device}.")
+
+        # Ensure contiguous for simple 1D indexing
+        if not x.is_contiguous():
+            x = x.contiguous()
+
+        # Allocate output
+        y = torch.empty_like(x)
+
+        N = x.numel()
+        if N == 0:
+            return y
+
+        # Grid: one program per BLOCK chunk
+        grid = (triton.cdiv(N, self.block_size),)
+
+        _double_kernel[grid](
+            x, y,
+            N,
+            BLOCK=self.block_size,
+            num_warps=self.num_warps,
+        )
+        return y
+```
+人工智能
+
+Analysis and plan
+
+- What the reference does
+  - The PyTorch model computes y = x + x elementwise. This is equivalent to y = 2 * x.
+  - It is a purely memory-bound operation: for each element, we perform two loads (of the same element twice) and one store. The arithmetic is trivial.
+
+- Optimization goals
+  - Maximize memory throughput with coalesced loads/stores and minimal control flow.
+  - Use a 1D grid over the flattened tensor to keep indexing simple and coalesced.
+  - Choose a reasonable block size and number of warps to balance occupancy and launch overhead.
+  - Preserve dtype: output dtype must match input dtype.
+
+- Design choices
+  - Flatten the tensor and process it as a 1D array.
+  - Each program instance processes BLOCK consecutive elements.
+  - Use masking for tail handling when N is not a multiple of BLOCK.
+  - Keep the kernel simple: y = x + x. Avoid more complex vectorization or shared memory, which won’t help here.
+
+- Correctness and edge cases
+  - Support common floating-point types: float16, bfloat16, float32.
+  - Integer types will also work; benchmark likely uses float.
+  - Assume contiguous input for simplicity (common in benchmarks). If not contiguous, make it contiguous before launching.
+  - CPU tensors are not supported by Triton; raise a clear error.
+
+- Performance notes
+  - BLOCK sizes of 1024–4096 are typical; 1024 or 2048 are good starting points.
+  - num_warps 4–8 is typical; 4 is a safe default.
+  - This kernel should be close to peak memory bandwidth for large N.
+
+Triton implementation (entry point: ModelNew)
+
+```python
+import torch
+
+try:
+    import triton
+    import triton.language as tl
+    _TRITON_AVAILABLE = True
+except Exception:
+    _TRITON_AVAILABLE = False
+
+
+@triton.jit
+def _double_kernel(x_ptr, y_ptr, N, BLOCK: tl.constexpr):
+    # program id
+    pid = tl.program_id(axis=0)
+    # offsets for this program
+    offs = pid * BLOCK + tl.arange(0, BLOCK)
+    mask = offs < N
+    # load, compute, store
+    x = tl.load(x_ptr + offs, mask=mask)
+    y = x + x
+    tl.store(y_ptr + offs, y, mask=mask)
+
+
+class ModelNew(torch.nn.Module):
+    def __init__(self, block_size: int = 1024, num_warps: int = 4):
+        super().__init__()
+        self.block_size = block_size
+        self.num_warps = num_warps
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        # Validate Triton and device
+        if not _TRITON_AVAILABLE:
+            raise RuntimeError("Triton is not available. Install triton to use this backend.")
+        if not x.is_cuda:
+            raise RuntimeError(f"Expected CUDA tensor, got device={x.device}.")
+
+        # Ensure contiguous for simple 1D indexing
+        if not x.is_contiguous():
+            x = x.contiguous()
+
+        # Allocate output
+        y = torch.empty_like(x)
+
+        N = x.numel()
+        if N == 0:
+            return y
+
+        # Grid: one program per BLOCK chunk
+        grid = (triton.cdiv(N, self.block_size),)
+
+        _double_kernel[grid](
+            x, y,
+            N,
+            BLOCK=self.block_size,
+            num_warps=self.num_warps,
+        )
+        return y
+```
+人工智能
+
+Analysis and plan
+
+- What the reference does
+  - The PyTorch model computes y = x + x elementwise. This is equivalent to y = 2 * x.
+  - It is a purely memory-bound operation: for each element, we perform two loads (of the same element twice) and one store. The arithmetic is trivial.
+
+- Optimization goals
+  - Maximize memory throughput with coalesced loads/stores and minimal control flow.
+  - Use a 1D grid over the flattened tensor to keep indexing simple and coalesced.
+  - Choose a reasonable block size and number of warps to balance occupancy and launch overhead.
+  - Preserve dtype: output dtype must match input dtype.
+
+- Design choices
+  - Flatten the tensor and process it as a 1D array.
+  - Each program instance processes BLOCK consecutive elements.
+  - Use masking for tail handling when N is not a multiple of BLOCK.
+  - Keep the kernel simple: y = x + x. Avoid more complex vectorization or shared memory, which won’t help here.
+
+- Correctness and edge cases
+  - Support common floating-point types: float16, bfloat16, float32.
+  - Integer types will also work; benchmark likely uses float.
+  - Assume contiguous input for simplicity (common in benchmarks). If not contiguous, make it contiguous before launching.
+  - CPU tensors are not supported by Triton; raise a clear error.
+
+- Performance notes
+  - BLOCK sizes of 1024–4096 are typical; 1024 or 2048 are good starting points.
+  - num_warps 4–8 is typical; 4 is a safe default.
+  - This kernel should be close to peak memory bandwidth for large N.
+
+Triton implementation (entry point: ModelNew)
+
+```python
+import torch
+
+try:
+    import triton
+    import triton.language as tl
+    _TRITON_AVAILABLE = True
+except Exception:
+    _TRITON_AVAILABLE = False
+
+
+@triton.jit
+def _double_kernel(x_ptr, y_ptr, N, BLOCK: tl.constexpr):
+    # program id
+    pid = tl.program_id(axis=0)
+    # offsets for this program
+    offs = pid * BLOCK + tl.arange(0, BLOCK)
+    mask = offs < N
+    # load, compute, store
+    x = tl.load(x_ptr + offs, mask=mask)
+    y = x + x
+    tl.store(y_ptr + offs, y, mask=mask)
+
+
+class ModelNew(torch.nn.Module):
+    def __init__(self, block_size: int = 1024, num_warps: int = 4):
+        super().__init__()
+        self.block_size = block_size
+        self.num_warps = num_warps
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        # Validate Triton and device
+        if not _TRITON_AVAILABLE:
+            raise RuntimeError("Triton is not available. Install triton to use this backend.")
+        if not x.is_cuda:
+            raise RuntimeError(f"Expected CUDA tensor, got device={x.device}.")
+
+        # Ensure contiguous for simple 1D indexing
+        if not x.is_contiguous():
+            x = x.contiguous()
+
+        # Allocate output
+        y = torch.empty_like(x)
+
+        N = x.numel()
+        if N == 0:
+            return y
+
+        # Grid: one program per BLOCK chunk
+        grid = (triton.cdiv(N, self.block_size),)
+
+        _double_kernel[grid](
+            x, y,
+            N,
+            BLOCK=self.block_size,
+            num_warps=self.num_warps,
+        )
+        return y
+```
+人工智能
+
+Analysis and plan
+
+- What the reference does
+  - The PyTorch model computes y = x + x elementwise. This is equivalent to y = 2 * x.
+  - It is a purely memory-bound operation: for each element, we perform two loads (of the same element twice) and one store. The arithmetic is trivial.
+
+- Optimization goals
+  - Maximize memory throughput with coalesced loads/stores and minimal control flow.
+  - Use a 1D grid over the flattened tensor to keep indexing simple and coalesced.
+  - Choose a reasonable block size and number of warps to balance occupancy and launch overhead.
+  - Preserve dtype: output dtype must match input dtype.
+
+- Design choices
+  - Flatten the tensor and process it as a 1D array.
+  - Each program instance processes BLOCK consecutive elements.
+  - Use masking for tail handling when N is not a multiple of BLOCK.
+  - Keep the kernel simple: y = x + x. Avoid more complex vectorization or shared memory, which won’t help here.
+
+- Correctness and edge cases
+  - Support common floating-point types: float16, bfloat16, float32.
+  - Integer types will also work; benchmark likely uses float.
+  - Assume contiguous input for simplicity (common in benchmarks). If not contiguous, make it contiguous before launching.
+  - CPU tensors are not supported by Triton; raise a clear error.
+
+- Performance notes
+  - BLOCK sizes of 1024–4096 are typical; 1024 or 2048 are good starting points.
+  - num_warps 4–8 is typical; 4 is a safe default.
+  - This kernel should be close to peak memory bandwidth for large N.
+
+Triton implementation (entry point: ModelNew)
+
+```python
+import torch
+
+try:
+    import triton
+    import triton.language as tl
+    _TRITON_AVAILABLE = True
+except Exception:
+    _TRITON_AVAILABLE = False
+
+
+@triton.jit
+def _double_kernel(x_ptr, y_ptr, N, BLOCK: tl.constexpr):
+    # program id
+    pid = tl.program_id(axis=0)
+    # offsets for this program
+    offs = pid * BLOCK + tl.arange(0, BLOCK)
+    mask = offs < N
+    # load, compute, store
+    x = tl.load(x_ptr + offs, mask=mask)
+    y = x + x
+    tl.store(y_ptr + offs, y, mask=mask)
+
+
+class ModelNew(torch.nn.Module):
+    def __init__(self, block_size: int = 1024, num_warps: int = 4):
+        super().__init__()
+        self.block_size = block_size
+        self.num_warps = num_warps
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        # Validate Triton and device
+        if not _TRITON_AVAILABLE:
+            raise RuntimeError("Triton is not available. Install triton to use this backend.")
+        if not x.is_cuda:
+            raise RuntimeError(f"Expected CUDA tensor, got device={x.device}.")
+
+        # Ensure contiguous for simple 1D indexing
+        if not x.is_contiguous():
+            x = x.contiguous()
+
+        # Allocate output
+        y = torch.empty_like(x)
+
+        N = x.numel()
+        if N == 0:
+            return y
+
+        # Grid: one program per BLOCK chunk
+        grid = (triton.cdiv(N, self.block_size),)
+
+        _double_kernel[grid](
+            x, y,
+            N,
+            BLOCK=self.block_size,
+            num_warps=self.num_warps,
+        )
+        return y
+```
+人工智能
+
+Analysis and plan
+
+- What the reference does
+  - The PyTorch model computes y = x + x elementwise. This is equivalent to y = 2 * x.
+  - It is a purely memory-bound operation: for each element, we perform two loads (of the same element twice) and one store. The arithmetic is trivial.
+
+- Optimization goals
+  - Maximize memory throughput with coalesced loads/stores and minimal control flow.
+  - Use a 1D grid over the flattened tensor to keep indexing simple and coalesced.
+  - Choose a reasonable block size and number of warps to balance occupancy and launch overhead.
+  - Preserve dtype: output dtype must match input dtype.
+
+- Design choices
+  - Flatten the tensor and process it as a 1D array.
+  - Each program instance processes BLOCK consecutive elements.
+  - Use masking for tail handling when N is not a multiple of BLOCK.
+  - Keep the kernel simple: y = x + x. Avoid more complex vectorization or shared memory, which won’t help here.
+
+- Correctness and edge cases
+  - Support common floating-point types: float16, bfloat16, float32.
+  - Integer types will also work; benchmark likely uses float.
+  - Assume contiguous input for simplicity (common in benchmarks). If not contiguous, make it contiguous before launching.
+  - CPU tensors are not supported by Triton; raise a clear error.
+
+- Performance notes
+  - BLOCK sizes of 1024–4096 are typical; 1024 or 2048 are good starting points.
+  - num_warps 4–8 is typical; 4 is a safe default.
+  - This kernel should be close to peak memory bandwidth for large N.
+
+Triton implementation (entry point: ModelNew)
+
+```python
+import torch
+
+try:
+    import triton
+    import triton.language as tl
+    _TRITON_AVAILABLE = True
+except Exception:
+    _TRITON_AVAILABLE = False
+
+
+@triton.jit
+def _double_kernel(x_ptr, y_ptr, N, BLOCK: tl.constexpr):
+    # program id
+    pid = tl.program_id(axis=0)
+    # offsets for this program
+    offs = pid * BLOCK + tl.arange(0, BLOCK)
+    mask = offs < N
+    # load, compute, store
+    x = tl.load(x_ptr + offs, mask=mask)
+    y = x + x
+    tl.store(y_ptr + offs, y, mask=mask)
+
+
+class ModelNew(torch.nn.Module):
+    def __init__(self, block_size: int = 1024, num_warps: int = 4):
+        super().__init__()
+        self.block_size = block_size
+        self.num_warps = num_warps
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        # Validate Triton and device
+        if not _TRITON_AVAILABLE:
+            raise RuntimeError("Triton is not available. Install triton to use this backend.")
+        if not x.is_cuda:
+            raise RuntimeError(f"Expected CUDA tensor, got device={x.device}.")
+
+        # Ensure contiguous for simple 1D indexing
+        if not x.is_contiguous():
+            x = x.contiguous()
+
+        # Allocate output
+        y = torch.empty_like(x)
+
+        N = x.numel()
+        if N == 0:
+            return y
+
+        # Grid: one program per BLOCK chunk
+        grid = (triton.cdiv(N, self.block_size),)
+
+        _double_kernel[grid](
+            x, y,
+            N,
+            BLOCK=self.block_size,
+            num_warps=self.num_warps,
+        )
+        return y
+```
+人工智能
+
+Analysis and plan
+
+- What the reference does
+  - The PyTorch model computes y = x + x elementwise. This is equivalent to y = 2 * x.
+  - It is a purely memory-bound operation: for each element, we perform two loads (of the same element twice) and one store. The arithmetic is trivial.
+
+- Optimization goals
+  - Maximize memory throughput with coalesced loads/stores and minimal control flow.
+  - Use a 1D grid over the flattened tensor to keep indexing simple and coalesced.
+  - Choose a reasonable block size and number of warps to balance occupancy and launch overhead.
+  - Preserve dtype: output dtype must match input dtype.
+
+- Design choices
+  - Flatten the tensor and process it as a 1D array.
+  - Each program instance processes BLOCK consecutive elements.
+  - Use masking for tail handling when N is not a multiple of BLOCK.
+  - Keep the kernel simple: y = x + x. Avoid more complex vectorization or shared memory, which won’t help here.
+
+- Correctness and edge cases
+  - Support common floating-point types: float16, bfloat16, float32.
+  - Integer types will also work; benchmark likely uses float.
+  - Assume contiguous input for simplicity (common in benchmarks). If not contiguous, make it contiguous before launching.
+  - CPU tensors are not supported by Triton; raise a clear error.
+
+- Performance notes
+  - BLOCK sizes of 1024–4096 are typical; 1024 or 2048 are good starting points.
+  - num_warps 4–8 is typical; 4 is a safe default.
+  - This kernel should be close to peak memory bandwidth for large N.
+
+Triton implementation (entry point: ModelNew)
+
+```python
+import torch
+
+try:
+    import triton
+    import triton.language as tl
+    _TRITON_AVAILABLE = True
+except Exception:
+    _TRITON_AVAILABLE = False
+
+
+@triton.jit
+def _double_kernel(x_ptr, y_ptr, N, BLOCK: tl.constexpr):
+    # program id
+    pid = tl.program_id(axis=0)
+    # offsets for this program
+    offs = pid * BLOCK + tl.arange(0, BLOCK)
+    mask = offs < N
+    # load, compute, store
+    x = tl.load(x_ptr + offs, mask=mask)
+    y = x + x
+    tl.store(y_ptr + offs, y, mask=mask)
+
+
+class ModelNew(torch.nn.Module):
+    def __init__(self, block_size: int = 1024, num_warps: int = 4):
+        super().__init__()
+        self.block_size = block_size
+        self.num_warps = num_warps
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        # Validate Triton and device
+        if not _TRITON_AVAILABLE:
+            raise RuntimeError("Triton is not available. Install triton to use this backend.")
+        if not x.is_cuda:
+            raise RuntimeError(f"Expected CUDA tensor, got device={x.device}.")
+
+        # Ensure contiguous for simple 1D indexing
+        if not x.is_contiguous():
+            x = x.contiguous()
+
+        # Allocate output
+        y = torch.empty_like(x)
+
+        N = x.numel()
+        if N == 0:
+            return y
+
+        # Grid: one program per BLOCK chunk
+        grid = (triton.cdiv(N, self.block_size),)
+
+        _double_kernel[grid](
+            x, y,
+            N,
+            BLOCK=self.block_size,
+            num_warps=self.num_warps,
+        )
+        return y
+```
+人工智能
+
+Analysis and plan
+
+- What the reference does
+  - The PyTorch model computes y = x + x elementwise. This is equivalent to y = 2 * x.
+  - It is a purely memory-bound operation: for each element, we perform two loads (of the same element twice) and one store. The arithmetic is trivial.
+
+- Optimization goals
+  - Maximize memory throughput with coalesced loads/stores and minimal control flow.
+  - Use a 1D grid over the flattened tensor to keep indexing simple and coalesced.
+  - Choose a reasonable block size and number of warps to balance occupancy and launch overhead.
+  - Preserve dtype: output dtype must match input dtype.
+
+- Design choices
+  - Flatten the tensor and process it as a 1D array.
+  - Each program instance processes BLOCK consecutive elements.
+  - Use masking for tail handling when N is not a multiple of BLOCK.
+  - Keep the kernel simple: y = x + x. Avoid more complex vectorization or shared memory, which won’t help here.
+
+- Correctness and edge cases
+  - Support common floating-point types: float16, bfloat16, float32.
+  - Integer types will also work; benchmark likely uses float.
+  - Assume contiguous input for simplicity (common in benchmarks). If not contiguous, make it contiguous before launching.
+  - CPU tensors are not supported by Triton; raise a clear error.
+
+- Performance notes
+  - BLOCK sizes of 1024–4096 are typical; 1024 or 2048 are good starting points.
+  - num_warps 4–8 is typical; 4 is a safe default.
+  - This kernel should be close to peak memory bandwidth for large N.
+
+Triton implementation (entry point: ModelNew)
+
+```python
+import torch
+
+try:
+    import triton
+    import triton.language as tl
+    _TRITON_AVAILABLE = True
+except Exception:
+    _TRITON_AVAILABLE = False
+
+
+@triton.jit
+def _double_kernel(x_ptr, y_ptr, N, BLOCK: tl.constexpr):
+    # program id
+    pid = tl.program_id(axis=0)
+    # offsets for this program
+    offs = pid * BLOCK + tl.arange(0, BLOCK)
+    mask = offs < N
+    # load, compute, store
+    x = tl.load(x_ptr + offs, mask=mask)
+    y = x + x
+    tl.store(y_ptr + offs, y, mask=mask)
+
+
+class ModelNew(torch.nn.Module):
+    def __init__(self, block_size: int = 1024, num_warps: int = 4):
+        super().__init__()
+        self.block_size = block_size
+        self.num_warps = num_warps
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        # Validate Triton and device
+        if not _TRITON_AVAILABLE:
+            raise RuntimeError("Triton is not available. Install triton to use this backend.")
+        if not x.is_cuda:
+            raise RuntimeError(f"Expected CUDA tensor, got device={x.device}.")
+
+        # Ensure contiguous for simple 1D indexing
+        if not x.is_contiguous():
+            x = x.contiguous()
+
+        # Allocate output
+        y = torch.empty_like(x)
+
+        N = x.numel()
+        if N == 0:
+            return y
+
+        # Grid: one program per BLOCK chunk
+        grid = (triton.cdiv(N, self.block_size),)
+
+        _double_kernel[grid](
+            x, y,
+            N,
+            BLOCK=self.block_size,
+            num_warps=self.num_warps,
+        )
+        return y
+```
+
+人工智能
+
+Analysis and plan
+
+- What the reference does
+  - The PyTorch model computes y = x + x elementwise. This is equivalent to y = 2 * x.
+  - It is a purely memory-bound operation: for each element, we perform two loads (of the same element twice) and one store. The arithmetic is trivial.
+
+- Optimization goals
+  - Maximize memory throughput with coalesced loads/stores and minimal control flow.
+  - Use a 1D grid over the flattened tensor to keep indexing simple and coalesced.
+  - Choose a reasonable block size and number of warps to balance occupancy and launch overhead.
+  - Preserve dtype: output dtype must match input dtype.
+
+- Design choices
+  - Flatten the tensor and process it as a 1D array.
+  - Each program instance processes BLOCK consecutive elements.
+  - Use masking for tail handling when N is not a multiple of BLOCK.
+  - Keep the kernel simple: y = x + x. Avoid more complex vectorization or shared memory, which won’t help here.
+
+- Correctness and edge cases
+  - Support common floating-point types: float16, bfloat16, float32.
+ 

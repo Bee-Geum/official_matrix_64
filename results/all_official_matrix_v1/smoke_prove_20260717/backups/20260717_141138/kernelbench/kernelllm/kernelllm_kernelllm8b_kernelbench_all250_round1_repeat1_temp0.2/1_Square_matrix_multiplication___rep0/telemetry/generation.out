@@ -1,0 +1,3 @@
+[kernelllm] LIVE model kernelllm8b @ http://127.0.0.1:8002/v1
+[round 0] wrote round0_kernel.py (ModelNew present: True, 2914 chars)
+[kernelllm] wrote 1 kernel(s) to /home/bi_geum/official_matrix_64/runs/kernelllm_kernelllm8b_kernelbench_all250_round1_repeat1_temp0.2/1_Square_matrix_multiplication___rep0/candidates

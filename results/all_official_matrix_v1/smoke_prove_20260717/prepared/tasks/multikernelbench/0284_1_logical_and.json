@@ -1,0 +1,8 @@
+{
+  "benchmark": "multikernelbench",
+  "task_id": "1_logical_and",
+  "op": "1_logical_and",
+  "official_task": true,
+  "prompt_path": "",
+  "prompt": "Benchmark: multikernelbench\nOfficial task: 1_logical_and\nReturn only source code, without Markdown fences or explanations.\n\nGenerate a kernel response for the exact MultiKernelBench operator '1_logical_and'. Use CUDA C++ or Triton and do not replace the computation with eager PyTorch.\n\nMultiKernelBench operator: 1_logical_and\nOfficial dataset entry: {'category': 'npukernelbench_level0', 'source': 'NPUKernelBench'}\n"
+}

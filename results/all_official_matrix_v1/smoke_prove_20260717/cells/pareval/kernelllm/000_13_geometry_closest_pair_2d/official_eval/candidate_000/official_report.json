@@ -1,0 +1,22 @@
+{
+  "benchmark": "pareval",
+  "task_id": "13_geometry_closest_pair_2d",
+  "task_manifest": "/home/bi_geum/official_matrix_64/results/all_official_matrix_v1/smoke_prove_20260717/prepared/tasks/pareval/0000_13_geometry_closest_pair_2d.json",
+  "candidate": "/home/bi_geum/official_matrix_64/results/all_official_matrix_v1/smoke_prove_20260717/cells/pareval/kernelllm/000_13_geometry_closest_pair_2d/candidates/official_candidate_000.py",
+  "official_task": 1,
+  "official_attempted": 1,
+  "official_eval": 1,
+  "correct": 0,
+  "performance_available": 0,
+  "score": 0.0,
+  "evaluator_rc": 0,
+  "infrastructure_error": "",
+  "candidate_error": "orch._inductor.runtime.triton_heuristics in newer torch. Kernel logic below is verbatim.)\\nimport triton as _triton\\nimport torch._inductor.runtime.triton_heuristics as _th\\nif not hasattr(_th, \\\"grid\\\"):\\n    def grid(*numels):\\n        def grid_fn(meta):\\n            return tuple(_triton.cdiv(n, meta[b]) for n, b in zip(numels, (\\\"XBLOCK\\\", \\\"YBLOCK\\\", \\\"ZBLOCK\\\")))\\n        return grid_fn\\n    _th.grid = grid\\n# ---- KernelLLM output (verbatim) ----\\nimport torch\\nimport triton\\nimport triton.language as tl\\nfrom torch._inductor.runtime.triton_heuristics import grid\\nfrom torch._C import _cuda_getCurrentRawStream as get_raw_stream\\nfrom torch._inductor.runtime import triton_helpers\\nfrom torch._inductor.runtime.triton_helpers import libdevice\\nimport torch.nn as nn\\nassert_size_stride = torch._C._dynamo.guards.assert_size_stride\\nempty_strided_cuda = torch._C._dynamo.guards._empty_strided_cuda\\n\\n\\n@triton.jit\\ndef triton_per_fused_add_pow_sqrt_sub_0(in_ptr0, out_ptr0, xnumel, rnumel,\\n    XBLOCK: tl.constexpr):\\n    RBLOCK: tl.constexpr = 64\\n    xoffset = tl.program_id(0) * XBLOCK\\n    xoffset + tl.arange(0, XBLOCK)[:, None]\\n    tl.full([XBLOCK, RBLOCK], True, tl.int1)\\n    rindex = tl.arange(0, RBLOCK)[None, :]\\n    tl.full([XBLOCK, RBLOCK], True, tl.int1)\\n    r0 = rindex\\n    tmp0 = tl.load(in_ptr0 + r0, None)\\n    tmp1 = tl.load(in_ptr0 + (64 + r0), None)\\n    tmp4 = tl.load(in_ptr0 + (128 + r0), None)\\n    tmp8 = tl.load(in_ptr0 + (192 + r0), None)\\n    tmp2 = tmp0 - tmp1\\n    tmp3 = tmp2 * tmp2\\n    tmp5 = tmp0 - tmp4\\n    tmp6 = tmp5 * tmp5\\n    tmp7 = tmp3 + tmp6\\n    tmp9 = tmp0 - tmp8\\n    tmp10 = tmp9 * tmp9\\n    tmp11 = tmp7 + tmp10\\n    tmp12 = libdevice.sqrt(tmp11)\\n    tmp13 = tl.broadcast_to(tmp12, [XBLOCK, RBLOCK])\\n    tmp15 = triton_helpers.min2(tmp13, 1)[:, None]\\n    tl.store(out_ptr0 + tl.full([XBLOCK, 1], 0, tl.int32), tmp15, None)\\n\\n\\ndef call(args):\\n    arg0_1, = args\\n    args.clear()\\n    assert_size_stride(arg0_1, (4, 4, 4, 4), (64, 16, 4, 1))\\n    with torch.cuda._DeviceGuard(0):\\n        torch.cuda.set_device(0)\\n        buf0 = empty_strided_cuda((), (), torch.float32)\\n        get_raw_stream(0)\\n        triton_per_fused_add_pow_sqrt_sub_0[grid(1)](arg0_1, buf0, 1, 64,\\n            XBLOCK=1, num_warps=2, num_stages=1)\\n        del arg0_1\\n    return buf0,\\n\\n\\nclass Point:\\n    \\\"\\\"\\\"\\n    A point in 2D space.\\n    \\\"\\\"\\\"\\n\\n    def __init__(self, x: 'int', y: 'int'):\\n        self.x = x\\n        self.y = y\\n\\n\\nclass DistanceNew(nn.Module):\\n    \\\"\\\"\\\"\\n    A module for calculating distance between two points.\\n    \\\"\\\"\\\"\\n\\n    def __init__(self):\\n        super().__init__()\\n\\n    def forward(self, input_0):\\n        arg0_1 = input_0\\n        output = call([arg0_1])\\n        return output[0]\\n\", \"source_write_success\": true, \"did_build\": false, \"is_source_valid\": true, \"did_any_run\": false, \"did_all_run\": false, \"are_any_valid\": false, \"are_all_valid\": false, \"best_sequential_runtime\": null, \"runs\": null}]",
+  "logs": [
+    "/home/bi_geum/official_matrix_64/results/all_official_matrix_v1/smoke_prove_20260717/cells/pareval/kernelllm/000_13_geometry_closest_pair_2d/official_eval/candidate_000/official_eval.log.txt"
+  ],
+  "artifacts": [
+    "/home/bi_geum/official_matrix_64/results/all_official_matrix_v1/smoke_prove_20260717/cells/pareval/kernelllm/000_13_geometry_closest_pair_2d/official_eval/candidate_000/pareval_result.json"
+  ],
+  "wall_s": 0.2979915142059326
+}

@@ -1,0 +1,22 @@
+{
+  "benchmark": "pareval",
+  "task_id": "13_geometry_closest_pair_2d",
+  "task_manifest": "/home/bi_geum/official_matrix_64/results/all_official_matrix_v1/smoke_prove_20260717/prepared/tasks/pareval/0000_13_geometry_closest_pair_2d.json",
+  "candidate": "/home/bi_geum/official_matrix_64/results/all_official_matrix_v1/smoke_prove_20260717/cells/pareval/incoder32b/000_13_geometry_closest_pair_2d/candidates/official_candidate_000.py",
+  "official_task": 1,
+  "official_attempted": 1,
+  "official_eval": 1,
+  "correct": 0,
+  "performance_available": 0,
+  "score": 0.0,
+  "evaluator_rc": 0,
+  "infrastructure_error": "",
+  "candidate_error": "[{\"generated_output\": \"const size_t BLOCK_SIZE = 256;\\nconst size_t MAX_SHARED_POINTS = 1024;\\n\\n__device__ bool comparePoints(const Point& a, const Point& b) {\\n    return (a.x < b.x) || ((a.x == b.x) && (a.y < b.y));\\n}\\n\\n__global__ void closestPair(const Point *points, size_t numPoints, double *distance) {\\n    __shared__ Point sharedPoints[MAX_SHARED_POINTS];\\n    __shared__ double sharedMinDist;\\n    __shared__ int sharedMinI, sharedMinJ;\\n    \\n    int tid = threadIdx.x;\\n    int gid = blockIdx.x * blockDim.x + threadIdx.x;\\n    \\n    if (gid < numPoints) {\\n        sharedPoints[tid] = points[gid];\\n    }\\n    __syncthreads();\\n    \\n    if (tid == 0) {\\n        sharedMinDist = INFINITY;\\n        sharedMinI = -1;\\n        sharedMinJ = -1;\\n    }\\n    __syncthreads();\\n    \\n    for (int i = tid; i < numPoints; i += blockDim.x) {\\n        Point pi = sharedPoints[i];\\n        for (int j = i + 1; j < numPoints; j++) {\\n            Point pj = sharedPoints[j];\\n            double dx = pj.x - pi.x;\\n            double dy = pj.y - pi.y;\\n            double d = sqrt(dx * dx + dy * dy);\\n            \\n            if (d < sharedMinDist) {\\n                sharedMinDist = d;\\n                sharedMinI = i;\\n                sharedMinJ = j;\\n            }\\n        }\\n    }\\n    __syncthreads();\\n    \\n    if (tid == 0) {\\n        *distance = sharedMinDist;\\n    }\\n}\\n\", \"source_write_success\": true, \"did_build\": false, \"is_source_valid\": true, \"did_any_run\": false, \"did_all_run\": false, \"are_any_valid\": false, \"are_all_valid\": false, \"best_sequential_runtime\": null, \"runs\": null}]",
+  "logs": [
+    "/home/bi_geum/official_matrix_64/results/all_official_matrix_v1/smoke_prove_20260717/cells/pareval/incoder32b/000_13_geometry_closest_pair_2d/official_eval/candidate_000/official_eval.log.txt"
+  ],
+  "artifacts": [
+    "/home/bi_geum/official_matrix_64/results/all_official_matrix_v1/smoke_prove_20260717/cells/pareval/incoder32b/000_13_geometry_closest_pair_2d/official_eval/candidate_000/pareval_result.json"
+  ],
+  "wall_s": 0.8437495231628418
+}

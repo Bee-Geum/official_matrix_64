@@ -1,0 +1,8 @@
+{
+  "benchmark": "multikernelbench",
+  "task_id": "matmul_for_lower_triangular_matrices",
+  "op": "matmul_for_lower_triangular_matrices",
+  "official_task": true,
+  "prompt_path": "/home/bi_geum/official_matrix_64/third_party/MultiKernelBench/reference/matmul/matmul_for_lower_triangular_matrices.py",
+  "prompt": "Benchmark: multikernelbench\nOfficial task: matmul_for_lower_triangular_matrices\nReturn only source code, without Markdown fences or explanations.\n\nGenerate a kernel response for the exact MultiKernelBench operator 'matmul_for_lower_triangular_matrices'. Use CUDA C++ or Triton and do not replace the computation with eager PyTorch.\n\nimport torch\nimport torch.nn as nn\n\nclass Model(nn.Module):\n    \"\"\"\n    Simple model that performs a matrix multiplication (C = A * B) where A and B are lower triangular matrices. \n    \"\"\"\n    def __init__(self):\n        super(Model, self).__init__()\n    \n    def forward(self, A, B):\n        \"\"\"\n        Performs matrix multiplication of lower triangular matrices A and B.\n\n        Args:\n            A (torch.Tensor): Lower triangular matrix of shape (N, N).\n            B (torch.Tensor): Lower triangular matrix of shape (N, N).\n\n        Returns:\n            torch.Tensor: The result of matrix multiplication C of shape (N, N).\n        \"\"\"\n        return torch.tril(torch.matmul(A, B))\n\nM = 4096\n\ndef get_inputs():\n    A = torch.rand(M, M)\n    B = torch.rand(M, M)\n    A = torch.tril(A)\n    B = torch.tril(B)\n    return [A, B]\n\ndef get_init_inputs():\n    return []  # No special initialization inputs needed"
+}

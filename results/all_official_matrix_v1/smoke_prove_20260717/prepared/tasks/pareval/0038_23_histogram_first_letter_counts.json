@@ -1,0 +1,13 @@
+{
+  "benchmark": "pareval",
+  "task_id": "23_histogram_first_letter_counts",
+  "official_task": true,
+  "prompt_obj": {
+    "problem_type": "histogram",
+    "language": "cpp",
+    "name": "23_histogram_first_letter_counts",
+    "parallelism_model": "cuda",
+    "prompt": "/* For each letter in the alphabet, count the number of strings in the vector s that start with that letter.\n   Assume all strings are in lower case. Store the output in `bins` array.\n   Use CUDA to compute in parallel. The kernel is launched with at least N threads.\n   Example:\n\n   input: [\"dog\", \"cat\", \"xray\", \"cow\", \"code\", \"type\", \"flower\"]\n   output: [0, 0, 3, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0]\n*/\n__global__ void firstLetterCounts(const char **s, size_t N, size_t bins[26]) {"
+  },
+  "prompt": "Benchmark: pareval\nOfficial task: 23_histogram_first_letter_counts\nReturn only source code, without Markdown fences or explanations.\n\nThis is a ParEval CUDA COMPLETION task. Below is the BEGINNING of a CUDA C++ file; its last line is a function signature ending with '{' and the body is missing. Your output will be appended VERBATIM right after it and compiled by ParEval's official C++ driver.\n\nOutput ONLY the code that completes that open function body, ending with its closing '}'. Do NOT repeat anything shown below: no #include, no struct/typedef, no 'using', no function signature, and no main(). Emit raw C++ only (no Markdown fences, no prose).\n\n--- code so far (context only; do NOT repeat it) ---\n/* For each letter in the alphabet, count the number of strings in the vector s that start with that letter.\n   Assume all strings are in lower case. Store the output in `bins` array.\n   Use CUDA to compute in parallel. The kernel is launched with at least N threads.\n   Example:\n\n   input: [\"dog\", \"cat\", \"xray\", \"cow\", \"code\", \"type\", \"flower\"]\n   output: [0, 0, 3, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0]\n*/\n__global__ void firstLetterCounts(const char **s, size_t N, size_t bins[26]) {"
+}

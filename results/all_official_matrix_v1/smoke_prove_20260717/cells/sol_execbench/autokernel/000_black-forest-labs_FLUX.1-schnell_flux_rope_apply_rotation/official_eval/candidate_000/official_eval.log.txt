@@ -1,0 +1,202 @@
+$ /home/bi_geum/official_matrix_64/.venv/bin/python3 -m sol_execbench.cli.main /home/bi_geum/official_matrix_64/third_party/SOL-ExecBench/examples/cuda_cpp/flux_rope --solution /home/bi_geum/official_matrix_64/results/all_official_matrix_v1/smoke_prove_20260717/cells/sol_execbench/autokernel/000_black-forest-labs_FLUX.1-schnell_flux_rope_apply_rotation/official_eval/candidate_000/solution.json --config /home/bi_geum/official_matrix_64/results/all_official_matrix_v1/smoke_prove_20260717/cells/sol_execbench/autokernel/000_black-forest-labs_FLUX.1-schnell_flux_rope_apply_rotation/official_eval/candidate_000/bench_config.json --compile-timeout 180 --timeout 600 -o /home/bi_geum/official_matrix_64/results/all_official_matrix_v1/smoke_prove_20260717/cells/sol_execbench/autokernel/000_black-forest-labs_FLUX.1-schnell_flux_rope_apply_rotation/official_eval/candidate_000/trace.jsonl --json
+cwd=/home/bi_geum/official_matrix_64/third_party/SOL-ExecBench
+returncode=1
+wall_s=2.766901
+----- STDOUT -----
+
+----- STDERR -----
+<frozen runpy>:128: RuntimeWarning: 'sol_execbench.cli.main' found in sys.modules after import of package 'sol_execbench.cli', but prior to execution of 'sol_execbench.cli.main'; this may result in unpredictable behaviour
+[1mProblem:[0m  black-forest-labs_FLUX.[1;36m1[0m-schnell_flux_rope_apply_rotation
+[1mSolution:[0m autokernel_black-forest-labs_FLUX.[1;36m1[0m-schnell_flux_rope_apply_rotation
+[1mWorkloads:[0m [1;36m3[0m
+[1mConfig:[0m   [1m{[0m[32m"warmup_runs"[0m: [1;36m1[0m, [32m"iterations"[0m: [1;36m3[0m, [32m"lock_clocks"[0m: false, 
+[32m"benchmark_reference"[0m: false, [32m"seed"[0m: [1;36m0[0m[1m}[0m
+[?25l
+[2K[32m⠋[0m Compiling C++/CUDA solution...
+[2K[32m⠙[0m Compiling C++/CUDA solution...
+[2K[32m⠹[0m Compiling C++/CUDA solution...
+[2K[32m⠸[0m Compiling C++/CUDA solution...
+[2K[32m⠴[0m Compiling C++/CUDA solution...
+[2K[32m⠦[0m Compiling C++/CUDA solution...
+[2K[32m⠧[0m Compiling C++/CUDA solution...
+[2K[32m⠇[0m Compiling C++/CUDA solution...
+[2K[32m⠋[0m Compiling C++/CUDA solution...
+[2K[32m⠙[0m Compiling C++/CUDA solution...
+[2K[32m⠹[0m Compiling C++/CUDA solution...
+[2K[32m⠸[0m Compiling C++/CUDA solution...
+[2K[32m⠴[0m Compiling C++/CUDA solution...
+[2K[32m⠦[0m Compiling C++/CUDA solution...
+[2K[32m⠧[0m Compiling C++/CUDA solution...
+[2K[32m⠏[0m Compiling C++/CUDA solution...
+[2K[32m⠋[0m Compiling C++/CUDA solution...
+[2K[32m⠙[0m Compiling C++/CUDA solution...
+[2K[32m⠹[0m Compiling C++/CUDA solution...
+[2K[32m⠼[0m Compiling C++/CUDA solution...
+[2K[32m⠴[0m Compiling C++/CUDA solution...
+[2K[32m⠦[0m Compiling C++/CUDA solution...
+[2K[32m⠧[0m Compiling C++/CUDA solution...
+[2K[32m⠏[0m Compiling C++/CUDA solution...
+[2K[32m⠋[0m Compiling C++/CUDA solution...
+[?25h[31mCompilation failed[0m
+Traceback [1m([0mmost recent call last[1m)[0m:
+  File 
+[32m"/home/bi_geum/official_matrix_64/.venv/lib/python3.12/site-packages/torch/utils[0m
+[32m/cpp_extension.py"[0m, line [1;36m2693[0m, in _run_ninja_build
+    [1;35msubprocess.run[0m[1m([0m
+  File [32m"/usr/lib/python3.12/subprocess.py"[0m, line [1;36m571[0m, in run
+    raise [1;35mCalledProcessError[0m[1m([0mretcode, process.args,
+subprocess.CalledProcessError: Command [32m'[0m[32m[[0m[32m'[0mninja', [32m'-v'[0m[1m][0m' returned non-zero exit 
+status [1;36m1[0m.
+
+The above exception was the direct cause of the following exception:
+
+Traceback [1m([0mmost recent call last[1m)[0m:
+  File 
+[32m"/home/bi_geum/official_matrix_64/results/all_official_matrix_v1/smoke_prove_202[0m
+[32m60717/cells/sol_execbench/autokernel/_scratch/tmp/sol_execbench_68c5ykx_/build_e[0m
+[32mxt.py"[0m, line [1;36m51[0m, in [1m<[0m[1;95mmodule[0m[1m>[0m
+    [1;35mext.load[0m[1m([0m
+  File 
+[32m"/home/bi_geum/official_matrix_64/.venv/lib/python3.12/site-packages/torch/utils[0m
+[32m/cpp_extension.py"[0m, line [1;36m1767[0m, in load
+    return [1;35m_jit_compile[0m[1m([0m
+           ^^^^^^^^^^^^^
+  File 
+[32m"/home/bi_geum/official_matrix_64/.venv/lib/python3.12/site-packages/torch/utils[0m
+[32m/cpp_extension.py"[0m, line [1;36m2207[0m, in _jit_compile
+    [1;35m_write_ninja_file_and_build_library[0m[1m([0m
+  File 
+[32m"/home/bi_geum/official_matrix_64/.venv/lib/python3.12/site-packages/torch/utils[0m
+[32m/cpp_extension.py"[0m, line [1;36m2362[0m, in _write_ninja_file_and_build_library
+    [1;35m_run_ninja_build[0m[1m([0m
+  File 
+[32m"/home/bi_geum/official_matrix_64/.venv/lib/python3.12/site-packages/torch/utils[0m
+[32m/cpp_extension.py"[0m, line [1;36m2710[0m, in _run_ninja_build
+    raise [1;35mRuntimeError[0m[1m([0mmessage[1m)[0m from e
+RuntimeError: Error building extension [32m'benchmark_kernel'[0m
+
+[1m[[0m[1;36m1[0m/[1;36m2[0m[1m][0m [35m/usr/local/cuda/bin/[0m[95mnvcc[0m --generate-dependencies-with-compile 
+--dependency-output kernel.cuda.o.d -[33mDTORCH_EXTENSION_NAME[0m=[35mbenchmark_kernel[0m 
+-DTORCH_API_INCLUDE_EXTENSION_H 
+-I/home/bi_geum/official_matrix_64/results/all_official_matrix_v1/smoke_prove_20
+260717/cells/sol_execbench/autokernel/_scratch/tmp/sol_execbench_68c5ykx_ 
+-I/usr/local/cutlass/include -I/usr/local/cutlass/tools/util/include -isystem 
+[35m/home/bi_geum/official_matrix_64/.venv/lib/python3.12/site-packages/torch/[0m[95minclud[0m
+[95me[0m -isystem 
+[35m/home/bi_geum/official_matrix_64/.venv/lib/python3.12/site-packages/torch/includ[0m
+[35me/torch/csrc/api/[0m[95minclude[0m -isystem [35m/usr/local/cuda/[0m[95minclude[0m -isystem 
+[35m/usr/include/[0m[95mpython3.12[0m -D__CUDA_NO_HALF_OPERATORS__ 
+-D__CUDA_NO_HALF_CONVERSIONS__ -D__CUDA_NO_BFLOAT16_CONVERSIONS__ 
+-D__CUDA_NO_HALF2_OPERATORS__ --expt-relaxed-constexpr --compiler-options 
+[32m'-fPIC'[0m -[33mgencode[0m=[35march[0m=compute_90,[33mcode[0m=[35msm_90[0m -O3 --use_fast_math -[33mstd[0m=[35mc[0m++[1;36m17[0m -c 
+[35m/home/bi_geum/official_matrix_64/results/all_official_matrix_v1/smoke_prove_2026[0m
+[35m0717/cells/sol_execbench/autokernel/_scratch/tmp/sol_execbench_68c5ykx_/[0m[95mkernel.c[0m
+[95mu[0m -o kernel.cuda.o 
+FAILED:  kernel.cuda.o 
+[35m/usr/local/cuda/bin/[0m[95mnvcc[0m --generate-dependencies-with-compile 
+--dependency-output kernel.cuda.o.d -[33mDTORCH_EXTENSION_NAME[0m=[35mbenchmark_kernel[0m 
+-DTORCH_API_INCLUDE_EXTENSION_H 
+-I/home/bi_geum/official_matrix_64/results/all_official_matrix_v1/smoke_prove_20
+260717/cells/sol_execbench/autokernel/_scratch/tmp/sol_execbench_68c5ykx_ 
+-I/usr/local/cutlass/include -I/usr/local/cutlass/tools/util/include -isystem 
+[35m/home/bi_geum/official_matrix_64/.venv/lib/python3.12/site-packages/torch/[0m[95minclud[0m
+[95me[0m -isystem 
+[35m/home/bi_geum/official_matrix_64/.venv/lib/python3.12/site-packages/torch/includ[0m
+[35me/torch/csrc/api/[0m[95minclude[0m -isystem [35m/usr/local/cuda/[0m[95minclude[0m -isystem 
+[35m/usr/include/[0m[95mpython3.12[0m -D__CUDA_NO_HALF_OPERATORS__ 
+-D__CUDA_NO_HALF_CONVERSIONS__ -D__CUDA_NO_BFLOAT16_CONVERSIONS__ 
+-D__CUDA_NO_HALF2_OPERATORS__ --expt-relaxed-constexpr --compiler-options 
+[32m'-fPIC'[0m -[33mgencode[0m=[35march[0m=compute_90,[33mcode[0m=[35msm_90[0m -O3 --use_fast_math -[33mstd[0m=[35mc[0m++[1;36m17[0m -c 
+[35m/home/bi_geum/official_matrix_64/results/all_official_matrix_v1/smoke_prove_2026[0m
+[35m0717/cells/sol_execbench/autokernel/_scratch/tmp/sol_execbench_68c5ykx_/[0m[95mkernel.c[0m
+[95mu[0m -o kernel.cuda.o 
+[35m/home/bi_geum/official_matrix_64/results/all_official_matrix_v1/smoke_prove_2026[0m
+[35m0717/cells/sol_execbench/autokernel/_scratch/tmp/sol_execbench_68c5ykx_/[0m[95mkernel.c[0m
+[95mu[0m:[1;92m1:3[0m: warning: missing terminating " character
+    [1;36m1[0m | [32m""[0m"
+      |   ^
+[35m/home/bi_geum/official_matrix_64/results/all_official_matrix_v1/smoke_prove_2026[0m
+[35m0717/cells/sol_execbench/autokernel/_scratch/tmp/sol_execbench_68c5ykx_/[0m[95mkernel.c[0m
+[95mu[0m:[1;92m13:3[0m: warning: missing terminating " character
+   [1;36m13[0m | [32m""[0m"
+      |   ^
+[35m/home/bi_geum/official_matrix_64/results/all_official_matrix_v1/smoke_prove_2026[0m
+[35m0717/cells/sol_execbench/autokernel/_scratch/tmp/sol_execbench_68c5ykx_/[0m[95mkernel.c[0m
+[95mu[0m:[1;92m26:3[0m: error: invalid preprocessing directive #Optional
+   [1;36m26[0m | # Optional: use AutoKernel's CUDA compilation utility for custom CUDA 
+C++ kernels
+      |   ^~~~~~~~
+[35m/home/bi_geum/official_matrix_64/results/all_official_matrix_v1/smoke_prove_2026[0m
+[35m0717/cells/sol_execbench/autokernel/_scratch/tmp/sol_execbench_68c5ykx_/[0m[95mkernel.c[0m
+[95mu[0m:[1;92m26:27[0m: warning: missing terminating ' character
+   [1;36m26[0m | # Optional: use AutoKernel's CUDA compilation utility for custom CUDA 
+C++ kernels
+      |                           ^
+[35m/home/bi_geum/official_matrix_64/results/all_official_matrix_v1/smoke_prove_2026[0m
+[35m0717/cells/sol_execbench/autokernel/_scratch/tmp/sol_execbench_68c5ykx_/[0m[95mkernel.c[0m
+[95mu[0m:[1;92m27:3[0m: error: invalid preprocessing directive #from
+   [1;36m27[0m | # from kernels.cuda._compile import compile_cuda
+      |   ^~~~
+[35m/home/bi_geum/official_matrix_64/results/all_official_matrix_v1/smoke_prove_2026[0m
+[35m0717/cells/sol_execbench/autokernel/_scratch/tmp/sol_execbench_68c5ykx_/[0m[95mkernel.c[0m
+[95mu[0m:[1;92m29:3[0m: error: invalid preprocessing directive #CUDA_SRC
+   [1;36m29[0m | # CUDA_SRC = r"[32m""[0m
+      |   ^~~~~~~~
+[35m/home/bi_geum/official_matrix_64/results/all_official_matrix_v1/smoke_prove_2026[0m
+[35m0717/cells/sol_execbench/autokernel/_scratch/tmp/sol_execbench_68c5ykx_/[0m[95mkernel.c[0m
+[95mu[0m:[1;92m29:17[0m: warning: missing terminating " character
+   [1;36m29[0m | # CUDA_SRC = r"[32m""[0m
+      |                 ^
+[35m/home/bi_geum/official_matrix_64/results/all_official_matrix_v1/smoke_prove_2026[0m
+[35m0717/cells/sol_execbench/autokernel/_scratch/tmp/sol_execbench_68c5ykx_/[0m[95mkernel.c[0m
+[95mu[0m:[1;92m30:3[0m: error: invalid preprocessing directive ##
+   [1;36m30[0m | # #include [1m<[0m[1;95mtorch[0m[39m/extension.h>[0m
+[39m      |   ^[0m
+[35m/home/bi_geum/official_matrix_64/results/all_official_matrix_v1/smoke_prove_2026[0m
+[35m0717/cells/sol_execbench/autokernel/_scratch/tmp/sol_execbench_68c5ykx_/[0m[95mkernel.c[0m
+[95mu[0m[39m:[0m[1;92m31:3[0m[39m: error: invalid preprocessing directive ##[0m
+[39m   [0m[1;36m31[0m[39m | # #include <cuda_runtime.h>[0m
+[39m      |   ^[0m
+[35m/home/bi_geum/official_matrix_64/results/all_official_matrix_v1/smoke_prove_2026[0m
+[35m0717/cells/sol_execbench/autokernel/_scratch/tmp/sol_execbench_68c5ykx_/[0m[95mkernel.c[0m
+[95mu[0m[39m:[0m[1;92m32:3[0m[39m: error: invalid preprocessing directive ##[0m
+[39m   [0m[1;36m32[0m[39m | # #include <cuda_fp16.h[0m[1m>[0m
+      |   ^
+[35m/home/bi_geum/official_matrix_64/results/all_official_matrix_v1/smoke_prove_2026[0m
+[35m0717/cells/sol_execbench/autokernel/_scratch/tmp/sol_execbench_68c5ykx_/[0m[95mkernel.c[0m
+[95mu[0m:[1;92m34:3[0m: error: invalid preprocessing directive #__global__
+   [1;36m34[0m | # __global__ void [1;35mmy_kernel[0m[1m([0mconst float* input, float* output, int N[1m)[0m [1m{[0m
+      |   ^~~~~~~~~~
+[35m/home/bi_geum/official_matrix_64/results/all_official_matrix_v1/smoke_prove_2026[0m
+[35m0717/cells/sol_execbench/autokernel/_scratch/tmp/sol_execbench_68c5ykx_/[0m[95mkernel.c[0m
+[95mu[0m:[1;92m35:7[0m: error: invalid preprocessing directive #int
+   [1;36m35[0m | #     int idx = blockIdx.x * blockDim.x + threadIdx.x;
+      |       ^~~
+[35m/home/bi_geum/official_matrix_64/results/all_official_matrix_v1/smoke_prove_2026[0m
+[35m0717/cells/sol_execbench/autokernel/_scratch/tmp/sol_execbench_68c5ykx_/[0m[95mkernel.c[0m
+[95mu[0m:[1;92m36:20[0m: error: missing binary operator before token [32m"output"[0m
+   [1;36m36[0m | #     if [1m([0midx < N[1m)[0m output = input;
+      |                    ^~~~~~
+[35m/home/bi_geum/official_matrix_64/results/all_official_matrix_v1/smoke_prove_2026[0m
+[35m0717/cells/sol_execbench/autokernel/_scratch/tmp/sol_execbench_68c5ykx_/[0m[95mkernel.c[0m
+[95mu[0m:[1;92m45:5[0m: warning: missing terminating " character
+   [1;36m45[0m | # [32m""[0m"
+      |     ^
+[35m/home/bi_geum/official_matrix_64/results/all_official_matrix_v1/smoke_prove_2026[0m
+[35m0717/cells/sol_execbench/autokernel/_scratch/tmp/sol_execbench_68c5ykx_/[0m[95mkernel.c[0m
+[95mu[0m:[1;92m106:25[0m: warning: missing terminating ' character
+  [1;36m106[0m | # Start by copying Model's logic, then optimize with CUDA C++ or Triton.
+      |                         ^
+[35m/home/bi_geum/official_matrix_64/results/all_official_matrix_v1/smoke_prove_2026[0m
+[35m0717/cells/sol_execbench/autokernel/_scratch/tmp/sol_execbench_68c5ykx_/[0m[95mkernel.c[0m
+[95mu[0m:[1;36m49[0m: error: unterminated #if
+   [1;36m49[0m | #     if _mod is [3;35mNone[0m:
+      | 
+[35m/home/bi_geum/official_matrix_64/results/all_official_matrix_v1/smoke_prove_2026[0m
+[35m0717/cells/sol_execbench/autokernel/_scratch/tmp/sol_execbench_68c5ykx_/[0m[95mkernel.c[0m
+[95mu[0m:[1;36m36[0m: error: unterminated #if
+   [1;36m36[0m | #     if [1m([0midx < N[1m)[0m output = input;
+      | 
+ninja: build stopped: subcommand failed.
+
+

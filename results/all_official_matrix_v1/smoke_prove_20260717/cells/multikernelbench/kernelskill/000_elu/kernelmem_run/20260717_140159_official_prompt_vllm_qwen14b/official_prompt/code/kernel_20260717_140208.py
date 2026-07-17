@@ -1,0 +1,91 @@
+import torch
+import torch.nn as nn
+import torch.nn.functional as F
+from torch.utils.cpp_extension import load_inline
+
+# Define the custom CUDA kernel for ELU activation
+source = """
+#include <torch/extension.h>
+#include <cuda_runtime.h>
+#include <ATen/cuda/CUDAContext.h>
+#include <c10/cuda/CUDAException.h>
+
+__global__ void elu_kernel(const float* x, float* out, float alpha, int size) {
+    int idx = blockIdx.x * blockDim.x + threadIdx.x;
+    if (idx < size) {
+        float val = x[idx];
+        out[idx] = (val > 0) ? val : alpha * (exp(val) - 1);
+    }
+}
+
+torch::Tensor elu_cuda(torch::Tensor x, float alpha) {
+    auto size = x.numel();
+    auto out = torch::zeros_like(x);
+
+    const int block_size = 256;
+    const int num_blocks = (size + block_size - 1) / block_size;
+
+    auto stream = at::cuda::getDefaultCUDAStream();
+    elu_kernel<<<num_blocks, block_size, 0, stream>>>(
+        x.data_ptr<float>(), out.data_ptr<float>(), alpha, (int)size
+    );
+    C10_CUDA_KERNEL_LAUNCH_CHECK();
+
+    return out;
+}
+"""
+
+cpp_src = (
+    "torch::Tensor elu_cuda(torch::Tensor x, float alpha);"
+)
+
+# Compile the inline CUDA code for ELU activation
+elu = load_inline(
+    name="elu",
+    cpp_sources=cpp_src,
+    cuda_sources=source,
+    functions=["elu_cuda"],
+    verbose=True,
+    extra_cflags=[
+        "-O3",                          # High optimization
+        "-std=c++17",                    # Use C++17 standard
+        ],
+    extra_ldflags=[""],
+    extra_cuda_cflags=[
+        "-gencode=arch=compute_90,code=sm_90",  # Correct CUDA target arch
+        "--expt-relaxed-constexpr",  # CUDA specific flag
+        "-lineinfo",  # Line information for debugging
+        ],
+)
+
+
+class ModelNew(nn.Module):
+    """
+    Optimized model that performs an ELU activation using a custom CUDA kernel.
+    
+    Granularity: A (optimize a single hotspot op)
+    Replaced ops: F.elu
+    Fusion: None
+    Remaining PyTorch: None (all computation is offloaded to CUDA)
+    """
+    def __init__(self, alpha: float = 1.0):
+        """
+        Initializes the ELU model.
+
+        Args:
+            alpha (float, optional): The alpha parameter for the ELU function. Defaults to 1.0.
+        """
+        super(ModelNew, self).__init__()
+        self.alpha = alpha
+    
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        """
+        Applies ELU activation to the input tensor using a custom CUDA kernel.
+
+        Args:
+            x (torch.Tensor): Input tensor of any shape.
+
+        Returns:
+            torch.Tensor: Output tensor with ELU applied, same shape as input.
+        """
+        return elu.elu_cuda(x, self.alpha)

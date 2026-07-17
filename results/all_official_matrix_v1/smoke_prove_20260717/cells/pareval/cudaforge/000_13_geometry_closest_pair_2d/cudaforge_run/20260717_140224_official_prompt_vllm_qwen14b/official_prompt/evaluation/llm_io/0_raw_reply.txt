@@ -1,0 +1,28 @@
+```cpp
+	__shared__ double minDist;
+	__shared__ Point closestP1, closestP2;
+
+	if (threadIdx.x == 0) {
+		minDist = DBL_MAX;
+		closestP1 = {0, 0};
+		closestP2 = {0, 0};
+	}
+	__syncthreads();
+
+	for (size_t i = threadIdx.x; i < numPoints; i += blockDim.x) {
+		for (size_t j = i + 1; j < numPoints; ++j) {
+			double dist = distanceBetweenPoints(points[i], points[j]);
+			if (dist < minDist) {
+				minDist = dist;
+				closestP1 = points[i];
+				closestP2 = points[j];
+			}
+		}
+	}
+	__syncthreads();
+
+	if (threadIdx.x == 0) {
+		atomicMin(&distance[0], minDist);
+	}
+}
+```

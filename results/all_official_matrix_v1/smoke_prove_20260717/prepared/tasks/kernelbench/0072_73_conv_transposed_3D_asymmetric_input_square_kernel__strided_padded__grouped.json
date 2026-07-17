@@ -1,0 +1,6 @@
+{
+  "benchmark": "kernelbench",
+  "task_id": "73_conv_transposed_3D_asymmetric_input_square_kernel__strided_padded__grouped",
+  "source_path": "/home/bi_geum/official_matrix_64/third_party/KernelBench/KernelBench/level1/73_conv_transposed_3D_asymmetric_input_square_kernel__strided_padded__grouped.py",
+  "official_task": true
+}

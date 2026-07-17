@@ -1,0 +1,6 @@
+{
+  "benchmark": "kernelbench",
+  "task_id": "22_Matmul_Scale_ResidualAdd_Clamp_LogSumExp_Mish",
+  "source_path": "/home/bi_geum/official_matrix_64/third_party/KernelBench/KernelBench/level2/22_Matmul_Scale_ResidualAdd_Clamp_LogSumExp_Mish.py",
+  "official_task": true
+}

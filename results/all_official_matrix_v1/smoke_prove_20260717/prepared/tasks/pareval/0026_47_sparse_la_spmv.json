@@ -1,0 +1,13 @@
+{
+  "benchmark": "pareval",
+  "task_id": "47_sparse_la_spmv",
+  "official_task": true,
+  "prompt_obj": {
+    "problem_type": "sparse_la",
+    "language": "cpp",
+    "name": "47_sparse_la_spmv",
+    "parallelism_model": "cuda",
+    "prompt": "struct COOElement {\n   size_t row, column;\n   double value;\n};\n\n/* Compute y = alpha*A*x + beta*y where alpha and beta are scalars, x and y are vectors,\n   and A is a sparse matrix stored in COO format with sizeA elements.\n   A has dimensions MxN, x has N values, and y has M values.\n   Use CUDA to parallelize. The kernel will be launched with at least sizeA threads.\n   Example:\n\n   input: alpha=0.5 beta=1.0 A=[{0,1,3}, {1,0,-1}] x=[-4, 2] y=[-1,1]\n   output: y=[2, 3]\n*/\n__global__ void spmv(double alpha, const COOElement *A, size_t sizeA, const double *x, double beta, double *y, size_t M, size_t N) {"
+  },
+  "prompt": "Benchmark: pareval\nOfficial task: 47_sparse_la_spmv\nReturn only source code, without Markdown fences or explanations.\n\nThis is a ParEval CUDA COMPLETION task. Below is the BEGINNING of a CUDA C++ file; its last line is a function signature ending with '{' and the body is missing. Your output will be appended VERBATIM right after it and compiled by ParEval's official C++ driver.\n\nOutput ONLY the code that completes that open function body, ending with its closing '}'. Do NOT repeat anything shown below: no #include, no struct/typedef, no 'using', no function signature, and no main(). Emit raw C++ only (no Markdown fences, no prose).\n\n--- code so far (context only; do NOT repeat it) ---\nstruct COOElement {\n   size_t row, column;\n   double value;\n};\n\n/* Compute y = alpha*A*x + beta*y where alpha and beta are scalars, x and y are vectors,\n   and A is a sparse matrix stored in COO format with sizeA elements.\n   A has dimensions MxN, x has N values, and y has M values.\n   Use CUDA to parallelize. The kernel will be launched with at least sizeA threads.\n   Example:\n\n   input: alpha=0.5 beta=1.0 A=[{0,1,3}, {1,0,-1}] x=[-4, 2] y=[-1,1]\n   output: y=[2, 3]\n*/\n__global__ void spmv(double alpha, const COOElement *A, size_t sizeA, const double *x, double beta, double *y, size_t M, size_t N) {"
+}

@@ -1,0 +1,10 @@
+{
+  "run": "incoder32b_incoder32b_robust_kbench_l12_round1_repeat1_temp0.2",
+  "agent": "incoder32b",
+  "benchmark": "robust_kbench",
+  "task": "/home/bi_geum/official_matrix_64/third_party/KernelBench/KernelBench/level1/1_Square_matrix_multiplication_.py",
+  "repeat": 0,
+  "generation_seconds": 86,
+  "n_candidates": 1,
+  "n_llm_io_files": 1
+}

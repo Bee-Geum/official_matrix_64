@@ -1,0 +1,57 @@
+{
+  "root": "/home/bi_geum/official_matrix_64",
+  "run_root": "/home/bi_geum/official_matrix_64/results/all_official_matrix_v1/smoke_prove_20260717",
+  "benchmarks": [
+    "kernelbench",
+    "robust_kbench",
+    "tritonbench_t",
+    "tritonbench_g",
+    "multikernelbench",
+    "backendbench",
+    "pareval",
+    "sol_execbench"
+  ],
+  "agents": [
+    {
+      "name": "drkernel",
+      "model": "drkernel14b",
+      "langs": [
+        "triton"
+      ],
+      "driver": "/home/bi_geum/official_matrix_64/drivers/drkernel_live_driver.py",
+      "out_flag": "--cand_dir",
+      "gen_args": "--task {TASK} --cand_dir {CAND} --rounds {ROUNDS} --seed {SEED} --temperature {TEMP}",
+      "glob": "candidate_*.py"
+    }
+  ],
+  "args": {
+    "mode": "run",
+    "root": "/home/bi_geum/official_matrix_64",
+    "run_id": "smoke_prove_20260717",
+    "benchmarks": "all",
+    "agents": "drkernel",
+    "limit": 1,
+    "rounds": 1,
+    "repeat": 1,
+    "temp": 0.2,
+    "seed": 0,
+    "gpu": "0",
+    "gpus": "1,2,3",
+    "cell_workers": 3,
+    "workers_per_gpu": 1,
+    "port": 8000,
+    "generation_timeout": 1200,
+    "eval_timeout": 1800,
+    "cell_timeout": 7200,
+    "cell_attempts": 2,
+    "max_candidates": 2,
+    "pareval_build_timeout": 60,
+    "pareval_run_timeout": 180,
+    "sol_warmup": 1,
+    "sol_iterations": 3,
+    "sol_compile_timeout": 180,
+    "sol_run_timeout": 600,
+    "force": false
+  },
+  "generated_at": "2026-07-17T14:28:20+0900"
+}

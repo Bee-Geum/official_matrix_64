@@ -1,0 +1,80 @@
+[kernelskill] LIVE upstream agent: /home/bi_geum/official_matrix_64/.venv/bin/python3 /home/bi_geum/official_matrix_64/third_party/KernelMem/main_memory_latest.py /home/bi_geum/official_matrix_64/third_party/KernelBench/KernelBench/level1/1_Square_matrix_multiplication_.py --server_type vllm --server_address 127.0.0.1 --server_port 8000 --model_name qwen14b --gpu H100 --round 1 --work_dir /home/bi_geum/official_matrix_64/runs/kernelskill_qwen14b_robust_kbench_l12_round1_repeat1_temp0.2/1_Square_matrix_multiplication___rep0/kernelmem_run --device 0 --max_tokens 8192 --temperature 0.2 --subproc_id 0
+[BATCH] Output folder: /home/bi_geum/official_matrix_64/runs/kernelskill_qwen14b_robust_kbench_l12_round1_repeat1_temp0.2/1_Square_matrix_multiplication___rep0/kernelmem_run/20260717_135951_1_Square_matrix_multiplication__vllm_qwen14b
+[1_Square_matrix_multiplication_.py] Round 0
+[Seed] Generating the initial kernel ...
+[91mTest Error (CompilationError):[0m [1/3] c++ -MMD -MF main.o.d -DTORCH_EXTENSION_NAME=matmul_custom -DTORCH_API_INCLUDE_EXTENSION_H -isystem /home/bi_geum/official_matrix_64/.venv/lib/python3.12/site-packages/torch/include -isystem /home/bi_geum/official_matrix_64/.venv/lib/python3.12/site-packages/torch/include/torch/csrc/api/include -isystem /usr/local/cuda-12/include -isystem /usr/include/python3.12 -fPIC -std=c++17 -O3 -std=c++17 --expt-relaxed-constexpr -lineinfo -c /home/bi_geum/official_matrix_64/results/all_official_matrix_v1/smoke_prove_20260717/cells/robust_kbench/kernelskill/_scratch/torch_extensions/matmul_custom/main.cpp -o main.o 
+FAILED: [code=1] main.o 
+c++ -MMD -MF main.o.d -DTORCH_EXTENSION_NAME=matmul_custom -DTORCH_API_INCLUDE_EXTENSION_H -isystem /home/bi_geum/official_matrix_64/.venv/lib/python3.12/site-packages/torch/include -isystem /home/bi_geum/official_matrix_64/.venv/lib/python3.12/site-packages/torch/include/torch/csrc/api/include -isystem /usr/local/cuda-12/include -isystem /usr/include/python3.12 -fPIC -std=c++17 -O3 -std=c++17 --expt-relaxed-constexpr -lineinfo -c /home/bi_geum/official_matrix_64/results/all_official_matrix_v1/smoke_prove_20260717/cells/robust_kbench/kernelskill/_scratch/torch_extensions/matmul_custom/main.cpp -o main.o 
+c++: error: unrecognized command-line option ‘--expt-relaxed-constexpr’
+[2/3] /usr/local/cuda-12/bin/nvcc --generate-dependencies-with-compile --dependency-output cuda.cuda.o.d -DTORCH_EXTENSION_NAME=matmul_custom -DTORCH_API_INCLUDE_EXTENSION_H -isystem /home/bi_geum/official_matrix_64/.venv/lib/python3.12/site-packages/torch/include -isystem /home/bi_geum/official_matrix_64/.venv/lib/python3.12/site-packages/torch/include/torch/csrc/api/include -isystem /usr/local/cuda-12/include -isystem /usr/include/python3.12 -D__CUDA_NO_HALF_OPERATORS__ -D__CUDA_NO_HALF_CONVERSIONS__ -D__CUDA_NO_BFLOAT16_CONVERSIONS__ -D__CUDA_NO_HALF2_OPERATORS__ --expt-relaxed-constexpr --compiler-options '-fPIC' -gencode=arch=compute_90,code=sm_90 -std=c++17 -c /home/bi_geum/official_matrix_64/results/all_official_matrix_v1/smoke_prove_20260717/cells/robust_kbench/kernelskill/_scratch/torch_extensions/matmul_custom/cuda.cu -o cuda.cuda.o 
+FAILED: [code=2] cuda.cuda.o 
+/usr/local/cuda-12/bin/nvcc --generate-dependencies-with-compile --dependency-output cuda.cuda.o.d -DTORCH_EXTENSION_NAME=matmul_custom -DTORCH_API_INCLUDE_EXTENSION_H -isystem /home/bi_geum/official_matrix_64/.venv/lib/python3.12/site-packages/torch/include -isystem /home/bi_geum/official_matrix_64/.venv/lib/python3.12/site-packages/torch/include/torch/csrc/api/include -isystem /usr/local/cuda-12/include -isystem /usr/include/python3.12 -D__CUDA_NO_HALF_OPERATORS__ -D__CUDA_NO_HALF_CONVERSIONS__ -D__CUDA_NO_BFLOAT16_CONVERSIONS__ -D__CUDA_NO_HALF2_OPERATORS__ --expt-relaxed-constexpr --compiler-options '-fPIC' -gencode=arch=compute_90,code=sm_90 -std=c++17 -c /home/bi_geum/official_matrix_64/results/all_official_matrix_v1/smoke_prove_20260717/cells/robust_kbench/kernelskill/_scratch/torch_extensions/matmul_custom/cuda.cu -o cuda.cuda.o 
+/home/bi_geum/official_matrix_64/results/all_official_matrix_v1/smoke_prove_20260717/cells/robust_kbench/kernelskill/_scratch/torch_extensions/matmul_custom/cuda.cu(28): error: identifier "CUBLAS_CHECK" is undefined
+      CUBLAS_CHECK(cublasLtCreate(&ltHandle));
+      ^
+
+/home/bi_geum/official_matrix_64/results/all_official_matrix_v1/smoke_prove_20260717/cells/robust_kbench/kernelskill/_scratch/torch_extensions/matmul_custom/cuda.cu(31): error: too many arguments in function call
+      CUBLAS_CHECK(cublasLtMatmulDescCreate(&operationDesc, CUBLAS_COMPUTE_32F, CUDA_R_32F, CUDA_R_32F));
+                                                                                            ^
+
+/home/bi_geum/official_matrix_64/results/all_official_matrix_v1/smoke_prove_20260717/cells/robust_kbench/kernelskill/_scratch/torch_extensions/matmul_custom/cuda.cu(43): error: argument of type "int" is incompatible with parameter of type "cublasLtMatmulPreference_t" (aka "cublasLtMatmulPreferenceOpaque_t *")
+      CUBLAS_CHECK(cublasLtMatmulAlgoGetHeuristic(ltHandle, operationDesc, Adesc, Bdesc, Cdesc, Cdesc, 1, heuristicResult, &returnedResults));
+                                                                                                       ^
+
+/home/bi_geum/official_matrix_64/results/all_official_matrix_v1/smoke_prove_20260717/cells/robust_kbench/kernelskill/_scratch/torch_extensions/matmul_custom/cuda.cu(43): error: argument of type "cublasLtMatmulHeuristicResult_t *" is incompatible with parameter of type "int"
+      CUBLAS_CHECK(cublasLtMatmulAlgoGetHeuristic(ltHandle, operationDesc, Adesc, Bdesc, Cdesc, Cdesc, 1, heuristicResult, &returnedResults));
+                                                                                                          ^
+
+/home/bi_geum/official_matrix_64/results/all_official_matrix_v1/smoke_prove_20260717/cells/robust_kbench/kernelskill/_scratch/torch_extensions/matmul_custom/cuda.cu(43): error: argument of type "int *" is incompatible with parameter of type "cublasLtMatmulHeuristicResult_t *"
+      CUBLAS_CHECK(cublasLtMatmulAlgoGetHeuristic(ltHandle, operationDesc, Adesc, Bdesc, Cdesc, Cdesc, 1, heuristicResult, &returnedResults));
+                                                                                                                           ^
+
+/home/bi_geum/official_matrix_64/results/all_official_matrix_v1/smoke_prove_20260717/cells/robust_kbench/kernelskill/_scratch/torch_extensions/matmul_custom/cuda.cu(43): error: too few arguments in function call
+      CUBLAS_CHECK(cublasLtMatmulAlgoGetHeuristic(ltHandle, operationDesc, Adesc, Bdesc, Cdesc, Cdesc, 1, heuristicResult, &returnedResults));
+                                                                                                                                           ^
+
+/home/bi_geum/official_matrix_64/results/all_official_matrix_v1/smoke_prove_20260717/cells/robust_kbench/kernelskill/_scratch/torch_extensions/matmul_custom/cuda.cu(49): error: class "cublasLtMatmulAlgo_t" has no member "workspaceSize"
+      CUBLAS_CHECK(cublasLtMatmulWorkspacePreferenceGet(&heuristicResult[0].algo.workspaceSize, &workspaceSize));
+                                                                                 ^
+
+/home/bi_geum/official_matrix_64/results/all_official_matrix_v1/smoke_prove_20260717/cells/robust_kbench/kernelskill/_scratch/torch_extensions/matmul_custom/cuda.cu(49): error: identifier "cublasLtMatmulWorkspacePreferenceGet" is undefined
+      CUBLAS_CHECK(cublasLtMatmulWorkspacePreferenceGet(&heuristicResult[0].algo.workspaceSize, &workspaceSize));
+                   ^
+
+/home/bi_geum/official_matrix_64/results/all_official_matrix_v1/smoke_prove_20260717/cells/robust_kbench/kernelskill/_scratch/torch_extensions/matmul_custom/cuda.cu(50): error: no suitable conversion function from "at::Tensor" to "void *" exists
+      workspace = torch::empty(workspaceSize, torch::dtype(torch::kByte).device(torch::kCUDA));
+                  ^
+
+/home/bi_geum/official_matrix_64/results/all_official_matrix_v1/smoke_prove_20260717/cells/robust_kbench/kernelskill/_scratch/torch_extensions/matmul_custom/cuda.cu(52): error: argument of type "float *" is incompatible with parameter of type "cublasLtMatrixLayout_t" (aka "cublasLtMatrixLayoutOpaque_t *")
+      CUBLAS_CHECK(cublasLtMatmul(ltHandle, operationDesc, &heuristicResult[0].algo, nullptr, A.data_ptr<float>(), Adesc, B.data_ptr<float>(), Bdesc, nullptr, C.data_ptr<float>(), Cdesc, C.data_ptr<float>(), Cdesc, workspace, workspaceSize, at::cuda::getDefaultCUDAStream()));
+                                                                                              ^
+
+/home/bi_geum/official_matrix_64/results/all_official_matrix_v1/smoke_prove_20260717/cells/robust_kbench/kernelskill/_scratch/torch_extensions/matmul_custom/cuda.cu(52): error: argument of type "float *" is incompatible with parameter of type "cublasLtMatrixLayout_t" (aka "cublasLtMatrixLayoutOpaque_t *")
+      CUBLAS_CHECK(cublasLtMatmul(ltHandle, operationDesc, &heuristicResult[0].algo, nullptr, A.data_ptr<float>(), Adesc, B.data_ptr<float>(), Bdesc, nullptr, C.data_ptr<float>(), Cdesc, C.data_ptr<float>(), Cdesc, workspace, workspaceSize, at::cuda::getDefaultCUDAStream()));
+                                                                                                                          ^
+
+/home/bi_geum/official_matrix_64/results/all_official_matrix_v1/smoke_prove_20260717/cells/robust_kbench/kernelskill/_scratch/torch_extensions/matmul_custom/cuda.cu(52): error: argument of type "float *" is incompatible with parameter of type "cublasLtMatrixLayout_t" (aka "cublasLtMatrixLayoutOpaque_t *")
+      CUBLAS_CHECK(cublasLtMatmul(ltHandle, operationDesc, &heuristicResult[0].algo, nullptr, A.data_ptr<float>(), Adesc, B.data_ptr<float>(), Bdesc, nullptr, C.data_ptr<float>(), Cdesc, C.data_ptr<float>(), Cdesc, workspace, workspaceSize, at::cuda::getDefaultCUDAStream()));
+                                                                                                                                                               ^
+
+/home/bi_geum/official_matrix_64/results/all_official_matrix_v1/smoke_prove_20260717/cells/robust_kbench/kernelskill/_scratch/torch_extensions/matmul_custom/cuda.cu(52): error: argument of type "float *" is incompatible with parameter of type "cublasLtMatrixLayout_t" (aka "cublasLtMatrixLayoutOpaque_t *")
+      CUBLAS_CHECK(cublasLtMatmul(ltHandle, operationDesc, &heuristicResult[0].algo, nullptr, A.data_ptr<float>(), Adesc, B.data_ptr<float>(), Bdesc, nullptr, C.data_ptr<float>(), Cdesc, C.data_ptr<float>(), Cdesc, workspace, workspaceSize, at::cuda::getDefaultCUDAStream()));
+                                                                                                                                                                                           ^
+
+/home/bi_geum/official_matrix_64/results/all_official_matrix_v1/smoke_prove_20260717/cells/robust_kbench/kernelskill/_scratch/torch_extensions/matmul_custom/cuda.cu(52): error: argument of type "cublasLtMatrixLayout_t" (aka "cublasLtMatrixLayoutOpaque_t *") is incompatible with parameter of type "const cublasLtMatmulAlgo_t *"
+      CUBLAS_CHECK(cublasLtMatmul(ltHandle, operationDesc, &heuristicResult[0].algo, nullptr, A.data_ptr<float>(), Adesc, B.data_ptr<float>(), Bdesc, nullptr, C.data_ptr<float>(), Cdesc, C.data_ptr<float>(), Cdesc, workspace, workspaceSize, at::cuda::getDefaultCUDAStream()));
+                                                                                                                                                                                                                ^
+
+14 errors detected in the compilation of "/home/bi_geum/official_matrix_64/results/all_official_matrix_v1/smoke_prove_20260717/cells/robust_kbench/kernelskill/_scratch/torch_extensions/matmul_custom/cuda.cu".
+ninja: build stopped: subcommand failed.
+Error building extension 'matmul_custom'
+[seed] failed. See metrics.message for details.
+[seed] metrics saved to: /home/bi_geum/official_matrix_64/runs/kernelskill_qwen14b_robust_kbench_l12_round1_repeat1_temp0.2/1_Square_matrix_multiplication___rep0/kernelmem_run/20260717_135951_1_Square_matrix_multiplication__vllm_qwen14b/1_Square_matrix_multiplication_/evaluation/eval_0000.json
+[1_Square_matrix_multiplication_.py] Figure saved to: /home/bi_geum/official_matrix_64/runs/kernelskill_qwen14b_robust_kbench_l12_round1_repeat1_temp0.2/1_Square_matrix_multiplication___rep0/kernelmem_run/20260717_135951_1_Square_matrix_multiplication__vllm_qwen14b/1_Square_matrix_multiplication_/figures/1_Square_matrix_multiplication__score.png
+[1_Square_matrix_multiplication_.py] Optimization tree saved to: /home/bi_geum/official_matrix_64/runs/kernelskill_qwen14b_robust_kbench_l12_round1_repeat1_temp0.2/1_Square_matrix_multiplication___rep0/kernelmem_run/20260717_135951_1_Square_matrix_multiplication__vllm_qwen14b/1_Square_matrix_multiplication_/optimization_tree.json
+[SUMMARY] {'task': '/home/bi_geum/official_matrix_64/third_party/KernelBench/KernelBench/level1/1_Square_matrix_multiplication_.py', 'best_score': 0.0, 'best_runnable': False, 'task_dir': '/home/bi_geum/official_matrix_64/runs/kernelskill_qwen14b_robust_kbench_l12_round1_repeat1_temp0.2/1_Square_matrix_multiplication___rep0/kernelmem_run/20260717_135951_1_Square_matrix_multiplication__vllm_qwen14b/1_Square_matrix_multiplication_', 'figure': '/home/bi_geum/official_matrix_64/runs/kernelskill_qwen14b_robust_kbench_l12_round1_repeat1_temp0.2/1_Square_matrix_multiplication___rep0/kernelmem_run/20260717_135951_1_Square_matrix_multiplication__vllm_qwen14b/1_Square_matrix_multiplication_/figures/1_Square_matrix_multiplication__score.png', 'input_tokens_sum': 0, 'output_tokens_sum': 0, 'total_tokens_sum': 0, 'method_matched_stats': {'total_opt_rounds': 0, 'matched_count': 0, 'unmatched_count': 0}}
+[GLOBAL] Avg speedup=0.0000, Accuracy=0.0000
+[GLOBAL] Saved: /home/bi_geum/official_matrix_64/runs/kernelskill_qwen14b_robust_kbench_l12_round1_repeat1_temp0.2/1_Square_matrix_multiplication___rep0/kernelmem_run/20260717_135951_1_Square_matrix_multiplication__vllm_qwen14b/summary.json
+[GLOBAL] Saved: /home/bi_geum/official_matrix_64/runs/kernelskill_qwen14b_robust_kbench_l12_round1_repeat1_temp0.2/1_Square_matrix_multiplication___rep0/kernelmem_run/20260717_135951_1_Square_matrix_multiplication__vllm_qwen14b/summary.csv
+[kernelskill] upstream rc=0 wall=32.4s
+[kernelskill] ERROR: KernelMem produced no runnable kernel ({'summary': '/home/bi_geum/official_matrix_64/runs/kernelskill_qwen14b_robust_kbench_l12_round1_repeat1_temp0.2/1_Square_matrix_multiplication___rep0/kernelmem_run/20260717_135951_1_Square_matrix_multiplication__vllm_qwen14b/summary.json', 'accuracy': 0.0, 'best_runnable': False, 'best_score': 0.0}); refusing to harvest a crash artifact

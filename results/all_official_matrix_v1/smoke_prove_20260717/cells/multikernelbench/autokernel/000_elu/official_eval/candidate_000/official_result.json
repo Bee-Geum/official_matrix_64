@@ -1,0 +1,8 @@
+{
+  "compiled": false,
+  "correctness": false,
+  "performance": null,
+  "hardware": "NVIDIA H100 80GB HBM3",
+  "cheating": false,
+  "compile_info": "invalid syntax (<string>, line 58)"
+}

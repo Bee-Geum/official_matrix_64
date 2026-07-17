@@ -1,0 +1,7 @@
+{
+  "benchmark": "tritonbench_t",
+  "task_id": "solve_and_add_scaled_vector",
+  "source_path": "/home/bi_geum/official_matrix_64/third_party/TritonBench/data/TritonBench_T_v1/solve_and_add_scaled_vector.py",
+  "official_task": true,
+  "prompt": "Benchmark: tritonbench_t\nOfficial task: solve_and_add_scaled_vector\nReturn only source code, without Markdown fences or explanations.\n\nImplement the official TritonBench task as a Python module and preserve its public interface.\n\nimport torch\n\n\ndef solve_and_add_scaled_vector(A: torch.Tensor, b: torch.Tensor, y: torch.Tensor, alpha: float) -> torch.Tensor:\n    x = torch.linalg.solve_triangular(A, b, upper=True)\n    x += alpha * y\n    return x\n\n##################################################################################################################################################\n\n\nimport torch\n\ndef test_solve_and_add_scaled_vector():\n    results = {}\n\n    # Test case 1: Basic test with 2x2 upper triangular matrix\n    A1 = torch.tensor([[2.0, 1.0], [0.0, 3.0]], device='cuda')\n    b1 = torch.tensor([[5.0, 6.0], [7.0, 8]], device='cuda')\n    y1 = torch.tensor([1.0, 2.0], device='cuda')\n    alpha1 = 0.5\n    results[\"test_case_1\"] = solve_and_add_scaled_vector(A1, b1, y1, alpha1)\n    return results\n\ntest_results = test_solve_and_add_scaled_vector()\n"
+}

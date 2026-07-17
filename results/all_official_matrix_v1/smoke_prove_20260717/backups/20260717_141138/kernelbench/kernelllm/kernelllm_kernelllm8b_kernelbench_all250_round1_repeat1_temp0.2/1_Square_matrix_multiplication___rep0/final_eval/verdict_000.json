@@ -1,0 +1,23 @@
+{
+  "compiled": true,
+  "correct": false,
+  "latency_ms": null,
+  "ref_latency_ms": null,
+  "speedup": null,
+  "error": "runtime: Traceback (most recent call last):\n  File \"/home/bi_geum/official_matrix_64/telemetry/instrumented_eval_worker.py\", line 116, in main\n    candidate_output = first_tensor(candidate_model(*inputs)).contiguous()\n                                    ^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/bi_geum/official_matrix_64/.venv/lib/python3.12/site-packages/torch/nn/modules/module.py\", line 1776, in _wrapped_call_impl\n    return self._call_impl(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/bi_geum/official_matrix_64/.venv/lib/python3.12/site-packages/torch/nn/modules/module.py\", line 1787, in _call_impl\n    return forward_call(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/bi_geum/official_matrix_64/runs/kernelllm_kernelllm8b_kernelbench_all250_round1_repeat1_temp0.2/1_Square_matrix_multiplication___rep0/candidates/candidate_0000.py\", line 77, in forward\n    output = call([arg0_1, arg1_1])\n             ^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/bi_geum/official_matrix_64/runs/kernelllm_kernelllm8b_kernelbench_all250_round1_repeat1_temp0.2/1_Square_matrix_multiplication___rep0/candidates/candidate_0000.py\", line 48, in call\n    assert_size_stride(arg0_1, (2048, 2048), (2048, 1))\nAssertionError: expected size 4096==2048, stride 4096==2048 at dim=0; expected size 4096==2048, stride 1==1 at dim=1\nThis error most often comes from a incorrect fake (aka meta) kernel for a custom op.\nUse torch.library.opcheck to test your custom op.\nSee https://pytorch.org/docs/stable/library.html#torch.library.opcheck\n",
+  "stage_s": {
+    "reference_import": 0.0001666530006332323,
+    "candidate_compile_import": 1.4791802669997196,
+    "model_init": 0.00010810999992827419,
+    "correctness": 0.0,
+    "reference_benchmark": 0.0,
+    "candidate_benchmark": 0.0,
+    "total": 3.614619068999673
+  },
+  "correctness_trials_requested": 5,
+  "correctness_trials_executed": 0,
+  "warmup": 10,
+  "timing_iters": 100,
+  "compile_attempts": 1,
+  "profile_runs": 0
+}

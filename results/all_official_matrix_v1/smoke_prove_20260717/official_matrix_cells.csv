@@ -1,0 +1,9 @@
+benchmark,agent,n_tasks,candidate_task_count,official_eval_task_count,correct_task_count,valid_official_cell,all_tasks_official,wall_s,top_infrastructure_error,finished_at
+kernelbench,drkernel,1,1,1,1,1,1,116.84610867500305,,2026-07-17T14:30:17+0900
+robust_kbench,drkernel,1,1,1,1,1,1,114.26611256599426,,2026-07-17T14:30:15+0900
+tritonbench_t,drkernel,1,1,1,1,1,1,111.7422022819519,,2026-07-17T14:30:12+0900
+tritonbench_g,drkernel,1,1,1,0,1,1,113.03868103027344,,2026-07-17T14:32:05+0900
+multikernelbench,drkernel,1,1,1,1,1,1,165.94739627838135,,2026-07-17T14:33:01+0900
+backendbench,drkernel,1,1,0,0,0,0,131.51684021949768,op 'add' not covered by locally-available BackendBench suites (opinfo/torchbench); no official test case exists for it here,2026-07-17T14:34:44+0900
+pareval,drkernel,1,1,1,0,1,1,102.74530363082886,,2026-07-17T14:33:48+0900
+sol_execbench,drkernel,1,1,1,0,1,1,107.22786331176758,,2026-07-17T14:34:48+0900

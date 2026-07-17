@@ -1,0 +1,8 @@
+{
+  "compiled": true,
+  "correctness": false,
+  "performance": null,
+  "hardware": "NVIDIA H100 80GB HBM3",
+  "cheating": false,
+  "correctness_info": "[FAIL] Output mismatch"
+}

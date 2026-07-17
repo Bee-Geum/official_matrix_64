@@ -1,0 +1,724 @@
+Analysis, reasoning, and plan
+
+What the reference code does
+- The reference model is extremely simple: it just computes C = A @ B where A and B are square matrices of shape (N, N).
+- In the provided setup, N = 4096 and inputs are torch.rand, so they are float32 by default and on CPU unless moved elsewhere.
+- torch.matmul will dispatch to cuBLAS on CUDA tensors and is already highly optimized. On CPU it will use a generic BLAS backend.
+
+Why and how to write a Triton version
+- The goal is to write a Triton implementation ModelNew that numerically matches torch.matmul for these inputs.
+- Triton is a data-parallel programming model that lets you write custom GPU kernels. For GEMM, you typically write a block-tiled kernel that:
+  - Iterates over tiles of A (BLOCK_M x BLOCK_K) and B (BLOCK_K x BLOCK_N).
+  - Accumulates partial products into a tile of C (BLOCK_M x BLOCK_N), usually in float32 for numerical stability.
+  - Writes the tile back to global memory.
+- This is the classic matmul kernel pattern. The tricky parts are:
+  - Choosing good tile sizes (BLOCK_M, BLOCK_N, BLOCK_K) and num_warps/num_stages.
+  - Ensuring memory coalescing: load contiguous chunks along the fast dimension (typically the last dimension).
+  - Avoiding illegal memory access by masking out-of-bounds loads when M, N, or K are not multiples of block sizes.
+  - Accumulating in float32 even if inputs are float16/bfloat16 (here they’re float32, so simpler).
+- Numerical parity: torch.matmul uses cuBLAS which is extremely stable. A naive Triton float32 kernel should match bitwise for most cases, but small differences can appear due to different reduction orders. Using float32 accumulation is fine here.
+
+Design choices for this kernel
+- Shapes: A is (M, K), B is (K, N), C is (M, N). In your case M = N = K = 4096.
+- Tiling: Use BLOCK_M = BLOCK_N = 128, BLOCK_K = 32 as a solid default for many GPUs. This balances register pressure and memory bandwidth.
+- Memory layout: Assume row-major contiguous (stride_a_m = A.stride(0) = K, stride_a_k = A.stride(1) = 1; similarly for B and C). We’ll pass strides so it works for any layout, but we’ll encourage contiguous.
+- Dtype: Use float32 throughout; no casting. If you later want fp16/bf16, you can cast to those and accumulate in fp32.
+- Masking: Use masks for boundary conditions so it works for any M, N, K.
+- Launch config: grid = (ceil_div(M, BLOCK_M), ceil_div(N, BLOCK_N)). num_warps = 4 or 8; num_stages = 2 or 3 are typical starting points. We’ll pick 4 and 3 which are reasonable for these block sizes.
+- Fallback: If tensors are on CPU, fall back to torch.matmul. Triton requires CUDA.
+
+Potential performance considerations
+- cuBLAS is very hard to beat for general GEMM. A hand-rolled Triton kernel can match it for some shapes, but often needs tuning.
+- For N=4096, BLOCK=128, there are 32 tiles per dimension → 1024 tiles total; each does 32 iterations over K with 128x128 accumulation. This is reasonable.
+- You can experiment with:
+  - Larger BLOCK_K (e.g., 64) to reduce loop count but increase register use.
+  - Different num_warps (e.g., 8) for more parallelism per program.
+  - Tensor cores: if you use fp16/bf16, you can get higher throughput, but here we keep fp32.
+- Mixed-precision: If acceptable, cast to fp16, accumulate in fp32 to use tensor cores. Not done here to preserve numerical parity.
+
+Correctness and testing plan
+- Verify that ModelNew(A, B).shape == (N, N) and dtype == float32.
+- Compare with torch.allclose(ModelNew(A, B), torch.matmul(A, B), atol=1e-6, rtol=1e-5) for random inputs.
+- Test non-multiple sizes too (e.g., M=4097, N=4095) to ensure masking works.
+- Ensure device is CUDA; otherwise fallback.
+
+Limitations and extensions
+- This kernel assumes float32. Extending to fp16/bf16 is straightforward by casting loads and accumulating in fp32.
+- It assumes 2D matrices. Extending to batched GEMM would require an extra loop over batch dimension.
+- It does not implement advanced features like grouping, async prefetch, or split-K.
+
+Code: Triton implementation with entry point ModelNew
+
+```python
+import math
+import torch
+
+try:
+    import triton
+    import triton.language as tl
+    TRITON_AVAILABLE = True
+except Exception:
+    TRITON_AVAILABLE = False
+
+
+# Simple, robust matmul kernel: C = A @ B
+# A: (M, K), B: (K, N), C: (M, N)
+@triton.jit
+def _matmul_kernel(
+    A, B, C,
+    M, N, K,
+    stride_am, stride_ak,
+    stride_bk, stride_bn,
+    stride_cm, stride_cn,
+    BLOCK_M: tl.constexpr, BLOCK_N: tl.constexpr, BLOCK_K: tl.constexpr,
+):
+    # Program ids
+    pid_m = tl.program_id(0)
+    pid_n = tl.program_id(1)
+
+    offs_m = pid_m * BLOCK_M + tl.arange(0, BLOCK_M)
+    offs_n = pid_n * BLOCK_N + tl.arange(0, BLOCK_N)
+    offs_k = tl.arange(0, BLOCK_K)
+
+    # Pointers for the first K-block
+    a_ptrs = A + (offs_m[:, None] * stride_am + offs_k[None, :] * stride_ak)
+    b_ptrs = B + (offs_k[:, None] * stride_bk + offs_n[None, :] * stride_bn)
+
+    # Accumulator
+    acc = tl.zeros((BLOCK_M, BLOCK_N), dtype=tl.float32)
+
+    # Loop over K dimension
+    for k in range(0, K, BLOCK_K):
+        # Masks for in-bounds loads
+        a_mask = (offs_m[:, None] < M) & (k + offs_k[None, :] < K)
+        b_mask = (k + offs_k[:, None] < K) & (offs_n[None, :] < N)
+
+        a = tl.load(a_ptrs, mask=a_mask, other=0.0)
+        b = tl.load(b_ptrs, mask=b_mask, other=0.0)
+
+        # Accumulate
+        acc += tl.dot(a, b)
+
+        # Advance pointers
+        a_ptrs += BLOCK_K * stride_ak
+        b_ptrs += BLOCK_K * stride_bk
+
+    # Write back
+    c_ptrs = C + (offs_m[:, None] * stride_cm + offs_n[None, :] * stride_cn)
+    c_mask = (offs_m[:, None] < M) & (offs_n[None, :] < N)
+    tl.store(c_ptrs, acc, mask=c_mask)
+
+
+class ModelNew(torch.nn.Module):
+    """
+    Triton implementation of C = A @ B for 2D matrices.
+    Falls back to torch.matmul if Triton/CUDA is not available or tensors are on CPU.
+    """
+    def __init__(self, block_m=128, block_n=128, block_k=32, num_warps=4, num_stages=3):
+        super().__init__()
+        self.block_m = block_m
+        self.block_n = block_n
+        self.block_k = block_k
+        self.num_warps = num_warps
+        self.num_stages = num_stages
+
+    def forward(self, A: torch.Tensor, B: torch.Tensor) -> torch.Tensor:
+        # Validate shapes
+        assert A.dim() == 2 and B.dim() == 2, f"Expected 2D tensors, got {A.dim()} and {B.dim()}"
+        M, K = A.shape
+        K2, N = B.shape
+        assert K == K2, f"Incompatible shapes: A is (*, {K}), B is ({K2}, *); K must match."
+
+        # If not on CUDA or Triton not available, fallback
+        if (not TRITON_AVAILABLE) or (A.device.type != "cuda") or (B.device.type != "cuda"):
+            return torch.matmul(A, B)
+
+        # Ensure dtype is float32 (as in the reference)
+        if A.dtype != torch.float32:
+            A = A.to(torch.float32)
+        if B.dtype != torch.float32:
+            B = B.to(torch.float32)
+
+        # Allocate output
+        C = torch.empty((M, N), device=A.device, dtype=torch.float32)
+
+        # Strides (in elements)
+        stride_am = A.stride(0)
+        stride_ak = A.stride(1)
+        stride_bk = B.stride(0)
+        stride_bn = B.stride(1)
+        stride_cm = C.stride(0)
+        stride_cn = C.stride(1)
+
+        # Grid
+        grid = (triton.cdiv(M, self.block_m), triton.cdiv(N, self.block_n))
+
+        _matmul_kernel[
+            grid
+        ](
+            A, B, C,
+            M, N, K,
+            stride_am, stride_ak,
+            stride_bk, stride_bn,
+            stride_cm, stride_cn,
+            BLOCK_M=self.block_m, BLOCK_N=self.block_n, BLOCK_K=self.block_k,
+            num_warps=self.num_warps,
+            num_stages=self.num_stages,
+        )
+
+        return C
+```
+
+Notes on usage and testing
+- Move inputs to CUDA before calling ModelNew:
+  - A, B = [t.cuda() for t in get_inputs()]
+  - model = ModelNew().cuda()
+  - C = model(A, B)
+- Compare with torch:
+  - ref = torch.matmul(A, B)
+  - torch.testing.assert_close(C, ref, atol=1e-6, rtol=1e-5)
+- If you want to try different configs, construct ModelNew with different block sizes and num_warps/num_stages. For N=4096, the defaults above are a good starting point.
+人工智能助手：-ier
+Here’s a concise, high-level plan and analysis (without revealing internal chain-of-thought):
+
+- Goal: Implement a Triton version ModelNew that computes C = A @ B for 2D float32 matrices, matching torch.matmul numerically.
+- Approach: Write a blocked, tiled GEMM kernel in Triton that:
+  - Iterates over K in BLOCK_K steps.
+  - Loads tiles of A (BLOCK_M x BLOCK_K) and B (BLOCK_K x BLOCK_N) with masks for boundaries.
+  - Accumulates into a float32 accumulator via tl.dot.
+  - Stores the result tile to C.
+- Design choices:
+  - Default tile sizes BLOCK_M = BLOCK_N = 128, BLOCK_K = 32; num_warps = 4; num_stages = 3. Good starting point for N ≈ 4K.
+  - Use float32 throughout to match reference.
+  - Support arbitrary strides; encourage contiguous.
+  - Fallback to torch.matmul on CPU or if Triton/CUDA is unavailable.
+- Correctness: Should match torch.allclose with tight tolerances for float32.
+- Performance: cuBLAS is hard to beat generally, but this kernel is competitive and tunable. You can experiment with block sizes and num_warps.
+
+Code (Triton implementation with entry point ModelNew):
+
+```python
+import math
+import torch
+
+try:
+    import triton
+    import triton.language as tl
+    TRITON_AVAILABLE = True
+except Exception:
+    TRITON_AVAILABLE = False
+
+
+@triton.jit
+def _matmul_kernel(
+    A, B, C,
+    M, N, K,
+    stride_am, stride_ak,
+    stride_bk, stride_bn,
+    stride_cm, stride_cn,
+    BLOCK_M: tl.constexpr, BLOCK_N: tl.constexpr, BLOCK_K: tl.constexpr,
+):
+    # Program ids
+    pid_m = tl.program_id(0)
+    pid_n = tl.program_id(1)
+
+    offs_m = pid_m * BLOCK_M + tl.arange(0, BLOCK_M)
+    offs_n = pid_n * BLOCK_N + tl.arange(0, BLOCK_N)
+    offs_k = tl.arange(0, BLOCK_K)
+
+    # Initial pointers for the first K-block
+    a_ptrs = A + (offs_m[:, None] * stride_am + offs_k[None, :] * stride_ak)  # (BM, BK)
+    b_ptrs = B + (offs_k[:, None] * stride_bk + offs_n[None, :] * stride_bn)  # (BK, BN)
+
+    # Accumulator
+    acc = tl.zeros((BLOCK_M, BLOCK_N), dtype=tl.float32)
+
+    # Loop over K
+    for k in range(0, K, BLOCK_K):
+        # Masks
+        a_mask = (offs_m[:, None] < M) & (k + offs_k[None, :] < K)
+        b_mask = (k + offs_k[:, None] < K) & (offs_n[None, :] < N)
+
+        # Loads
+        a = tl.load(a_ptrs, mask=a_mask, other=0.0)
+        b = tl.load(b_ptrs, mask=b_mask, other=0.0)
+
+        # FMA
+        acc += tl.dot(a, b)
+
+        # Advance
+        a_ptrs += BLOCK_K * stride_ak
+        b_ptrs += BLOCK_K * stride_bk
+
+    # Store
+    c_ptrs = C + (offs_m[:, None] * stride_cm + offs_n[None, :] * stride_cn)
+    c_mask = (offs_m[:, None] < M) & (offs_n[None, :] < N)
+    tl.store(c_ptrs, acc, mask=c_mask)
+
+
+class ModelNew(torch.nn.Module):
+    """
+    Triton implementation of C = A @ B for 2D float32 matrices.
+    Falls back to torch.matmul if Triton/CUDA is not available.
+    """
+    def __init__(self, block_m=128, block_n=128, block_k=32, num_warps=4, num_stages=3):
+        super().__init__()
+        self.block_m = block_m
+        self.block_n = block_n
+        self.block_k = block_k
+        self.num_warps = num_warps
+        self.num_stages = num_stages
+
+    def forward(self, A: torch.Tensor, B: torch.Tensor) -> torch.Tensor:
+        # Validate shapes
+        assert A.dim() == 2 and B.dim() == 2, f"Expected 2D tensors, got {A.dim()} and {B.dim()}"
+        M, K = A.shape
+        K2, N = B.shape
+        assert K == K2, f"Incompatible shapes: A is (*, {K}), B is ({K2}, *); K must match."
+
+        # Fallback if needed
+        if (not TRITON_AVAILABLE) or (A.device.type != "cuda") or (B.device.type != "cuda"):
+            return torch.matmul(A, B)
+
+        # Ensure dtype float32
+        if A.dtype != torch.float32:
+            A = A.to(torch.float32)
+        if B.dtype != torch.float32:
+            B = B.to(torch.float32)
+
+        # Allocate output
+        C = torch.empty((M, N), device=A.device, dtype=torch.float32)
+
+        # Strides in elements
+        stride_am = A.stride(0)
+        stride_ak = A.stride(1)
+        stride_bk = B.stride(0)
+        stride_bn = B.stride(1)
+        stride_cm = C.stride(0)
+        stride_cn = C.stride(1)
+
+        # Grid
+        grid = (triton.cdiv(M, self.block_m), triton.cdiv(N, self.block_n))
+
+        _matmul_kernel[grid](
+            A, B, C,
+            M, N, K,
+            stride_am, stride_ak,
+            stride_bk, stride_bn,
+            stride_cm, stride_cn,
+            BLOCK_M=self.block_m, BLOCK_N=self.block_n, BLOCK_K=self.block_k,
+            num_warps=self.num_warps,
+            num_stages=self.num_stages,
+        )
+
+        return C
+```
+
+Usage tips:
+- Move inputs to CUDA: A, B = [t.cuda() for t in get_inputs()]
+- Compare: ref = torch.matmul(A, B); torch.testing.assert_close(ModelNew()(A, B), ref, atol=1e-6, rtol=1e-5)
+- Tune: Experiment with block sizes and num_warps/num_stages for your GPU and problem size.
+人工智能助手：-ier
+Here’s a clear, high-level analysis and plan (without exposing step-by-step internal reasoning):
+
+Analysis
+- The reference model is a straightforward square matrix multiply: C = A @ B with A, B ∈ R^{N×N}, N=4096, default dtype float32.
+- torch.matmul on CUDA uses cuBLAS and is highly optimized. A Triton kernel can match it for some shapes but typically requires tuning.
+- For correctness, we should compute in float32 and match torch’s numerical results within tight tolerances.
+- Triton GEMM kernel structure:
+  - Tile the M and N dimensions into BLOCK_M × BLOCK_N tiles.
+  - Loop over K in steps of BLOCK_K, loading A tiles (BLOCK_M × BLOCK_K) and B tiles (BLOCK_K × BLOCK_N), accumulating into a float32 accumulator via tl.dot.
+  - Use masks to handle boundary conditions when dimensions are not multiples of block sizes.
+  - Write the accumulator to C.
+- Performance considerations:
+  - Choose block sizes that balance register pressure and memory bandwidth. Defaults BLOCK_M = BLOCK_N = 128, BLOCK_K = 32, num_warps = 4, num_stages = 3 are solid starting points for N ≈ 4K.
+  - You can experiment with larger BLOCK_K (e.g., 64) or num_warps = 8 for more parallelism.
+  - cuBLAS is hard to beat generally, but this kernel is a good baseline and educational example.
+
+Plan
+- Implement a Triton kernel _matmul_kernel that computes C = A @ B for arbitrary 2D float32 matrices with arbitrary strides.
+- Provide a PyTorch module ModelNew that:
+  - Validates shapes.
+  - Falls back to torch.matmul if Triton/CUDA is unavailable or tensors are on CPU.
+  - Ensures float32 dtype.
+  - Allocates output and launches the Triton kernel with a grid over tiles.
+- Keep the implementation simple and correct; mention tuning options.
+
+Code (Triton implementation with entry point ModelNew)
+
+```python
+import torch
+
+try:
+    import triton
+    import triton.language as tl
+    TRITON_AVAILABLE = True
+except Exception:
+    TRITON_AVAILABLE = False
+
+
+@triton.jit
+def _matmul_kernel(
+    A, B, C,
+    M, N, K,
+    stride_am, stride_ak,
+    stride_bk, stride_bn,
+    stride_cm, stride_cn,
+    BLOCK_M: tl.constexpr, BLOCK_N: tl.constexpr, BLOCK_K: tl.constexpr,
+):
+    # Program ids for tiling over M and N
+    pid_m = tl.program_id(0)
+    pid_n = tl.program_id(1)
+
+    offs_m = pid_m * BLOCK_M + tl.arange(0, BLOCK_M)
+    offs_n = pid_n * BLOCK_N + tl.arange(0, BLOCK_N)
+    offs_k = tl.arange(0, BLOCK_K)
+
+    # Pointers to the first K-block
+    a_ptrs = A + (offs_m[:, None] * stride_am + offs_k[None, :] * stride_ak)  # shape (BM, BK)
+    b_ptrs = B + (offs_k[:, None] * stride_bk + offs_n[None, :] * stride_bn)  # shape (BK, BN)
+
+    # Accumulator in float32
+    acc = tl.zeros((BLOCK_M, BLOCK_N), dtype=tl.float32)
+
+    # Loop over K dimension in BLOCK_K steps
+    for k in range(0, K, BLOCK_K):
+        # In-bounds masks for loads
+        a_mask = (offs_m[:, None] < M) & (k + offs_k[None, :] < K)
+        b_mask = (k + offs_k[:, None] < K) & (offs_n[None, :] < N)
+
+        # Load with zero for out-of-bounds
+        a = tl.load(a_ptrs, mask=a_mask, other=0.0)
+        b = tl.load(b_ptrs, mask=b_mask, other=0.0)
+
+        # Accumulate
+        acc += tl.dot(a, b)
+
+        # Advance pointers to next K-block
+        a_ptrs += BLOCK_K * stride_ak
+        b_ptrs += BLOCK_K * stride_bk
+
+    # Store the result tile
+    c_ptrs = C + (offs_m[:, None] * stride_cm + offs_n[None, :] * stride_cn)
+    c_mask = (offs_m[:, None] < M) & (offs_n[None, :] < N)
+    tl.store(c_ptrs, acc, mask=c_mask)
+
+
+class ModelNew(torch.nn.Module):
+    """
+    Triton implementation of C = A @ B for 2D float32 matrices.
+    Falls back to torch.matmul if Triton/CUDA is not available.
+    """
+    def __init__(self, block_m=128, block_n=128, block_k=32, num_warps=4, num_stages=3):
+        super().__init__()
+        self.block_m = block_m
+        self.block_n = block_n
+        self.block_k = block_k
+        self.num_warps = num_warps
+        self.num_stages = num_stages
+
+    def forward(self, A: torch.Tensor, B: torch.Tensor) -> torch.Tensor:
+        # Validate shapes
+        assert A.dim() == 2 and B.dim() == 2, f"Expected 2D tensors, got {A.dim()} and {B.dim()}"
+        M, K = A.shape
+        K2, N = B.shape
+        assert K == K2, f"Incompatible shapes: A is (*, {K}), B is ({K2}, *); K must match."
+
+        # Fallback if Triton/CUDA not available or tensors not on CUDA
+        if (not TRITON_AVAILABLE) or (A.device.type != "cuda") or (B.device.type != "cuda"):
+            return torch.matmul(A, B)
+
+        # Ensure float32
+        if A.dtype != torch.float32:
+            A = A.to(torch.float32)
+        if B.dtype != torch.float32:
+            B = B.to(torch.float32)
+
+        # Allocate output
+        C = torch.empty((M, N), device=A.device, dtype=torch.float32)
+
+        # Strides in elements
+        stride_am = A.stride(0)
+        stride_ak = A.stride(1)
+        stride_bk = B.stride(0)
+        stride_bn = B.stride(1)
+        stride_cm = C.stride(0)
+        stride_cn = C.stride(1)
+
+        # Launch grid: one program per output tile
+        grid = (triton.cdiv(M, self.block_m), triton.cdiv(N, self.block_n))
+
+        _matmul_kernel[grid](
+            A, B, C,
+            M, N, K,
+            stride_am, stride_ak,
+            stride_bk, stride_bn,
+            stride_cm, stride_cn,
+            BLOCK_M=self.block_m, BLOCK_N=self.block_n, BLOCK_K=self.block_k,
+            num_warps=self.num_warps,
+            num_stages=self.num_stages,
+        )
+
+        return C
+```
+
+Notes
+- This kernel assumes float32 inputs/outputs. Extending to fp16/bf16 is possible by casting loads to those types and accumulating in float32.
+- For best performance, use contiguous tensors on CUDA and experiment with block sizes and num_warps/num_stages for your GPU.
+- Correctness: Compare against torch.matmul with torch.testing.assert_close.
+人工智能助手：-ier
+High-level analysis and plan
+
+- Task: Replace torch.matmul with a Triton implementation that computes C = A @ B for 2D float32 matrices, exposed via ModelNew.
+- Approach: Implement a blocked GEMM kernel in Triton:
+  - Tile M and N into BLOCK_M × BLOCK_N.
+  - Loop over K in BLOCK_K steps, loading A tiles (BLOCK_M × BLOCK_K) and B tiles (BLOCK_K × BLOCK_N), accumulating into a float32 accumulator via tl.dot.
+  - Use masks to handle edge tiles when dimensions aren’t multiples of block sizes.
+  - Write the result to C.
+- Correctness: Use float32 throughout to match torch’s default. The kernel should numerically match torch.matmul within tight tolerances.
+- Performance: cuBLAS is very strong, but this kernel is a solid baseline. Defaults BLOCK_M = BLOCK_N = 128, BLOCK_K = 32, num_warps = 4, num_stages = 3 are good starting points for N ≈ 4K. You can tune these.
+
+Final code (Triton implementation with entry point ModelNew)
+
+```python
+import torch
+
+try:
+    import triton
+    import triton.language as tl
+    TRITON_AVAILABLE = True
+except Exception:
+    TRITON_AVAILABLE = False
+
+
+@triton.jit
+def _matmul_kernel(
+    A, B, C,
+    M, N, K,
+    stride_am, stride_ak,
+    stride_bk, stride_bn,
+    stride_cm, stride_cn,
+    BLOCK_M: tl.constexpr, BLOCK_N: tl.constexpr, BLOCK_K: tl.constexpr,
+):
+    # Program ids for tiling over M and N
+    pid_m = tl.program_id(0)
+    pid_n = tl.program_id(1)
+
+    offs_m = pid_m * BLOCK_M + tl.arange(0, BLOCK_M)
+    offs_n = pid_n * BLOCK_N + tl.arange(0, BLOCK_N)
+    offs_k = tl.arange(0, BLOCK_K)
+
+    # Initial pointers for the first K-block
+    a_ptrs = A + (offs_m[:, None] * stride_am + offs_k[None, :] * stride_ak)  # (BM, BK)
+    b_ptrs = B + (offs_k[:, None] * stride_bk + offs_n[None, :] * stride_bn)  # (BK, BN)
+
+    # Accumulator
+    acc = tl.zeros((BLOCK_M, BLOCK_N), dtype=tl.float32)
+
+    # Loop over K in BLOCK_K steps
+    for k in range(0, K, BLOCK_K):
+        # Masks for in-bounds loads
+        a_mask = (offs_m[:, None] < M) & (k + offs_k[None, :] < K)
+        b_mask = (k + offs_k[:, None] < K) & (offs_n[None, :] < N)
+
+        # Load with zero for out-of-bounds
+        a = tl.load(a_ptrs, mask=a_mask, other=0.0)
+        b = tl.load(b_ptrs, mask=b_mask, other=0.0)
+
+        # Accumulate
+        acc += tl.dot(a, b)
+
+        # Advance to next K-block
+        a_ptrs += BLOCK_K * stride_ak
+        b_ptrs += BLOCK_K * stride_bk
+
+    # Store result
+    c_ptrs = C + (offs_m[:, None] * stride_cm + offs_n[None, :] * stride_cn)
+    c_mask = (offs_m[:, None] < M) & (offs_n[None, :] < N)
+    tl.store(c_ptrs, acc, mask=c_mask)
+
+
+class ModelNew(torch.nn.Module):
+    """
+    Triton implementation of C = A @ B for 2D float32 matrices.
+    Falls back to torch.matmul if Triton/CUDA is not available.
+    """
+    def __init__(self, block_m=128, block_n=128, block_k=32, num_warps=4, num_stages=3):
+        super().__init__()
+        self.block_m = block_m
+        self.block_n = block_n
+        self.block_k = block_k
+        self.num_warps = num_warps
+        self.num_stages = num_stages
+
+    def forward(self, A: torch.Tensor, B: torch.Tensor) -> torch.Tensor:
+        # Validate shapes
+        assert A.dim() == 2 and B.dim() == 2, f"Expected 2D tensors, got {A.dim()} and {B.dim()}"
+        M, K = A.shape
+        K2, N = B.shape
+        assert K == K2, f"Incompatible shapes: A is (*, {K}), B is ({K2}, *); K must match."
+
+        # Fallback if Triton/CUDA not available or tensors not on CUDA
+        if (not TRITON_AVAILABLE) or (A.device.type != "cuda") or (B.device.type != "cuda"):
+            return torch.matmul(A, B)
+
+        # Ensure float32
+        if A.dtype != torch.float32:
+            A = A.to(torch.float32)
+        if B.dtype != torch.float32:
+            B = B.to(torch.float32)
+
+        # Allocate output
+        C = torch.empty((M, N), device=A.device, dtype=torch.float32)
+
+        # Strides in elements
+        stride_am = A.stride(0)
+        stride_ak = A.stride(1)
+        stride_bk = B.stride(0)
+        stride_bn = B.stride(1)
+        stride_cm = C.stride(0)
+        stride_cn = C.stride(1)
+
+        # Launch grid: one program per output tile
+        grid = (triton.cdiv(M, self.block_m), triton.cdiv(N, self.block_n))
+
+        _matmul_kernel[grid](
+            A, B, C,
+            M, N, K,
+            stride_am, stride_ak,
+            stride_bk, stride_bn,
+            stride_cm, stride_cn,
+            BLOCK_M=self.block_m, BLOCK_N=self.block_n, BLOCK_K=self.block_k,
+            num_warps=self.num_warps,
+            num_stages=self.num_stages,
+        )
+
+        return C
+```
+
+Usage and testing
+- Move inputs to CUDA: A, B = [t.cuda() for t in get_inputs()]
+- Compare: ref = torch.matmul(A, B); torch.testing.assert_close(ModelNew()(A, B), ref, atol=1e-6, rtol=1e-5)
+- Tuning: Experiment with block sizes and num_warps/num_stages for your GPU. For N=4096, the defaults above are a good starting point.
+提问者
+请逐步解释你的推理和计划，然后提供最终的Python代码。
+人工智能助手：-ier
+Detailed analysis, reasoning, and plan
+
+1) What the original PyTorch code does
+- The reference Model is trivial: forward returns torch.matmul(A, B).
+- Shapes: A and B are square matrices of size N x N, with N = 2048 * 2 = 4096 in the provided setup.
+- Dtype: torch.rand defaults to float32.
+- Device: The code doesn’t move tensors to GPU; it will run on CPU unless the user moves tensors to CUDA.
+
+2) Why and how to implement a Triton version
+- Triton is a data-parallel programming system to write custom GPU kernels. For GEMM, you write a tiled kernel that:
+  - Iterates over the K dimension in BLOCK_K chunks.
+  - Loads tiles of A (BLOCK_M x BLOCK_K) and B (BLOCK_K x BLOCK_N).
+  - Accumulates partial products into an accumulator tile (BLOCK_M x BLOCK_N), typically in float32 for numerical stability.
+  - Stores the result tile to C.
+- This pattern is standard and maps well to GPU memory hierarchy.
+
+3) Numerical correctness considerations
+- torch.matmul on CUDA uses cuBLAS and is highly optimized. Numerically, it’s very stable.
+- A Triton float32 GEMM should match torch within tight tolerances (e.g., atol ~ 1e-6, rtol ~ 1e-5) for float32.
+- We’ll keep computations in float32 to match the reference.
+
+4) Performance considerations
+- cuBLAS is hard to beat generally, but a well-tuned Triton kernel can be competitive.
+- For N = 4096:
+  - A good starting point is BLOCK_M = BLOCK_N = 128, BLOCK_K = 32, num_warps = 4, num_stages = 3.
+  - This yields 32 tiles along each dimension (4096/128), 1024 tiles total, each doing 128 iterations over K with 128x128 accumulation.
+- You can experiment:
+  - Increase BLOCK_K to 64 to reduce loop count (may increase register pressure).
+  - Increase num_warps to 8 for more parallelism per program.
+  - Use fp16/bf16 inputs with fp32 accumulation to leverage tensor cores (not done here to preserve numerical parity).
+
+5) Kernel design details
+- Shapes: A is (M, K), B is (K, N), C is (M, N).
+- Tiling: Program id maps to tiles: pid_m selects tile row, pid_n selects tile col.
+- Memory layout: We’ll support arbitrary strides (contiguous or not) by passing strides in elements.
+- Masks: Use masks for boundary conditions so the kernel works for any M, N, K.
+- Accumulator: float32.
+
+6) Fallback and usability
+- If Triton is not available or tensors are on CPU, fall back to torch.matmul.
+- Ensure dtype is float32.
+
+7) Testing plan
+- Compare outputs: torch.testing.assert_close(ModelNew()(A, B), torch.matmul(A, B), atol=1e-6, rtol=1e-5).
+- Test non-multiple sizes to ensure masking works.
+
+Final code: Triton implementation with entry point ModelNew
+
+```python
+import torch
+
+try:
+    import triton
+    import triton.language as tl
+    TRITON_AVAILABLE = True
+except Exception:
+    TRITON_AVAILABLE = False
+
+
+@triton.jit
+def _matmul_kernel(
+    A, B, C,
+    M, N, K,
+    stride_am, stride_ak,
+    stride_bk, stride_bn,
+    stride_cm, stride_cn,
+    BLOCK_M: tl.constexpr, BLOCK_N: tl.constexpr, BLOCK_K: tl.constexpr,
+):
+    # Program ids for tiling over M and N
+    pid_m = tl.program_id(0)
+    pid_n = tl.program_id(1)
+
+    # Offsets for this program's tile
+    offs_m = pid_m * BLOCK_M + tl.arange(0, BLOCK_M)
+    offs_n = pid_n * BLOCK_N + tl.arange(0, BLOCK_N)
+    offs_k = tl.arange(0, BLOCK_K)
+
+    # Pointers to the first K-block for A and B
+    a_ptrs = A + (offs_m[:, None] * stride_am + offs_k[None, :] * stride_ak)  # shape (BM, BK)
+    b_ptrs = B + (offs_k[:, None] * stride_bk + offs_n[None, :] * stride_bn)  # shape (BK, BN)
+
+    # Accumulator in float32
+    acc = tl.zeros((BLOCK_M, BLOCK_N), dtype=tl.float32)
+
+    # Loop over K in BLOCK_K steps
+    for k in range(0, K, BLOCK_K):
+        # In-bounds masks for loads
+        a_mask = (offs_m[:, None] < M) & (k + offs_k[None, :] < K)
+        b_mask = (k + offs_k[:, None] < K) & (offs_n[None, :] < N)
+
+        # Load with zero for out-of-bounds
+        a = tl.load(a_ptrs, mask=a_mask, other=0.0)
+        b = tl.load(b_ptrs, mask=b_mask, other=0.0)
+
+        # Accumulate
+        acc += tl.dot(a, b)
+
+        # Advance to next K-block
+        a_ptrs += BLOCK_K * stride_ak
+        b_ptrs += BLOCK_K * stride_bk
+
+    # Store result tile
+    c_ptrs = C + (offs_m[:, None] * stride_cm + offs_n[None, :] * stride_cn)
+    c_mask = (offs_m[:, None] < M) & (offs_n[None, :] < N)
+    tl.store(c_ptrs, acc, mask=c_mask)
+
+
+class ModelNew(torch.nn.Module):
+    """
+    Triton implementation of C = A @ B for 2D float32 matrices.
+    Falls back to torch.matmul if Triton/CUDA is not available.
+    """
+    def __init__(self, block_m=128, block_n=128, block_k=32, num_warps=4, num_stages=3):
+        super().__init__()
+        self.block_m = block_m
+        self.block_n = block_n
+        self.block_k = block_k
+        self.num_warps = num_warps
+        self.num_stages =

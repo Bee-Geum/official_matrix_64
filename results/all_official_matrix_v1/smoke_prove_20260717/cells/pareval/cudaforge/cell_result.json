@@ -1,0 +1,34 @@
+{
+  "benchmark": "pareval",
+  "agent": "cudaforge",
+  "n_tasks": 1,
+  "candidate_task_count": 0,
+  "official_eval_task_count": 0,
+  "correct_task_count": 0,
+  "valid_official_cell": 0,
+  "all_tasks_official": 0,
+  "wall_s": 10.210814952850342,
+  "top_infrastructure_error": "no candidate was evaluated",
+  "task_results": [
+    {
+      "benchmark": "pareval",
+      "task_id": "13_geometry_closest_pair_2d",
+      "official_task": 1,
+      "generation_ok": 0,
+      "candidate_count": 0,
+      "official_attempted": 0,
+      "official_eval": 0,
+      "correct": 0,
+      "performance_available": 0,
+      "best_score": 0.0,
+      "infrastructure_error": "no candidate was evaluated",
+      "candidate_error": "",
+      "generation_log": "/home/bi_geum/official_matrix_64/results/all_official_matrix_v1/smoke_prove_20260717/cells/pareval/cudaforge/000_13_geometry_closest_pair_2d/generation.log.txt",
+      "official_reports": [],
+      "agent": "cudaforge",
+      "cell_dir": "/home/bi_geum/official_matrix_64/results/all_official_matrix_v1/smoke_prove_20260717/cells/pareval/cudaforge",
+      "task_dir": "/home/bi_geum/official_matrix_64/results/all_official_matrix_v1/smoke_prove_20260717/cells/pareval/cudaforge/000_13_geometry_closest_pair_2d"
+    }
+  ],
+  "finished_at": "2026-07-17T14:02:32+0900"
+}

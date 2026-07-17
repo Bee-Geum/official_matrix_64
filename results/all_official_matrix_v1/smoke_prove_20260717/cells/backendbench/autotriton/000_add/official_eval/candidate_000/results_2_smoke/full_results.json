@@ -1,0 +1,23 @@
+[
+  {
+    "op_name": "relu.default",
+    "args": "((T([1024, 1024], f32),), {})",
+    "speedup": 0.9995403150436722,
+    "benchmark_time_ms": 5.907985985279083,
+    "reference_time_ms": 5.9052701729994554,
+    "error_msg": "",
+    "successfully_ran": true,
+    "test_type": "performance"
+  },
+  {
+    "op_name": "relu.default",
+    "args": "((T([2], f32),), {})",
+    "is_correct": true,
+    "error_msg": "",
+    "error_type": "",
+    "traceback": "",
+    "max_abs_error": 0.0,
+    "max_rel_error": 0.0,
+    "test_type": "correctness"
+  }
+]

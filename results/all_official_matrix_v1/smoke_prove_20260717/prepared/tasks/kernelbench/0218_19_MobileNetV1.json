@@ -1,0 +1,6 @@
+{
+  "benchmark": "kernelbench",
+  "task_id": "19_MobileNetV1",
+  "source_path": "/home/bi_geum/official_matrix_64/third_party/KernelBench/KernelBench/level3/19_MobileNetV1.py",
+  "official_task": true
+}

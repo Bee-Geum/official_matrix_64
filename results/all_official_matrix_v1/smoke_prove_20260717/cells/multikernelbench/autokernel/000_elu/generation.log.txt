@@ -1,0 +1,18 @@
+$ /home/bi_geum/official_matrix_64/.venv/bin/python3 /home/bi_geum/official_matrix_64/drivers/autokernel_live_driver.py --task /home/bi_geum/official_matrix_64/results/all_official_matrix_v1/smoke_prove_20260717/cells/multikernelbench/autokernel/000_elu/official_prompt.txt --out /home/bi_geum/official_matrix_64/results/all_official_matrix_v1/smoke_prove_20260717/cells/multikernelbench/autokernel/000_elu/candidates --rounds 1 --seed 0 --temperature 0.2
+cwd=/home/bi_geum/official_matrix_64
+returncode=0
+wall_s=15.700889
+----- STDOUT -----
+[autokernel] LIVE upstream loop: /home/bi_geum/official_matrix_64/.venv/bin/python3 /home/bi_geum/official_matrix_64/drivers/autokernel_qwen_loop.py --task /home/bi_geum/official_matrix_64/results/all_official_matrix_v1/smoke_prove_20260717/cells/multikernelbench/autokernel/000_elu/official_prompt.txt --problem-id 0 --iters 1 --backend cuda --out-best /home/bi_geum/official_matrix_64/results/all_official_matrix_v1/smoke_prove_20260717/cells/multikernelbench/autokernel/000_elu/candidates/candidate_0000.py --ext-base /home/bi_geum/official_matrix_64/results/all_official_matrix_v1/smoke_prove_20260717/cells/multikernelbench/autokernel/000_elu/_extdir_ak
+[setup] problem_id=0 backend=cuda task=/home/bi_geum/official_matrix_64/results/all_official_matrix_v1/smoke_prove_20260717/cells/multikernelbench/autokernel/000_elu/official_prompt.txt
+
+[iter 0] querying Qwen...
+[iter 0] correctness=FAIL speedup=0.000 kt=0.0
+[iter 0] REVERT (incorrect)
+
+[done] NO correct kernel found in 1 iters; wrote starter to /home/bi_geum/official_matrix_64/results/all_official_matrix_v1/smoke_prove_20260717/cells/multikernelbench/autokernel/000_elu/candidates/candidate_0000.py
+[autokernel] path shim applied: False
+[autokernel] wrote /home/bi_geum/official_matrix_64/results/all_official_matrix_v1/smoke_prove_20260717/cells/multikernelbench/autokernel/000_elu/candidates/candidate_0000.py
+
+----- STDERR -----
+

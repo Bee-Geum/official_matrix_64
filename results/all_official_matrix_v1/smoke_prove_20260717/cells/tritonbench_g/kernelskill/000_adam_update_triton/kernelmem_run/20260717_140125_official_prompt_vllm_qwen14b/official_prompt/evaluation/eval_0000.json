@@ -1,0 +1,6 @@
+{
+  "runnable": false,
+  "phase": "seed",
+  "error_type": "AttributeError",
+  "message": "'NoneType' object has no attribute 'loader'"
+}

@@ -1,0 +1,29 @@
+[
+  {
+    "task": "/home/bi_geum/official_matrix_64/third_party/KernelBench/KernelBench/level1/1_Square_matrix_multiplication_.py",
+    "task_dir": "/home/bi_geum/official_matrix_64/runs/kernelskill_qwen14b_kernelbench_all250_round1_repeat1_temp0.2/1_Square_matrix_multiplication___rep0/final_eval",
+    "n_candidates": 1,
+    "n_compiled": 0,
+    "n_correct": 0,
+    "runnable_rate": 0.0,
+    "correct_rate": 0.0,
+    "pass@1": 0.0,
+    "pass@k_analytic": 0.0,
+    "fast_1": 0.0,
+    "best_score": 0.0,
+    "best_runnable": false,
+    "geomean_speedup": 0.0,
+    "median_speedup": 0.0,
+    "compile_attempts": 1,
+    "correctness_trials_executed": 0,
+    "profile_runs": 0,
+    "first_compiled_candidate_index": null,
+    "first_correct_candidate_index": null,
+    "first_faster_candidate_index": null,
+    "unified_eval_wall_s": 2.3332104519995482,
+    "compile_s": 0.3861966989998109,
+    "correctness_s": 0.0,
+    "benchmark_s": 0.0,
+    "model_init_s": 0.0
+  }
+]

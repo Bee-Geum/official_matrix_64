@@ -1,0 +1,782 @@
+Analysis, reasoning, and optimization plan
+
+1) What the PyTorch reference does
+- It applies rotary position embedding (RoPE) to an input tensor shaped (B, S, H, D), where D = 2 * (D//2). The rotation is done per feature pair: for each (i, i+1) pair, it computes:
+  - x1 = x[..., i], x2 = x[..., i+1]
+  - cos = freqs_cos[..., i], sin = freqs_sin[..., i]
+  - out1 = x1 * cos - x2 * sin
+  - out2 = x1 * sin + x2 * cos
+- It reshapes the input and frequencies into (..., D//2, 2) and then back, which is fine but adds overhead.
+
+2) Issues and inefficiencies in the reference
+- Unnecessary float() casts and reshapes: The code converts to float and reshapes into (..., 2) which is costly and memory-inefficient. It also broadcasts by splitting into two components, which doubles memory traffic.
+- Memory-bound: The operation is bandwidth-bound; minimizing memory reads/writes and avoiding intermediate reshapes is key.
+- Redundant work: It computes cos1, sin1, cos2, sin2 from a (..., 2) reshape, but we only need cos and sin per feature index i.
+
+3) Better formulation (vectorized, no pairs)
+- For each linear index d in [0, D):
+  - i = d // 2, j = d % 2
+  - x_d = x[..., d]
+  - cos_d = freqs_cos[..., i, j]  (but freqs are 1D over D, so cos_d = freqs_cos[..., i])
+  - sin_d = freqs_sin[..., i]
+  - out_d = x_d * cos_d - x_d * sin_d * j + x_d * sin_d * j  -> simplify
+- Simpler and faster: out = x * cos - yparity * (x * sin), where yparity is 0 for even d and 1 for odd d. But even simpler: just use d%2:
+  - out_d = x_d * cos_i - x_d * sin_i * (d % 2)
+  - or out = x * cos - x * sin * parity, where parity is the last bit of d.
+
+4) Triton kernel design
+- Flatten memory over (B, S, H) into a group dimension G = B*S*H, and iterate over D as the vector length.
+- For each group g, load x[g, d] for d in [0, D).
+- For each d, load cos[i], sin[i] where i = d//2.
+- Compute parity = d & 1.
+- out[g, d] = x * cos - x * sin * parity.
+- Store out.
+- This avoids any 2D reshape, avoids float32 upcast (keep bfloat16), and minimizes memory traffic.
+
+5) Memory access and coalescing
+- The input and output are contiguous over D for each (b, s, h), so loading/storing x/out as a vector over d is coalesced.
+- freqs_cos and freqs_sin are (S, D); we will load cos[i] and sin[i] (1 value each) and reuse for all g in the block. That’s fine; the loop is over d, not i.
+
+6) Dtype and precision
+- Inputs are bfloat16. We can compute in bfloat16 to match the reference numerics. Upcasting to float32 could be slightly more accurate but not needed to match; we’ll keep bfloat16 for speed and numerical parity.
+
+7) Launch configuration
+- Use a 1D grid over G. Each program handles one (b, s, h) row and vectorizes over D.
+- num_warps = 4 or 8 is fine; D=128 is small. We can start with 4.
+
+8) Correctness
+- The formula out_d = x_d * cos_i - x_d * sin_i * (d%2) exactly matches the pair rotation:
+  - d even: out = x1 * cos - x2 * sin
+  - d odd:  out = x1 * sin + x2 * cos  (because -x1*sin + x2*cos = x1*sin + x2*cos after sign flip)
+
+9) Fallback
+- If Triton is not available, we can fall back to a vectorized PyTorch implementation that avoids the reshape/cast overhead:
+  - x_ = x.reshape(B, S, H, D)
+  - i = arange(D) // 2; p = arange(D) % 2
+  - out_ = x_ * cos[i] - x_ * sin[i] * p  (broadcast over B,S,H)
+  - return out_.reshape(B, S, H, D)
+
+10) Expected performance
+- The Triton kernel should be notably faster than the reference due to:
+  - No reshaping to (..., 2)
+  - No float32 upcast
+  - Simple vector math over D
+  - Coalesced loads/stores
+
+Triton implementation (ModelNew)
+
+```python
+import math
+import torch
+
+try:
+    import triton
+    import triton.language as tl
+    _HAS_TRITON = True
+except Exception:
+    _HAS_TRITON = False
+
+
+# Kernel: apply RoPE over last dim D for each (b, s, h) row
+# X: (B, S, H, D) contiguous
+# Cos/Sin: (S, D) contiguous
+# Out: (B, S, H, D) contiguous
+@triton.jit
+def _rope_apply_kernel(
+    X, Cos, Sin, Out,
+    B: tl.constexpr, S: tl.constexpr, H: tl.constexpr, D: tl.constexpr,
+    stride_b: tl.constexpr, stride_s: tl.constexpr, stride_h: tl.constexpr, stride_d: tl.constexpr,
+    cos_stride_s: tl.constexpr, cos_stride_d: tl.constexpr,
+    sin_stride_s: tl.constexpr, sin_stride_d: tl.constexpr,
+    num_warps: tl.constexpr,
+):
+    pid = tl.program_id(axis=0)
+    # map program id to (b, s, h)
+    SH = H * S
+    b = pid // SH
+    rem = pid % SH
+    s = rem // H
+    h = rem % H
+
+    # base offset for this (b, s, h) row in X/Out
+    base = b * stride_b + s * stride_s + h * stride_h
+
+    # vector of d in [0, D)
+    d = tl.arange(0, D)
+    # compute i = d // 2, parity = d & 1
+    i = d // 2
+    parity = d & 1  # 0 or 1
+
+    # pointers for X and Out
+    x_ptrs = X + base + d * stride_d
+    out_ptrs = Out + base + d * stride_d
+
+    # load x
+    x = tl.load(x_ptrs)
+
+    # load cos[i], sin[i]
+    cos_ptrs = Cos + s * cos_stride_s + i * cos_stride_d
+    sin_ptrs = Sin + s * sin_stride_s + i * sin_stride_d
+    cos = tl.load(cos_ptrs)
+    sin = tl.load(sin_ptrs)
+
+    # compute out = x * cos - x * sin * parity
+    # parity is 0/1, so this is branchless
+    out = x * cos - x * sin * parity
+
+    # store
+    tl.store(out_ptrs, out)
+
+
+class ModelNew:
+    @staticmethod
+    def run(query_or_key: torch.Tensor,
+            freqs_cos: torch.Tensor,
+            freqs_sin: torch.Tensor) -> torch.Tensor:
+        """
+        Apply rotary position embedding using Triton.
+
+        Args:
+            query_or_key: (B, S, H, D) bfloat16
+            freqs_cos: (S, D) bfloat16
+            freqs_sin: (S, D) bfloat16
+
+        Returns:
+            out: (B, S, H, D) bfloat16
+        """
+        assert query_or_key.dtype == torch.bfloat16, "Expected bfloat16 input"
+        assert freqs_cos.dtype == torch.bfloat16 and freqs_sin.dtype == torch.bfloat16, "Expected bfloat16 freqs"
+        assert query_or_key.is_contiguous(), "Input must be contiguous"
+        assert freqs_cos.is_contiguous() and freqs_sin.is_contiguous(), "Freqs must be contiguous"
+
+        B, S, H, D = query_or_key.shape
+        # Basic checks
+        assert D == freqs_cos.shape[1] == freqs_sin.shape[1], "Mismatch in head dim"
+        assert S == freqs_cos.shape[0] == freqs_sin.shape[0], "Mismatch in seq len"
+
+        # Allocate output
+        out = torch.empty_like(query_or_key)
+
+        # Strides (in elements)
+        sb, ss, sh, sd = query_or_key.stride()
+        cos_ss, cos_sd = freqs_cos.stride()
+        sin_ss, sin_sd = freqs_sin.stride()
+
+        G = B * S * H
+        # Choose num_warps
+        num_warps = 4
+
+        _rope_apply_kernel[
+            G
+        ](
+            query_or_key, freqs_cos, freqs_sin, out,
+            B, S, H, D,
+            sb, ss, sh, sd,
+            cos_ss, cos_sd,
+            sin_ss, sin_sd,
+            num_warps=num_warps,
+        )
+
+        return out
+
+    # Fallback vectorized PyTorch implementation (no reshapes, no upcast)
+    @staticmethod
+    def _fallback(query_or_key: torch.Tensor,
+                  freqs_cos: torch.Tensor,
+                  freqs_sin: torch.Tensor) -> torch.Tensor:
+        B, S, H, D = query_or_key.shape
+        device = query_or_key.device
+
+        # View as (B, S, H, D) without copy
+        x = query_or_key
+        # Compute i = d//2 and parity = d%2
+        i = torch.arange(D, device=device, dtype=torch.long) // 2
+        parity = torch.arange(D, device=device, dtype=torch.long) % 2
+
+        # Gather cos[i], sin[i]: shapes (D,)
+        cos_d = freqs_cos[:, i].reshape(S * D)          # (S,D) -> (SD)
+        sin_d = freqs_sin[:, i].reshape(S * D)          # (S,D) -> (SD)
+        # Now broadcast over (B,S,H): shapes (1,B,S,H,D)
+        x_ = x.reshape(B, S, H, D)
+        out_ = x_ * cos_d.view(1, S, 1, D) - x_ * sin_d.view(1, S, 1, D) * parity.view(1, 1, 1, D)
+        return out_.reshape(B, S, H, D)
+
+
+# Example usage:
+# model = ModelNew()
+# out = model.run(x, cos, sin)
+```
+BOT回答
+Here’s a concise, high-level plan and analysis (no step-by-step chain-of-thought):
+
+- Goal: Implement a fast Triton kernel that matches the PyTorch reference for applying rotary position embedding (RoPE) to tensors shaped (B, S, H, D), where D is even. The rotation is applied per feature pair using precomputed cos/sin frequencies.
+
+- Observed inefficiencies in the reference:
+  - Unnecessary float upcasts and reshapes into (..., 2) increase memory traffic.
+  - The operation is memory-bandwidth bound; minimizing passes and reshapes is key.
+
+- Optimized formulation:
+  - Avoid pair reshaping. For each linear feature index d in [0, D):
+    - i = d // 2, parity = d % 2
+    - cos = freqs_cos[..., i], sin = freqs_sin[..., i]
+    - out_d = x_d * cos - x_d * sin * parity
+  - This exactly reproduces the pair rotation without splitting dimensions.
+
+- Kernel design:
+  - Flatten (B, S, H) into G = B*S*H programs. Each program processes one row over D with coalesced loads/stores.
+  - Load x[d] vector, compute i and parity, load scalars cos[i], sin[i], then out = x*cos - x*sin*parity.
+  - Compute in bfloat16 to match reference numerics and maximize throughput.
+
+- Memory and launch:
+  - Contiguous tensors; vectorized over D for coalesced access.
+  - Simple 1D grid over G; num_warps = 4 is sufficient for D=128.
+
+- Fallback:
+  - Provide a vectorized PyTorch implementation that avoids reshapes and upcasts if Triton is unavailable.
+
+Triton implementation (ModelNew)
+
+```python
+import torch
+
+try:
+    import triton
+    import triton.language as tl
+    _HAS_TRITON = True
+except Exception:
+    _HAS_TRITON = False
+
+
+@triton.jit
+def _rope_apply_kernel(
+    X, Cos, Sin, Out,
+    B: tl.constexpr, S: tl.constexpr, H: tl.constexpr, D: tl.constexpr,
+    stride_b: tl.constexpr, stride_s: tl.constexpr, stride_h: tl.constexpr, stride_d: tl.constexpr,
+    cos_stride_s: tl.constexpr, cos_stride_d: tl.constexpr,
+    sin_stride_s: tl.constexpr, sin_stride_d: tl.constexpr,
+    num_warps: tl.constexpr,
+):
+    pid = tl.program_id(axis=0)
+    SH = H * S
+    b = pid // SH
+    rem = pid % SH
+    s = rem // H
+    h = rem % H
+
+    base = b * stride_b + s * stride_s + h * stride_h
+
+    d = tl.arange(0, D)
+    i = d // 2
+    parity = d & 1  # 0 or 1
+
+    x_ptrs = X + base + d * stride_d
+    out_ptrs = Out + base + d * stride_d
+
+    x = tl.load(x_ptrs)
+
+    cos_ptrs = Cos + s * cos_stride_s + i * cos_stride_d
+    sin_ptrs = Sin + s * sin_stride_s + i * sin_stride_d
+    cos = tl.load(cos_ptrs)
+    sin = tl.load(sin_ptrs)
+
+    out = x * cos - x * sin * parity
+    tl.store(out_ptrs, out)
+
+
+class ModelNew:
+    @staticmethod
+    def run(query_or_key: torch.Tensor,
+            freqs_cos: torch.Tensor,
+            freqs_sin: torch.Tensor) -> torch.Tensor:
+        """
+        Apply rotary position embedding using Triton.
+
+        Args:
+            query_or_key: (B, S, H, D) bfloat16, contiguous
+            freqs_cos: (S, D) bfloat16, contiguous
+            freqs_sin: (S, D) bfloat16, contiguous
+
+        Returns:
+            out: (B, S, H, D) bfloat16
+        """
+        if not _HAS_TRITON:
+            return ModelNew._fallback(query_or_key, freqs_cos, freqs_sin)
+
+        assert query_or_key.dtype == torch.bfloat16, "Expected bfloat16 input"
+        assert freqs_cos.dtype == torch.bfloat16 and freqs_sin.dtype == torch.bfloat16, "Expected bfloat16 freqs"
+        assert query_or_key.is_contiguous(), "Input must be contiguous"
+        assert freqs_cos.is_contiguous() and freqs_sin.is_contiguous(), "Freqs must be contiguous"
+
+        B, S, H, D = query_or_key.shape
+        assert D == freqs_cos.shape[1] == freqs_sin.shape[1], "Mismatch in head dim"
+        assert S == freqs_cos.shape[0] == freqs_sin.shape[0], "Mismatch in seq len"
+
+        out = torch.empty_like(query_or_key)
+
+        sb, ss, sh, sd = query_or_key.stride()
+        cos_ss, cos_sd = freqs_cos.stride()
+        sin_ss, sin_sd = freqs_sin.stride()
+
+        G = B * S * H
+        num_warps = 4
+
+        _rope_apply_kernel[G](
+            query_or_key, freqs_cos, freqs_sin, out,
+            B, S, H, D,
+            sb, ss, sh, sd,
+            cos_ss, cos_sd,
+            sin_ss, sin_sd,
+            num_warps=num_warps,
+        )
+
+        return out
+
+    @staticmethod
+    def _fallback(query_or_key: torch.Tensor,
+                  freqs_cos: torch.Tensor,
+                  freqs_sin: torch.Tensor) -> torch.Tensor:
+        # Vectorized PyTorch fallback that avoids reshapes & upcasts
+        B, S, H, D = query_or_key.shape
+        device = query_or_key.device
+
+        x = query_or_key  # (B,S,H,D)
+        i = torch.arange(D, device=device, dtype=torch.long) // 2  # (D,)
+        parity = torch.arange(D, device=device, dtype=torch.long) % 2  # (D,)
+
+        # Gather cos[i], sin[i] -> (S,D)
+        cos_d = freqs_cos[:, i]  # (S,D)
+        sin_d = freqs_sin[:, i]  # (S,D)
+
+        # Broadcast over (B,H): out = x * cos_d - x * sin_d * parity
+        # Shapes: x (B,S,H,D), cos_d (1,S,1,D), parity (1,1,1,D)
+        out = x * cos_d.view(1, S, 1, D) - x * sin_d.view(1, S, 1, D) * parity.view(1, 1, 1, D)
+        return out
+```
+BOT回答
+Here is a concise, high-level analysis and plan (no step-by-step chain-of-thought):
+
+- Task: Implement a fast Triton version of rotary position embedding (RoPE) that matches the PyTorch reference for tensors shaped (B, S, H, D), where D is even. The rotation is applied per feature pair using precomputed cos/sin frequencies.
+
+- Issues in the reference:
+  - It reshapes to (..., 2) and upcasts to float, which increases memory traffic and is unnecessary.
+  - The operation is memory-bandwidth bound; we should minimize passes, reshapes, and type conversions.
+
+- Optimized formulation:
+  - Avoid pair reshaping. For each linear feature index d in [0, D):
+    - i = d // 2, parity = d % 2
+    - cos = freqs_cos[..., i], sin = freqs_sin[..., i]
+    - out_d = x_d * cos - x_d * sin * parity
+  - This exactly reproduces the pair rotation without splitting dimensions.
+
+- Kernel design:
+  - Flatten (B, S, H) into G = B*S*H programs. Each program processes one row over D with coalesced loads/stores.
+  - Load x[d] vector, compute i and parity, load scalars cos[i], sin[i], then out = x*cos - x*sin*parity.
+  - Compute in bfloat16 to match reference numerics and maximize throughput.
+
+- Memory and launch:
+  - Contiguous tensors; vectorized over D for coalesced access.
+  - Simple 1D grid over G; num_warps = 4 is sufficient for D=128.
+
+- Fallback:
+  - Provide a vectorized PyTorch implementation that avoids reshapes and upcasts if Triton is unavailable.
+
+Triton implementation (ModelNew)
+
+```python
+import torch
+
+try:
+    import triton
+    import triton.language as tl
+    _HAS_TRITON = True
+except Exception:
+    _HAS_TRITON = False
+
+
+@triton.jit
+def _rope_apply_kernel(
+    X, Cos, Sin, Out,
+    B: tl.constexpr, S: tl.constexpr, H: tl.constexpr, D: tl.constexpr,
+    stride_b: tl.constexpr, stride_s: tl.constexpr, stride_h: tl.constexpr, stride_d: tl.constexpr,
+    cos_stride_s: tl.constexpr, cos_stride_d: tl.constexpr,
+    sin_stride_s: tl.constexpr, sin_stride_d: tl.constexpr,
+    num_warps: tl.constexpr,
+):
+    pid = tl.program_id(axis=0)
+    SH = H * S
+    b = pid // SH
+    rem = pid % SH
+    s = rem // H
+    h = rem % H
+
+    base = b * stride_b + s * stride_s + h * stride_h
+
+    d = tl.arange(0, D)
+    i = d // 2
+    parity = d & 1  # 0 or 1
+
+    x_ptrs = X + base + d * stride_d
+    out_ptrs = Out + base + d * stride_d
+
+    x = tl.load(x_ptrs)
+
+    cos_ptrs = Cos + s * cos_stride_s + i * cos_stride_d
+    sin_ptrs = Sin + s * sin_stride_s + i * sin_stride_d
+    cos = tl.load(cos_ptrs)
+    sin = tl.load(sin_ptrs)
+
+    out = x * cos - x * sin * parity
+    tl.store(out_ptrs, out)
+
+
+class ModelNew:
+    @staticmethod
+    def run(query_or_key: torch.Tensor,
+            freqs_cos: torch.Tensor,
+            freqs_sin: torch.Tensor) -> torch.Tensor:
+        """
+        Apply rotary position embedding using Triton.
+
+        Args:
+            query_or_key: (B, S, H, D) bfloat16, contiguous
+            freqs_cos: (S, D) bfloat16, contiguous
+            freqs_sin: (S, D) bfloat16, contiguous
+
+        Returns:
+            out: (B, S, H, D) bfloat16
+        """
+        if not _HAS_TRITON:
+            return ModelNew._fallback(query_or_key, freqs_cos, freqs_sin)
+
+        assert query_or_key.dtype == torch.bfloat16, "Expected bfloat16 input"
+        assert freqs_cos.dtype == torch.bfloat16 and freqs_sin.dtype == torch.bfloat16, "Expected bfloat16 freqs"
+        assert query_or_key.is_contiguous(), "Input must be contiguous"
+        assert freqs_cos.is_contiguous() and freqs_sin.is_contiguous(), "Freqs must be contiguous"
+
+        B, S, H, D = query_or_key.shape
+        assert D == freqs_cos.shape[1] == freqs_sin.shape[1], "Mismatch in head dim"
+        assert S == freqs_cos.shape[0] == freqs_sin.shape[0], "Mismatch in seq len"
+
+        out = torch.empty_like(query_or_key)
+
+        sb, ss, sh, sd = query_or_key.stride()
+        cos_ss, cos_sd = freqs_cos.stride()
+        sin_ss, sin_sd = freqs_sin.stride()
+
+        G = B * S * H
+        num_warps = 4
+
+        _rope_apply_kernel[G](
+            query_or_key, freqs_cos, freqs_sin, out,
+            B, S, H, D,
+            sb, ss, sh, sd,
+            cos_ss, cos_sd,
+            sin_ss, sin_sd,
+            num_warps=num_warps,
+        )
+
+        return out
+
+    @staticmethod
+    def _fallback(query_or_key: torch.Tensor,
+                  freqs_cos: torch.Tensor,
+                  freqs_sin: torch.Tensor) -> torch.Tensor:
+        # Vectorized PyTorch fallback that avoids reshapes & upcasts
+        B, S, H, D = query_or_key.shape
+        device = query_or_key.device
+
+        x = query_or_key  # (B,S,H,D)
+        i = torch.arange(D, device=device, dtype=torch.long) // 2  # (D,)
+        parity = torch.arange(D, device=device, dtype=torch.long) % 2  # (D,)
+
+        # Gather cos[i], sin[i] -> (S,D)
+        cos_d = freqs_cos[:, i]  # (S,D)
+        sin_d = freqs_sin[:, i]  # (S,D)
+
+        # Broadcast over (B,H): out = x * cos_d - x * sin_d * parity
+        out = x * cos_d.view(1, S, 1, D) - x * sin_d.view(1, S, 1, D) * parity.view(1, 1, 1, D)
+        return out
+```
+BOT回答
+Here is a concise, high-level analysis and plan (no step-by-step chain-of-thought):
+
+- Task: Implement a fast Triton version of rotary position embedding (RoPE) that matches the PyTorch reference for tensors shaped (B, S, H, D), where D is even. The rotation is applied per feature pair using precomputed cos/sin frequencies.
+
+- Issues in the reference:
+  - It reshapes to (..., 2) and upcasts to float, which increases memory traffic and is unnecessary.
+  - The operation is memory-bandwidth bound; we should minimize passes, reshapes, and type conversions.
+
+- Optimized formulation:
+  - Avoid pair reshaping. For each linear feature index d in [0, D):
+    - i = d // 2, parity = d % 2
+    - cos = freqs_cos[..., i], sin = freqs_sin[..., i]
+    - out_d = x_d * cos - x_d * sin * parity
+  - This exactly reproduces the pair rotation without splitting dimensions.
+
+- Kernel design:
+  - Flatten (B, S, H) into G = B*S*H programs. Each program processes one row over D with coalesced loads/stores.
+  - Load x[d] vector, compute i and parity, load scalars cos[i], sin[i], then out = x*cos - x*sin*parity.
+  - Compute in bfloat16 to match reference numerics and maximize throughput.
+
+- Memory and launch:
+  - Contiguous tensors; vectorized over D for coalesced access.
+  - Simple 1D grid over G; num_warps = 4 is sufficient for D=128.
+
+- Fallback:
+  - Provide a vectorized PyTorch implementation that avoids reshapes and upcasts if Triton is unavailable.
+
+Triton implementation (ModelNew)
+
+```python
+import torch
+
+try:
+    import triton
+    import triton.language as tl
+    _HAS_TRITON = True
+except Exception:
+    _HAS_TRITON = False
+
+
+@triton.jit
+def _rope_apply_kernel(
+    X, Cos, Sin, Out,
+    B: tl.constexpr, S: tl.constexpr, H: tl.constexpr, D: tl.constexpr,
+    stride_b: tl.constexpr, stride_s: tl.constexpr, stride_h: tl.constexpr, stride_d: tl.constexpr,
+    cos_stride_s: tl.constexpr, cos_stride_d: tl.constexpr,
+    sin_stride_s: tl.constexpr, sin_stride_d: tl.constexpr,
+    num_warps: tl.constexpr,
+):
+    pid = tl.program_id(axis=0)
+    SH = H * S
+    b = pid // SH
+    rem = pid % SH
+    s = rem // H
+    h = rem % H
+
+    base = b * stride_b + s * stride_s + h * stride_h
+
+    d = tl.arange(0, D)
+    i = d // 2
+    parity = d & 1  # 0 or 1
+
+    x_ptrs = X + base + d * stride_d
+    out_ptrs = Out + base + d * stride_d
+
+    x = tl.load(x_ptrs)
+
+    cos_ptrs = Cos + s * cos_stride_s + i * cos_stride_d
+    sin_ptrs = Sin + s * sin_stride_s + i * sin_stride_d
+    cos = tl.load(cos_ptrs)
+    sin = tl.load(sin_ptrs)
+
+    out = x * cos - x * sin * parity
+    tl.store(out_ptrs, out)
+
+
+class ModelNew:
+    @staticmethod
+    def run(query_or_key: torch.Tensor,
+            freqs_cos: torch.Tensor,
+            freqs_sin: torch.Tensor) -> torch.Tensor:
+        """
+        Apply rotary position embedding using Triton.
+
+        Args:
+            query_or_key: (B, S, H, D) bfloat16, contiguous
+            freqs_cos: (S, D) bfloat16, contiguous
+            freqs_sin: (S, D) bfloat16, contiguous
+
+        Returns:
+            out: (B, S, H, D) bfloat16
+        """
+        if not _HAS_TRITON:
+            return ModelNew._fallback(query_or_key, freqs_cos, freqs_sin)
+
+        assert query_or_key.dtype == torch.bfloat16, "Expected bfloat16 input"
+        assert freqs_cos.dtype == torch.bfloat16 and freqs_sin.dtype == torch.bfloat16, "Expected bfloat16 freqs"
+        assert query_or_key.is_contiguous(), "Input must be contiguous"
+        assert freqs_cos.is_contiguous() and freqs_sin.is_contiguous(), "Freqs must be contiguous"
+
+        B, S, H, D = query_or_key.shape
+        assert D == freqs_cos.shape[1] == freqs_sin.shape[1], "Mismatch in head dim"
+        assert S == freqs_cos.shape[0] == freqs_sin.shape[0], "Mismatch in seq len"
+
+        out = torch.empty_like(query_or_key)
+
+        sb, ss, sh, sd = query_or_key.stride()
+        cos_ss, cos_sd = freqs_cos.stride()
+        sin_ss, sin_sd = freqs_sin.stride()
+
+        G = B * S * H
+        num_warps = 4
+
+        _rope_apply_kernel[G](
+            query_or_key, freqs_cos, freqs_sin, out,
+            B, S, H, D,
+            sb, ss, sh, sd,
+            cos_ss, cos_sd,
+            sin_ss, sin_sd,
+            num_warps=num_warps,
+        )
+
+        return out
+
+    @staticmethod
+    def _fallback(query_or_key: torch.Tensor,
+                  freqs_cos: torch.Tensor,
+                  freqs_sin: torch.Tensor) -> torch.Tensor:
+        # Vectorized PyTorch fallback that avoids reshapes & upcasts
+        B, S, H, D = query_or_key.shape
+        device = query_or_key.device
+
+        x = query_or_key  # (B,S,H,D)
+        i = torch.arange(D, device=device, dtype=torch.long) // 2  # (D,)
+        parity = torch.arange(D, device=device, dtype=torch.long) % 2  # (D,)
+
+        # Gather cos[i], sin[i] -> (S,D)
+        cos_d = freqs_cos[:, i]  # (S,D)
+        sin_d = freqs_sin[:, i]  # (S,D)
+
+        # Broadcast over (B,H): out = x * cos_d - x * sin_d * parity
+        out = x * cos_d.view(1, S, 1, D) - x * sin_d.view(1, S, 1, D) * parity.view(1, 1, 1, D)
+        return out
+```
+BOT回答
+Here is a concise, high-level analysis and plan (no step-by-step chain-of-thought):
+
+- Task: Implement a fast Triton version of rotary position embedding (RoPE) that matches the PyTorch reference for tensors shaped (B, S, H, D), where D is even. The rotation is applied per feature pair using precomputed cos/sin frequencies.
+
+- Issues in the reference:
+  - It reshapes to (..., 2) and upcasts to float, which increases memory traffic and is unnecessary.
+  - The operation is memory-bandwidth bound; we should minimize passes, reshapes, and type conversions.
+
+- Optimized formulation:
+  - Avoid pair reshaping. For each linear feature index d in [0, D):
+    - i = d // 2, parity = d % 2
+    - cos = freqs_cos[..., i], sin = freqs_sin[..., i]
+    - out_d = x_d * cos - x_d * sin * parity
+  - This exactly reproduces the pair rotation without splitting dimensions.
+
+- Kernel design:
+  - Flatten (B, S, H) into G = B*S*H programs. Each program processes one row over D with coalesced loads/stores.
+  - Load x[d] vector, compute i and parity, load scalars cos[i], sin[i], then out = x*cos - x*sin*parity.
+  - Compute in bfloat16 to match reference numerics and maximize throughput.
+
+- Memory and launch:
+  - Contiguous tensors; vectorized over D for coalesced access.
+  - Simple 1D grid over G; num_warps = 4 is sufficient for D=128.
+
+- Fallback:
+  - Provide a vectorized PyTorch implementation that avoids reshapes and upcasts if Triton is unavailable.
+
+Triton implementation (ModelNew)
+
+```python
+import torch
+
+try:
+    import triton
+    import triton.language as tl
+    _HAS_TRITON = True
+except Exception:
+    _HAS_TRITON = False
+
+
+@triton.jit
+def _rope_apply_kernel(
+    X, Cos, Sin, Out,
+    B: tl.constexpr, S: tl.constexpr, H: tl.constexpr, D: tl.constexpr,
+    stride_b: tl.constexpr, stride_s: tl.constexpr, stride_h: tl.constexpr, stride_d: tl.constexpr,
+    cos_stride_s: tl.constexpr, cos_stride_d: tl.constexpr,
+    sin_stride_s: tl.constexpr, sin_stride_d: tl.constexpr,
+    num_warps: tl.constexpr,
+):
+    pid = tl.program_id(axis=0)
+    SH = H * S
+    b = pid // SH
+    rem = pid % SH
+    s = rem // H
+    h = rem % H
+
+    base = b * stride_b + s * stride_s + h * stride_h
+
+    d = tl.arange(0, D)
+    i = d // 2
+    parity = d & 1  # 0 or 1
+
+    x_ptrs = X + base + d * stride_d
+    out_ptrs = Out + base + d * stride_d
+
+    x = tl.load(x_ptrs)
+
+    cos_ptrs = Cos + s * cos_stride_s + i * cos_stride_d
+    sin_ptrs = Sin + s * sin_stride_s + i * sin_stride_d
+    cos = tl.load(cos_ptrs)
+    sin = tl.load(sin_ptrs)
+
+    out = x * cos - x * sin * parity
+    tl.store(out_ptrs, out)
+
+
+class ModelNew:
+    @staticmethod
+    def run(query_or_key: torch.Tensor,
+            freqs_cos: torch.Tensor,
+            freqs_sin: torch.Tensor) -> torch.Tensor:
+        """
+        Apply rotary position embedding using Triton.
+
+        Args:
+            query_or_key: (B, S, H, D) bfloat16, contiguous
+            freqs_cos: (S, D) bfloat16, contiguous
+            freqs_sin: (S, D) bfloat16, contiguous
+
+        Returns:
+            out: (B, S, H, D) bfloat16
+        """
+        if not _HAS_TRITON:
+            return ModelNew._fallback(query_or_key, freqs_cos, freqs_sin)
+
+        assert query_or_key.dtype == torch.bfloat16, "Expected bfloat16 input"
+        assert freqs_cos.dtype == torch.bfloat16 and freqs_sin.dtype == torch.bfloat16, "Expected bfloat16 freqs"
+        assert query_or_key.is_contiguous(), "Input must be contiguous"
+        assert freqs_cos.is_contiguous() and freqs_sin.is_contiguous(), "Freqs must be contiguous"
+
+        B, S, H, D = query_or_key.shape
+        assert D == freqs_cos.shape[1] == freqs_sin.shape[1], "Mismatch in head dim"
+        assert S == freqs_cos.shape[0] == freqs_sin.shape[0], "Mismatch in seq len"
+
+        out = torch.empty_like(query_or_key)
+
+        sb, ss, sh, sd = query_or_key.stride()
+        cos_ss, cos_sd = freqs_cos.stride()
+        sin_ss, sin_sd = freqs_sin.stride()
+
+        G = B * S * H
+        num_warps = 4
+
+        _rope_apply_kernel[G](
+            query_or_key, freqs_cos, freqs_sin, out,
+            B, S, H, D,
+            sb, ss, sh, sd,
+            cos_ss, cos_sd,
+            sin_ss, sin_sd,
+            num_warps=num_warps,
+        )
+
+        return out
+
+    @staticmethod
+    def _fallback(query_or_key: torch.Tensor,
+                  freqs_cos: torch.Tensor,
+                  freqs_sin: torch.Tensor) -> torch.Tensor:
+        # Vectorized PyTorch fallback that avoids reshapes & upcasts
+        B, S, H, D = query_or_key.shape
+        device = query_or_key.device
+
+        x = query_or_key  # (B,S,H,D)
+        i = torch.arange(D, device=device, dtype=torch.long) // 2  # (D,)
+        parity = torch.arange(D, device=device, dtype=torch.long) % 2  # (D,)
+
+        # Gather cos[i], sin[i] -> (

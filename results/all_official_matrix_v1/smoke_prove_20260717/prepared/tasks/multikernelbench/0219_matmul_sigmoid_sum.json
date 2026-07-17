@@ -1,0 +1,8 @@
+{
+  "benchmark": "multikernelbench",
+  "task_id": "matmul_sigmoid_sum",
+  "op": "matmul_sigmoid_sum",
+  "official_task": true,
+  "prompt_path": "/home/bi_geum/official_matrix_64/third_party/MultiKernelBench/reference/fuse/matmul_sigmoid_sum.py",
+  "prompt": "Benchmark: multikernelbench\nOfficial task: matmul_sigmoid_sum\nReturn only source code, without Markdown fences or explanations.\n\nGenerate a kernel response for the exact MultiKernelBench operator 'matmul_sigmoid_sum'. Use CUDA C++ or Triton and do not replace the computation with eager PyTorch.\n\nimport torch\nimport torch.nn as nn\n\nclass Model(nn.Module):\n    \"\"\"\n    Simple model that performs a matrix multiplication, applies sigmoid, and sums the result.\n    \"\"\"\n    def __init__(self, input_size, hidden_size):\n        super(Model, self).__init__()\n        self.linear = nn.Linear(input_size, hidden_size)\n\n    def forward(self, x):\n        \"\"\"\n        Args:\n            x: Input tensor of shape (batch_size, input_size).\n\n        Returns:\n            Output tensor of shape (batch_size, 1).\n        \"\"\"\n        x = self.linear(x)\n        x = torch.sigmoid(x)\n        x = torch.sum(x, dim=1, keepdim=True)\n        return x\n\nbatch_size = 128\ninput_size = 32768\nhidden_size = 32768\n\ndef get_inputs():\n    return [torch.rand(batch_size, input_size)]\n\ndef get_init_inputs():\n    return [input_size, hidden_size]"
+}

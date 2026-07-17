@@ -1,0 +1,13 @@
+$ /home/bi_geum/official_matrix_64/.venv/bin/python3 /home/bi_geum/official_matrix_64/third_party/TritonBench/performance_metrics/perf_T/run_bench/multiprocess_gpu_run.py
+cwd=/home/bi_geum/official_matrix_64/third_party/TritonBench/performance_metrics/perf_T
+returncode=0
+wall_s=29.316952
+----- STDOUT -----
+✅ finished 1/1: Adam_perf.py
+
+----- STDERR -----
+
+Process:   0%|                                            | 0/1 [00:00<?, ?it/s]
+Process: 100%|████████████████████████████████████| 1/1 [00:29<00:00, 29.13s/it]
+Process: 100%|████████████████████████████████████| 1/1 [00:29<00:00, 29.14s/it]
+

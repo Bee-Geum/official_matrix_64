@@ -1,0 +1,23 @@
+{
+  "agent": "kernelskill",
+  "mode": "live_upstream_agent",
+  "upstream_entry": "/home/bi_geum/official_matrix_64/third_party/KernelMem/main_memory_latest.py",
+  "memorybank": [
+    "/home/bi_geum/official_matrix_64/third_party/KernelMem/memorybank/bottleneck_headroom_kernelstructure.yaml",
+    "/home/bi_geum/official_matrix_64/third_party/KernelMem/memorybank/gate_value_from_kernel_struct"
+  ],
+  "run_dir": "/home/bi_geum/official_matrix_64/runs/kernelskill_qwen14b_kernelbench_all250_round1_repeat1_temp0.2/1_Square_matrix_multiplication___rep0/candidates/kernelmem_run/20260716_142646_1_Square_matrix_multiplication__vllm_qwen14b",
+  "selected_kernel": "/home/bi_geum/official_matrix_64/runs/kernelskill_qwen14b_kernelbench_all250_round1_repeat1_temp0.2/1_Square_matrix_multiplication___rep0/candidates/kernelmem_run/20260716_142646_1_Square_matrix_multiplication__vllm_qwen14b/1_Square_matrix_multiplication_/code/kernel_20260716_142656.py",
+  "ncu_on_path": "/usr/local/cuda-12/bin/ncu",
+  "ncu_evidence": {
+    "profile_dirs": [
+      "/home/bi_geum/official_matrix_64/runs/kernelskill_qwen14b_kernelbench_all250_round1_repeat1_temp0.2/1_Square_matrix_multiplication___rep0/candidates/kernelmem_run/20260716_142646_1_Square_matrix_multiplication__vllm_qwen14b/1_Square_matrix_multiplication_/profile"
+    ],
+    "profile_files": [],
+    "opt_round_files": [],
+    "ncu_error_csvs": [],
+    "ncu_phase_ran": false
+  },
+  "upstream_rc": 0,
+  "optimization_tree": "/home/bi_geum/official_matrix_64/runs/kernelskill_qwen14b_kernelbench_all250_round1_repeat1_temp0.2/1_Square_matrix_multiplication___rep0/candidates/kernelmem_run/20260716_142646_1_Square_matrix_multiplication__vllm_qwen14b/1_Square_matrix_multiplication_/optimization_tree.json"
+}

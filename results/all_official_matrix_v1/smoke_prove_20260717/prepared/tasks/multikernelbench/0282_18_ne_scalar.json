@@ -1,0 +1,8 @@
+{
+  "benchmark": "multikernelbench",
+  "task_id": "18_ne_scalar",
+  "op": "18_ne_scalar",
+  "official_task": true,
+  "prompt_path": "",
+  "prompt": "Benchmark: multikernelbench\nOfficial task: 18_ne_scalar\nReturn only source code, without Markdown fences or explanations.\n\nGenerate a kernel response for the exact MultiKernelBench operator '18_ne_scalar'. Use CUDA C++ or Triton and do not replace the computation with eager PyTorch.\n\nMultiKernelBench operator: 18_ne_scalar\nOfficial dataset entry: {'category': 'npukernelbench_level0', 'source': 'NPUKernelBench'}\n"
+}

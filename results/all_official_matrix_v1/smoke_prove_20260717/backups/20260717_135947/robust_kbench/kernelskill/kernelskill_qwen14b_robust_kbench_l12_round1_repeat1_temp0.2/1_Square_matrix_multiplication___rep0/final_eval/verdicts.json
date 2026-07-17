@@ -1,0 +1,28 @@
+[
+  {
+    "compiled": false,
+    "correct": false,
+    "latency_ms": null,
+    "ref_latency_ms": null,
+    "speedup": null,
+    "error": "compile: Traceback (most recent call last):\n  File \"/home/bi_geum/official_matrix_64/.venv/lib/python3.12/site-packages/torch/utils/cpp_extension.py\", line 2693, in _run_ninja_build\n    subprocess.run(\n  File \"/usr/lib/python3.12/subprocess.py\", line 571, in run\n    raise CalledProcessError(retcode, process.args,\nsubprocess.CalledProcessError: Command '['ninja', '-v']' returned non-zero exit status 1.\n\nThe above exception was the direct cause of the following exception:\n\nTraceback (most recent call last):\n  File \"/home/bi_geum/official_matrix_64/telemetry/instrumented_eval_worker.py\", line 87, in main\n    candidate_module = load_module(job[\"cand_path\"], \"cand_mod\")\n                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/bi_geum/official_matrix_64/telemetry/instrumented_eval_worker.py\", line 19, in load_module\n    spec.loader.exec_module(module)\n  File \"<frozen importlib._bootstrap_external>\", line 995, in exec_module\n  File \"<frozen importlib._bootstrap>\", line 488, in _call_with_frames_removed\n  File \"/home/bi_geum/official_matrix_64/runs/kernelskill_qwen14b_robust_kbench_l12_round1_repeat1_temp0.2/1_Square_matrix_multiplication___rep0/candidates/candidate_0000.py\", line 49, in <module>\n    matrix_multiply = load_inline(\n                      ^^^^^^^^^^^^\n  File \"/home/bi_geum/official_matrix_64/.venv/lib/python3.12/site-packages/torch/utils/cpp_extension.py\", line 2123, in load_inline\n    return _jit_compile(\n           ^^^^^^^^^^^^^\n  File \"/home/bi_geum/official_matrix_64/.venv/lib/python3.12/site-packages/torch/utils/cpp_extension.py\", line 2207, in _jit_compile\n    _write_ninja_file_and_build_library(\n  File \"/home/bi_geum/official_matrix_64/.venv/lib/python3.12/site-packages/torch/utils/cpp_extension.py\", line 2362, in _write_ninja_file_and_build_library\n    _run_ninja_build(\nRuntimeError: Error building extension 'matrix_multiply'\n",
+    "stage_s": {
+      "reference_import": 0.00017695899987302255,
+      "candidate_compile_import": 0.3948337299998457,
+      "model_init": 0.0,
+      "correctness": 0.0,
+      "reference_benchmark": 0.0,
+      "candidate_benchmark": 0.0,
+      "total": 1.785332429999471
+    },
+    "correctness_trials_requested": 5,
+    "correctness_trials_executed": 0,
+    "warmup": 10,
+    "timing_iters": 100,
+    "compile_attempts": 1,
+    "profile_runs": 0,
+    "candidate": "/home/bi_geum/official_matrix_64/runs/kernelskill_qwen14b_robust_kbench_l12_round1_repeat1_temp0.2/1_Square_matrix_multiplication___rep0/candidates/candidate_0000.py",
+    "candidate_index": 0,
+    "eval_wall_s": 2.3201476340000227
+  }
+]

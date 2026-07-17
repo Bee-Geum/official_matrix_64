@@ -1,0 +1,8 @@
+$ /home/bi_geum/official_matrix_64/.venv/bin/python3 /home/bi_geum/official_matrix_64/third_party/TritonBench/EVAL/eval_T/0_call_acc.py --source /home/bi_geum/official_matrix_64/results/all_official_matrix_v1/smoke_prove_20260717/cells/tritonbench_t/drkernel/000_Adam/official_eval/candidate_000/stage/source --target /home/bi_geum/official_matrix_64/results/all_official_matrix_v1/smoke_prove_20260717/cells/tritonbench_t/drkernel/000_Adam/official_eval/candidate_000/stage/target --GPUs 0
+cwd=/home/bi_geum/official_matrix_64/third_party/TritonBench/EVAL/eval_T
+returncode=0
+wall_s=0.055451
+----- STDOUT -----
+
+----- STDERR -----
+

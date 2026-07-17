@@ -1,0 +1,3 @@
+[autotriton] LIVE model autotriton8b @ http://127.0.0.1:8001/v1
+[round 0] wrote /home/bi_geum/official_matrix_64/runs/autotriton_autotriton8b_robust_kbench_l12_round1_repeat1_temp0.2/1_Square_matrix_multiplication___rep0/candidates/round0_kernel.py (ModelNew present: True, 1354 chars)
+[autotriton] wrote 1 kernel(s) to /home/bi_geum/official_matrix_64/runs/autotriton_autotriton8b_robust_kbench_l12_round1_repeat1_temp0.2/1_Square_matrix_multiplication___rep0/candidates

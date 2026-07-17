@@ -1,0 +1,8 @@
+{
+  "benchmark": "multikernelbench",
+  "task_id": "gelu",
+  "op": "gelu",
+  "official_task": true,
+  "prompt_path": "/home/bi_geum/official_matrix_64/third_party/MultiKernelBench/prompts/cuda_model_matmul_gelu.py",
+  "prompt": "Benchmark: multikernelbench\nOfficial task: gelu\nReturn only source code, without Markdown fences or explanations.\n\nGenerate a kernel response for the exact MultiKernelBench operator 'gelu'. Use CUDA C++ or Triton and do not replace the computation with eager PyTorch.\n\nimport torch\nimport torch.nn as nn\nimport torch.nn.functional as F\n\n\nclass Model(nn.Module):\n    def __init__(self):\n        super(Model, self).__init__()\n\n    def forward(self, a, b):\n        return F.gelu(torch.matmul(a, b))\n\n\ndef get_inputs():\n    a = torch.randn(1024, 256, dtype=torch.float16)\n    b = torch.randn(256, 640, dtype=torch.float16)\n    return [a, b]\n\n\ndef get_init_inputs():\n    return []\n"
+}

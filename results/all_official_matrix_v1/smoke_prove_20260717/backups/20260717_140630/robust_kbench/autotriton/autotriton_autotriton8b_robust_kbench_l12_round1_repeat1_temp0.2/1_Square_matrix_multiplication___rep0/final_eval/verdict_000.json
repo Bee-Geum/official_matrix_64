@@ -1,0 +1,23 @@
+{
+  "compiled": true,
+  "correct": false,
+  "latency_ms": null,
+  "ref_latency_ms": null,
+  "speedup": null,
+  "error": "correctness: trial 0 mismatch max_abs=1.100427e+03 mean_abs=1.023443e+03",
+  "stage_s": {
+    "reference_import": 0.00017177799963974394,
+    "candidate_compile_import": 0.05294793699977163,
+    "model_init": 0.00012594300005730474,
+    "correctness": 1.7023791619994881,
+    "reference_benchmark": 0.0,
+    "candidate_benchmark": 0.0,
+    "total": 3.1555096800002502
+  },
+  "correctness_trials_requested": 5,
+  "correctness_trials_executed": 1,
+  "warmup": 10,
+  "timing_iters": 100,
+  "compile_attempts": 1,
+  "profile_runs": 0
+}

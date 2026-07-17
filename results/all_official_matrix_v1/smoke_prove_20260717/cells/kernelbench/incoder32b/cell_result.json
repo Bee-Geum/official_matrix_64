@@ -1,0 +1,33 @@
+{
+  "benchmark": "kernelbench",
+  "agent": "incoder32b",
+  "n_tasks": 1,
+  "candidate_task_count": 1,
+  "official_eval_task_count": 1,
+  "correct_task_count": 0,
+  "valid_official_cell": 1,
+  "all_tasks_official": 1,
+  "wall_s": 90.89554619789124,
+  "top_infrastructure_error": "",
+  "task_results": [
+    {
+      "benchmark": "kernelbench",
+      "task_id": "1_Square_matrix_multiplication_",
+      "agent": "incoder32b",
+      "official_task": 1,
+      "generation_ok": 1,
+      "candidate_count": 1,
+      "official_attempted": 1,
+      "official_eval": 1,
+      "correct": 0,
+      "performance_available": 0,
+      "best_score": 0.0,
+      "infrastructure_error": "",
+      "candidate_error": "",
+      "generation_log": "/home/bi_geum/official_matrix_64/results/all_official_matrix_v1/smoke_prove_20260717/cells/kernelbench/incoder32b/kb_matrix.log.txt",
+      "cell_dir": "/home/bi_geum/official_matrix_64/results/all_official_matrix_v1/smoke_prove_20260717/cells/kernelbench/incoder32b",
+      "task_dir": ""
+    }
+  ],
+  "finished_at": "2026-07-17T14:22:20+0900"
+}

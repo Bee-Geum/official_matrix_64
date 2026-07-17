@@ -1,0 +1,6 @@
+{
+  "benchmark": "kernelbench",
+  "task_id": "85_Conv2d_GroupNorm_Scale_MaxPool_Clamp",
+  "source_path": "/home/bi_geum/official_matrix_64/third_party/KernelBench/KernelBench/level2/85_Conv2d_GroupNorm_Scale_MaxPool_Clamp.py",
+  "official_task": true
+}
